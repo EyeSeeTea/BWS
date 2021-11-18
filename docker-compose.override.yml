@@ -12,7 +12,26 @@ services:
     ports:
       - "${APP_EXT_PORT}:8000"
     volumes:
-      - .:/app
+      - ./bws:/app
+      - ./data:/app/data
     command: python manage.py runserver 0.0.0.0:8000
     entrypoint: bash -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
 
+  pma:
+    image: phpmyadmin/phpmyadmin
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      PMA_ARBITRARY: 1
+    restart: always
+    ports:
+      - "${PMA_EXT_PORT}:80"
+    depends_on:
+      db:
+        condition: service_healthy
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
