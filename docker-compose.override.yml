@@ -12,7 +12,8 @@ services:
     ports:
       - "${APP_EXT_PORT}:8000"
     volumes:
-      - .:/app
+      - ./bws:/app
+      - ./data:/app/data
     command: python manage.py runserver 0.0.0.0:8000
     entrypoint: bash -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
 

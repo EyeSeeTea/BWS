@@ -7,7 +7,7 @@ services:
   web:
     image: bcu/bws
     build:
-      context: .
+      context: ./bws
       labels:
         - "csic.cnb.bcu.project.name=3DBionotes"
         - "csic.cnb.bcu.app.name=BWS"
