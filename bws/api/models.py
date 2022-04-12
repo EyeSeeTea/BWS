@@ -1,3 +1,4 @@
+from pyexpat import model
 import uuid
 from django.db import models
 from django.core.validators import RegexValidator
@@ -377,3 +378,41 @@ class PdbEntryDetails(models.Model):
                                related_name='details', on_delete=models.CASCADE)
 
     refdoc = models.ManyToManyField(Publication)
+
+
+class FeatureType(models.Model):
+    '''
+        Feature type
+    '''
+    name = models.CharField(max_length=255, blank=False, default='')
+    description = models.CharField(max_length=255, blank=False, default='')
+    dataSource = models.CharField(max_length=255, blank=False, default='')
+    externalLink = models.CharField(max_length=200)
+
+
+class FeatureEntity(models.Model):
+    '''
+        Feature details
+    '''
+    name = models.CharField(max_length=255, blank=False, default='')
+    featureType = models.ForeignKey(FeatureType,
+                                    related_name='features', on_delete=models.CASCADE)
+    description = models.CharField(max_length=255, blank=False, default='')
+    pdbentry = models.ForeignKey(PdbEntry,
+                                 related_name='features', on_delete=models.CASCADE)
+    externalLink = models.CharField(max_length=200)
+
+
+class FeatureModelEntity(FeatureEntity):
+    '''
+        Feature that is associated with the whole Model
+    '''
+    details = models.CharField(max_length=255, blank=False, default='')
+
+
+class FeatureRegionEntity(FeatureEntity):
+    '''
+        Feature that is associated with a region in a Model
+    '''
+    start = models.IntegerField()
+    end = models.IntegerField()
