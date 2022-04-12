@@ -9,6 +9,9 @@ DEV
 - docker-compose up -d
 - docker-compose down
 
+ Connection to the running container "bws_web_1" in DEV
+- docker exec -it bws_web_1 /bin/bash
+
 PROD
 - docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 - docker-compose -f docker-compose.yml -f docker-compose.prod.yml down
