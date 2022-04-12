@@ -1,4 +1,3 @@
-from pyexpat import model
 import uuid
 from django.db import models
 from django.core.validators import RegexValidator
@@ -256,6 +255,8 @@ class LigandEntity(models.Model):
 
 
 class RefinedModel(models.Model):
+    URL_QUERYLINK = 'https://3dbionotes.cnb.csic.es/'
+
     method = models.CharField(
         max_length=25, choices=REF_METHOD, default=PDB_REDO)
 
@@ -269,13 +270,29 @@ class RefinedModel(models.Model):
 
 
 class RefinedPdbRedoModel(RefinedModel):
+    # https://pdb-redo.eu/db/6lxt
+    URL_EXTERNAL = 'https://pdb-redo.eu/db/'
+
     def externalLink(self):
-        # https://pdb-redo.eu/db/6lxt
-        return 'https://pdb-redo.eu/db/%s' % (self.pdbId.dbId.lower())
+        return "{0}{1}".format(self.URL_EXTERNAL, self.pdbId.dbId.lower())
 
     def queryLink(self):
         # https://3dbionotes.cnb.csic.es/pdb_redo/6lxt
-        return 'https://3dbionotes.cnb.csic.es/pdb_redo/%s' % (self.pdbId.dbId.lower(), )
+        return "{0}{1}{2}".format(self.URL_QUERYLINK, 'pdb_redo/', self.pdbId.dbId.lower())
+
+
+class RefinedIsoldeRedoModel(RefinedModel):
+    # https://insidecorona.net/our-database/
+    URL_EXTERNAL = 'https://insidecorona.net/our-database/'
+
+    filename = models.CharField(max_length=255, blank=False, default='')
+
+    def externalLink(self):
+        return "{0}".format(self.URL_EXTERNAL,)
+
+    def queryLink(self):
+        # https://3dbionotes.cnb.csic.es/isolde/6w9c/6w9c_refine_15
+        return "{0}{1}{2}{3}".format(self.URL_QUERYLINK, 'isolde/', self.pdbId.dbId.lower(), self.filename)
 
 
 class SampleModel(models.Model):
