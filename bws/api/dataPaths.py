@@ -3,7 +3,7 @@ import os
 from django.conf import settings
 
 LOCAL_DATA_DIR = os.path.join(settings.BASE_DIR, 'data')
-LOCAL_DATA_DIR = 'data'
+LOCAL_DATA_DIR = '/data'
 EMDB_BASEDIR = 'emdbs'
 EMDB_DATA_DIR = os.path.join(LOCAL_DATA_DIR, EMDB_BASEDIR)
 
@@ -21,3 +21,13 @@ MODEL_AND_LIGAND_DIR = os.path.join(LOCAL_DATA_DIR, MODEL_AND_LIGAND_BASEDIR)
 
 EMV_WS_URL = "http://finlay.cnb.csic.es:8010"
 EMV_WS_PATH = "emv"
+
+# https://github.com/thorn-lab/coronavirus_structural_task_force/tree/master/pdb/nsp3/SARS-CoV-2/6vxs/isolde
+CSTF_GITHUB_URL = "https://github.com/thorn-lab/coronavirus_structural_task_force/tree/master/pdb/"
+# https://raw.githubusercontent.com/thorn-lab/coronavirus_structural_task_force/master/pdb/isolde_refinements.txt
+CSTF_GITHUB_RAW_URL = "https://raw.githubusercontent.com/thorn-lab/coronavirus_structural_task_force/master/pdb/"
+ISOLDE_REF_FNAME = "isolde_refinements.txt"
+ISOLDE_JSON_FNAME = "isolde_entries.json"
+CSTF_LOCAL_PATH = LOCAL_DATA_DIR + "/" + "cstf"
+ISOLDE_LOCAL_DATA_PATH = CSTF_LOCAL_PATH + "/" + "isolde"
+BIONOTES_QUERY_URL = "/isolde"
