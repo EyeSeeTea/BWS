@@ -419,6 +419,9 @@ class FeatureEntity(models.Model):
                                  related_name='features', on_delete=models.CASCADE)
     externalLink = models.CharField(max_length=200)
 
+    class meta:
+        abstract = True
+
 
 class FeatureModelEntity(FeatureEntity):
     '''
