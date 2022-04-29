@@ -10,22 +10,6 @@ from .models import *
 
 logger = logging.getLogger(__name__)
 
-PDB_FOLDER_PATTERN = re.compile(".*/(\d\w{3})/.*\.pdb$")
-
-REGEX_EMDB_ID = re.compile('^emd-\d{4,5}$')
-REGEX_VOL_FILE = re.compile('^(emd)-\d{4,5}\.map$')
-REGEX_PDB_FILE = re.compile('^(pdb)\d\w{3}\.ent$')
-REGEX_LR_FILE = re.compile('^\d\w{3}\.(deepres|monores)\.pdb$')
-REGEX_MAP2MODELQUALITY_FILE = re.compile('^\d\w{3}\.(mapq|fscq)\.pdb$')
-
-URL_PDB_REDO = 'https://pdb-redo.eu/'
-URL_PDB_REDO_QUERY = 'http://3dbionotes.cnb.csic.es/pdb_redo/'
-URL_CSTF = 'https://insidecorona.net/'
-URL_PHENIX_CERES = 'https://cci.lbl.gov/ceres'
-
-
-logger = logging.getLogger(__name__)
-
 
 class PdbEntryAnnFromMapsUtils(object):
 

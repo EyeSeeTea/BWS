@@ -31,3 +31,7 @@ ISOLDE_JSON_FNAME = "isolde_entries.json"
 CSTF_LOCAL_PATH = LOCAL_DATA_DIR + "/" + "cstf"
 ISOLDE_LOCAL_DATA_PATH = CSTF_LOCAL_PATH + "/" + "isolde"
 BIONOTES_QUERY_URL = "/isolde"
+URL_PDB_REDO = 'https://pdb-redo.eu/'
+URL_PDB_REDO_QUERY = 'http://3dbionotes.cnb.csic.es/pdb_redo/'
+URL_CSTF = 'https://insidecorona.net/'
+URL_PHENIX_CERES = 'https://cci.lbl.gov/ceres'
