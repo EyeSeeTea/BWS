@@ -30,8 +30,12 @@ ISOLDE_REF_FNAME = "isolde_refinements.txt"
 ISOLDE_JSON_FNAME = "isolde_entries.json"
 CSTF_LOCAL_PATH = LOCAL_DATA_DIR + "/" + "cstf"
 ISOLDE_LOCAL_DATA_PATH = CSTF_LOCAL_PATH + "/" + "isolde"
-BIONOTES_QUERY_URL = "/isolde"
+URL_ISOLDE_QUERY = "/isolde"
+URL_UNIPROT = "https://www.uniprot.org/uniprot/"
+URL_NCBI_TAXONOMY = "https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id="
 URL_PDB_REDO = 'https://pdb-redo.eu/'
-URL_PDB_REDO_QUERY = 'http://3dbionotes.cnb.csic.es/pdb_redo/'
+URL_PDB_REDO_QUERY = '/pdb_redo/'
 URL_CSTF = 'https://insidecorona.net/'
 URL_PHENIX_CERES = 'https://cci.lbl.gov/ceres'
+URL_LIGAND_IMAGE_EBI = "https://www.ebi.ac.uk/pdbe/static/files/pdbechem_v2/"
+URL_LIGAND_EBI = "https://www.ebi.ac.uk/pdbe-srv/pdbechem/chemicalCompound/show/"

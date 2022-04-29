@@ -44,5 +44,7 @@ class RefinedModelSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = RefinedModel
-        fields = ['filename', 'details',  'source',
-                  'method', 'externalLink', 'queryLink']
+        fields = ['source', 'method',
+                  'filename',
+                  'externalLink', 'queryLink',
+                  'details']

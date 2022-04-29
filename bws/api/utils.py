@@ -57,6 +57,8 @@ class PdbEntryAnnFromMapsUtils(object):
                         return os.path.join(rootDir, dirName, fname)
         return None
 
+# ========== ========== ========== ========== ========== ========== ==========
+
 
 def download_file(url, path):
     """
@@ -104,6 +106,74 @@ def getGitHubFileList(url, ext=''):
 # ========== ========== ========== ========== ========== ========== ==========
 
 
+def findPdbEntry(pdbId):
+    obj = None
+    try:
+        obj = PdbEntry.objects.get(dbId=pdbId)
+        logger.debug('Found: %s', obj)
+        print('Found', obj)
+    except Exception as exc:
+        logger.exception(exc)
+        print(pdbId, exc, os.strerror)
+    return obj
+
+
+def findRefinedModelSource(name):
+    """
+    Find a RefinedModelSource entry in the DB table
+    """
+    obj = None
+    try:
+        obj = RefinedModelSource.objects.get(name=name)
+        logger.debug('Found: %s', obj)
+        print('Found', obj)
+    except Exception as exc:
+        logger.exception(exc)
+        print(name, exc, os.strerror)
+    return obj
+
+
+def findRefinedModelMethod(name):
+    """
+    Find a RefinedModelMethod entry in the DB table
+    """
+    obj = None
+    try:
+        obj = RefinedModelMethod.objects.get(name=name)
+        logger.debug('Found: %s', obj)
+        print('Found', obj)
+    except Exception as exc:
+        logger.exception(exc)
+        print(name, exc, os.strerror)
+    return obj
+
+
+def updateRefinedModel(emdbObj, pdbObj, sourceObj, methodObj, filename, externalLink, queryLink, details):
+    obj = None
+    try:
+        obj, created = RefinedModel.objects.update_or_create(
+            emdbId=emdbObj,
+            pdbId=pdbObj,
+            source=sourceObj,
+            method=methodObj,
+            defaults={
+                'filename': filename,
+                'externalLink': externalLink,
+                'queryLink': queryLink,
+                'details': details,
+            })
+        if created:
+            logger.debug('Created new: %s', obj)
+            print('Created new', obj)
+        else:
+            logger.debug('Updated: %s', obj)
+            print('Updated', obj)
+    except Exception as exc:
+        logger.exception(exc)
+        print(exc, os.strerror)
+    return obj
+
+
 def update_isolde_refinements(inputfile):
     """
     Update the isolde refinement models from GitHub
@@ -141,7 +211,19 @@ def update_isolde_refinements(inputfile):
     print("-- update DB Isolde data")
     logger.debug("-- update DB Isolde data")
     for entry in entries:
-        update_RefinedModel(entry)
+        if 'filename' in entry:
+            for refModel in entry['refmodels']:
+                pdbObj = findPdbEntry(entry['pdbId'].upper())
+                if pdbObj:
+                    updateRefinedModel(
+                        emdbObj=None,
+                        pdbObj=pdbObj,
+                        sourceObj=findRefinedModelSource(refModel['source']),
+                        methodObj=findRefinedModelMethod(refModel['method']),
+                        filename=entry['filename'],
+                        externalLink=refModel['externalLink'],
+                        queryLink=refModel['queryLink'],
+                        details=refModel['details'])
 
 
 def parseIsoldeEntryList(inputfile, entries):
@@ -185,9 +267,11 @@ def getIsoldeRefinementData(entries):
                              len(filenames), filename)
                 entry.update({"filename": filename})
                 entry.update({"refmodels": [{
+                    "source": "CSTF",
                     "method": "Isolde",
                     "externalLink": url,
-                    "queryLink": "%s/%s/%s" % (BIONOTES_QUERY_URL, pdb_id, filename)
+                    "queryLink": "%s/%s/%s" % (URL_ISOLDE_QUERY, pdb_id, filename),
+                    "details": "",
                 }]})
 
 
@@ -225,30 +309,6 @@ def getAllIsoldeDataFiles(entries, exts=["txt"]):
             for filename in filenames:
                 download_file(os.path.join(url_raw, filename), os.path.join(
                     ISOLDE_LOCAL_DATA_PATH, pdb_id[1:3], pdb_id))
-
-
-def update_RefinedModelSource(name, description, externalLink):
-    """
-    Update a RefinedModelSource intry in the DB table
-    """
-    obj = None
-    try:
-        obj, created = RefinedModelSource.objects.update_or_create(
-            name=name,
-            defaults={
-                'description': description if description else '',
-                'externalLink': externalLink if externalLink else '',
-            })
-        if created:
-            logger.debug('Created new: %s', obj)
-            print('Created new', obj)
-        else:
-            logger.debug('Updated: %s', obj)
-            print('Updated', obj)
-    except Exception as exc:
-        logger.exception(exc)
-        print(exc, os.strerror)
-    return obj
 
 
 def findRefinedModelSource(name):
@@ -317,6 +377,8 @@ def update_RefinedModel(refmodel):
         logger.exception(exc)
         print(exc, os.strerror)
     return obj
+
+# ========== ========== ========== ========== ========== ========== ==========
 
 
 def initBaseTables():
