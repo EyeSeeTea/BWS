@@ -1,4 +1,3 @@
-from unicodedata import name
 import uuid
 from django.db import models
 from django.core.validators import RegexValidator
@@ -256,35 +255,47 @@ class LigandEntity(models.Model):
 
 
 class RefinedModelSource(models.Model):
-    name = models.CharField(max_length=200) # name of the data source, e.g. 'PDB-REDO', 'CSTF (Coronavirus Structural TaskForce)', etc
-    description = models.CharField(max_length=200)  # description of the data source
-    externalLink = models.CharField(max_length=200) # link to the data source
+    # name of the data source, e.g. 'PDB-REDO', 'CSTF (Coronavirus Structural TaskForce)', etc
+    name = models.CharField(max_length=200, unique=True)
+    # description of the data source
+    description = models.TextField()
+    externalLink = models.CharField(max_length=200)  # link to the data source
 
     def __str__(self):
         return '%s' % (self.name,)
 
 
 class RefinedModelMethod(models.Model):
-    source = models.ForeignKey(RefinedModelSource, on_delete=models.CASCADE) # Data source
-    name = models.CharField(max_length=200) # name of the refinement method, e.g. 'PDB-REDO', 'Isolde', etc
-    description = models.CharField(max_length=200)  # description of the refinement method
-    externalLink = models.CharField(max_length=200) # link to the refinement method
+    source = models.ForeignKey(
+        RefinedModelSource, on_delete=models.CASCADE)  # Data source
+    # name of the refinement method, e.g. 'PDB-REDO', 'Isolde', etc
+    name = models.CharField(max_length=200, unique=True)
+    # description of the refinement method
+    description = models.TextField()
+    # link to the refinement method
+    externalLink = models.CharField(max_length=200)
 
     def __str__(self):
         return '%s' % (self.name,)
 
 
 class RefinedModel(models.Model):
-    emdbId = models.ForeignKey(EmdbEntry, related_name='%(class)s_refMaps',
-                               null=True, on_delete=models.CASCADE) # EMDB entry
-    pdbId = models.ForeignKey('PdbEntry', related_name='%(class)s_refModels',
-                              null=True, on_delete=models.CASCADE) # PDB entry
-    source = models.ForeignKey(RefinedModelSource, on_delete=models.CASCADE) # Data source
-    method = models.ForeignKey(RefinedModelMethod, on_delete=models.CASCADE) # Refinement method 
-    filename = models.CharField(max_length=200) # filename of the refined model
-    externalLink = models.CharField(max_length=200) # link to the refined model
-    queryLink = models.CharField(max_length=200) # link to the query used to display the refined model in 3DBionotes
-    details = models.CharField(max_length=200) # description of the refined model, notes, etc.
+    emdbId = models.ForeignKey(EmdbEntry, related_name='refMaps',
+                               null=True, on_delete=models.CASCADE)  # EMDB entry
+    pdbId = models.ForeignKey(PdbEntry, related_name='refModels',
+                              null=True, on_delete=models.CASCADE)  # PDB entry
+    source = models.ForeignKey(
+        RefinedModelSource, on_delete=models.CASCADE)  # Data source
+    method = models.ForeignKey(
+        RefinedModelMethod, on_delete=models.CASCADE)  # Refinement method
+    # filename of the refined model
+    filename = models.CharField(max_length=200)
+    externalLink = models.CharField(
+        max_length=200)  # link to the refined model
+    # link to the query used to display the refined model in 3DBionotes
+    queryLink = models.CharField(max_length=200)
+    # description of the refined model, notes, etc.
+    details = models.TextField()
 
     def __str__(self):
         return '%s' % (self.filename,)

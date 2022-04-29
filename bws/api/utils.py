@@ -4,10 +4,9 @@ import json
 import logging
 import os
 import re
-from api import models
-from api.models import ENTRY_TYPES, FILE_TYPES
 from django.core.exceptions import ValidationError
-from api.dataPaths import *
+from .dataPaths import *
+from .models import *
 
 logger = logging.getLogger(__name__)
 
@@ -18,6 +17,11 @@ REGEX_VOL_FILE = re.compile('^(emd)-\d{4,5}\.map$')
 REGEX_PDB_FILE = re.compile('^(pdb)\d\w{3}\.ent$')
 REGEX_LR_FILE = re.compile('^\d\w{3}\.(deepres|monores)\.pdb$')
 REGEX_MAP2MODELQUALITY_FILE = re.compile('^\d\w{3}\.(mapq|fscq)\.pdb$')
+
+URL_PDB_REDO = 'https://pdb-redo.eu/'
+URL_PDB_REDO_QUERY = 'http://3dbionotes.cnb.csic.es/pdb_redo/'
+URL_CSTF = 'https://insidecorona.net/'
+URL_PHENIX_CERES = 'https://cci.lbl.gov/ceres'
 
 
 logger = logging.getLogger(__name__)
@@ -150,8 +154,16 @@ def update_isolde_refinements(inputfile):
     logger.debug("-- get all files in Isolde data folder")
     getAllIsoldeDataFiles(entries, [".txt", ".mtz", ".cif"])
 
+    print("-- update DB Isolde data")
+    logger.debug("-- update DB Isolde data")
+    for entry in entries:
+        update_RefinedModel(entry)
+
 
 def parseIsoldeEntryList(inputfile, entries):
+    """
+    Parse the Isolde entries list file to get new entries
+    """
     with open(inputfile, 'r') as f:
         lines = f.readlines()
         for line in lines:
@@ -168,6 +180,9 @@ def parseIsoldeEntryList(inputfile, entries):
 
 
 def getIsoldeRefinementData(entries):
+    """
+    Get the Isolde refinement data from GitHub
+    """
     for entry in entries:
         pdb_id = entry["pdbId"]
         remote_path = entry["path"]
@@ -193,6 +208,9 @@ def getIsoldeRefinementData(entries):
 
 
 def getIsoldeRefinedModel(entries):
+    """
+    Get the Isolde refined model file from GitHub
+    """
     for entry in entries:
         if "filename" in entry:
             filename = entry["filename"]
@@ -207,6 +225,9 @@ def getIsoldeRefinedModel(entries):
 
 
 def getAllIsoldeDataFiles(entries, exts=["txt"]):
+    """
+    Get all the files in the Isolde data folder from GitHub
+    """
     for entry in entries:
         pdb_id = entry["pdbId"]
         remote_path = entry["path"]
@@ -220,3 +241,209 @@ def getAllIsoldeDataFiles(entries, exts=["txt"]):
             for filename in filenames:
                 download_file(os.path.join(url_raw, filename), os.path.join(
                     ISOLDE_LOCAL_DATA_PATH, pdb_id[1:3], pdb_id))
+
+
+def update_RefinedModelSource(name, description, externalLink):
+    """
+    Update a RefinedModelSource intry in the DB table
+    """
+    obj = None
+    try:
+        obj, created = RefinedModelSource.objects.update_or_create(
+            name=name,
+            defaults={
+                'description': description if description else '',
+                'externalLink': externalLink if externalLink else '',
+            })
+        if created:
+            logger.debug('Created new: %s', obj)
+            print('Created new', obj)
+        else:
+            logger.debug('Updated: %s', obj)
+            print('Updated', obj)
+    except Exception as exc:
+        logger.exception(exc)
+        print(exc, os.strerror)
+    return obj
+
+
+def findRefinedModelSource(name):
+    """
+    Find a RefinedModelSource entry in the DB table
+    """
+    obj = None
+    try:
+        obj = RefinedModelSource.objects.get(name=name)
+        logger.debug('Found: %s', obj)
+        print('Found', obj)
+    except Exception as exc:
+        logger.exception(exc)
+        print(exc, os.strerror)
+    return obj
+
+
+def findRefinedModelMethod(name):
+    """
+    Find a RefinedModelMethod entry in the DB table
+    """
+    obj = None
+    try:
+        obj = RefinedModelMethod.objects.get(name=name)
+        logger.debug('Found: %s', obj)
+        print('Found', obj)
+    except Exception as exc:
+        logger.exception(exc)
+        print(exc, os.strerror)
+    return obj
+
+
+def update_RefinedModel(refmodel):
+    """
+    Update a RefinedModel in the DB
+    """
+    emdb_id = refmodel["emdbId"]
+    pdb_id = refmodel["pdbId"]
+    source = findRefinedModelSource(refmodel["source"])
+    method = findRefinedModelMethod(refmodel["method"])
+    filename = refmodel["filename"]
+    externalLink = refmodel["externalLink"]
+    queryLink = refmodel["queryLink"]
+    details = refmodel["details"]
+
+    obj = None
+    try:
+        obj, created = RefinedModel.objects.update_or_create(
+            emdbId=emdb_id,
+            pdbId=pdb_id,
+            source=source,
+            method=method,
+            defaults={
+                'filename': filename if filename else '',
+                'externalLink': externalLink if externalLink else '',
+                'queryLink': queryLink if queryLink else '',
+                'details': details if details else '',
+            })
+        if created:
+            logger.debug('Created new: %s', obj)
+            print('Created new', obj)
+        else:
+            logger.debug('Updated: %s', obj)
+            print('Updated', obj)
+    except Exception as exc:
+        logger.exception(exc)
+        print(exc, os.strerror)
+    return obj
+
+
+def initBaseTables():
+    """
+    Initialize some base tables
+    """
+    print('Initializing base tables', 'RefinedModelSources')
+    initRefinedModelSources()
+    initRefinedModelMethods()
+
+
+def initRefinedModelSources():
+    """
+    Initialize the RefinedModelSources table
+    """
+    print('Initializing Refined Model Source', 'PDB-REDO')
+    source = updateRefinedModelSource(
+        'PDB-REDO',
+        'The PDB-REDO databank contains optimised versions of existing PDB entries with electron density maps, a description of model changes, and a wealth of model validation data.',
+        URL_PDB_REDO)
+
+    print('Initializing Refined Model Source', 'CSTF')
+    source = updateRefinedModelSource(
+        'CSTF',
+        'The Coronavirus Structural Task Force (CSTF) serve as a public global resource for the macromolecular models for 17 of the 28 different SARS-CoV and SARS-CoV-2 proteins, as well as structures of the most important human coronavirus interaction partners. All structures have been evaluated and some have been reviewed manually, atom by atom.',
+        URL_CSTF)
+
+    print('Initializing Refined Model Source', 'Phenix')
+    source = updateRefinedModelSource(
+        'Phenix',
+        'Re-refined models deposited in the Protein Data Bank that have map resolutions better than 5Å automatically obtained using the latest version of phenix.real_space_refine within the Phenix software package.',
+        URL_PHENIX_CERES)
+
+
+def initRefinedModelMethods():
+    """
+    Initialize the RefinedModelMethods table
+    """
+    print('Initializing Refined Model Method', 'PDB-Redo')
+    method = updateRefinedModelMethod(
+        RefinedModelSource.objects.get(name='PDB-REDO'),
+        'PDB-Redo',
+        'All the entries are treated with a consistent protocol that reduces the effects of differences in age, software, and depositors. This makes PDB-REDO a great datatset for large scale structure analysis studies.',
+        URL_PDB_REDO)
+
+    print('Initializing Refined Model Method', 'Isolde')
+    method = updateRefinedModelMethod(
+        RefinedModelSource.objects.get(name='CSTF'),
+        'Isolde',
+        'These are manual re-refinements from ISOLDE in ChimeraX, done by Tristan Croll. Structures were energy-minimised, visually checked residue-by-residue and, where necessary, rebuilt. Crystal structures were further refined with phenix.refine.',
+        URL_CSTF)
+    print('Initializing Refined Model Method', 'Isolde')
+    method = updateRefinedModelMethod(
+        RefinedModelSource.objects.get(name='CSTF'),
+        'Refmac',
+        'These are manual re-refinements from coot and REFMAC5 done by Dr. Sam Horrell. Structures were validated using inbuilt validation tools from coot in combination with validation through the molprobity server (Duke University School of Medicine).',
+        URL_CSTF)
+
+    print('Initializing Refined Model Method', 'CERES')
+    method = updateRefinedModelMethod(
+        RefinedModelSource.objects.get(name='Phenix'),
+        'CERES',
+        'CERES - the Cryo-EM re-refinement system provides automatically re-refined models deposited in the Protein Data Bank that have map resolutions better than 5Å, using the latest version of phenix.real_space_refine within the Phenix software package.',
+        URL_PHENIX_CERES)
+
+
+def updateRefinedModelSource(name, description='', url=''):
+    """
+    Update a RefinedModelSource in the DB
+    """
+    obj = None
+    try:
+        obj, created = RefinedModelSource.objects.update_or_create(
+            name=name,
+            defaults={
+                'description': description,
+                'externalLink': url,
+            }
+        )
+        if created:
+            logger.debug('Created new: %s', obj)
+            print('Created new', obj)
+        else:
+            logger.debug('Updated: %s', obj)
+            print('Updated', obj)
+    except Exception as exc:
+        logger.exception(exc)
+        print(exc, os.strerror)
+    return obj
+
+
+def updateRefinedModelMethod(source, name, description='', url=''):
+    """
+    Update a RefinedModelMethod in the DB
+    """
+    obj = None
+    try:
+        obj, created = RefinedModelMethod.objects.update_or_create(
+            source=source,
+            name=name,
+            defaults={
+                'description': description,
+                'externalLink': url,
+            })
+        if created:
+            logger.debug('Created new: %s', obj)
+            print('Created new', obj)
+        else:
+            logger.debug('Updated: %s', obj)
+            print('Updated', obj)
+    except Exception as exc:
+        logger.exception(exc)
+        print(exc, os.strerror)
+    return obj
