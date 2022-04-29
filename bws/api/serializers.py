@@ -1,10 +1,10 @@
 from rest_framework import serializers
-from api import models
+from .models import *   # import all models
 
 
 class DataFileNestedSerializer(serializers.ModelSerializer):
     class Meta:
-        model = models.DataFile
+        model = DataFile
         fields = ['filename', 'unique_id']
 
 
@@ -12,7 +12,7 @@ class EntrySerializer(serializers.ModelSerializer):
     files = DataFileNestedSerializer(many=True, read_only=True)
 
     class Meta:
-        model = models.Entry
+        model = Entry
         fields = ['entryId', 'path', 'files', 'entryType']
 
 
@@ -20,5 +20,31 @@ class DataFileSerializer(serializers.ModelSerializer):
     data = DataFileNestedSerializer(many=True, read_only=True)
 
     class Meta:
-        model = models.DataFile
+        model = DataFile
         fields = ['unique_id', 'path', 'filename', 'entry', 'data', 'fileType']
+
+
+class RefinedModelSourceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RefinedModelSource
+        fields = ['name', 'description', 'externalLink']
+
+
+class RefinedModelMethodSerializer(serializers.ModelSerializer):
+    source = serializers.StringRelatedField()
+
+    class Meta:
+        model = RefinedModelMethod
+        fields = ['source', 'name', 'description', 'externalLink']
+
+
+class RefinedModelSerializer(serializers.ModelSerializer):
+    source = serializers.StringRelatedField()
+    method = serializers.StringRelatedField()
+
+    class Meta:
+        model = RefinedModel
+        fields = ['source', 'method',
+                  'filename',
+                  'externalLink', 'queryLink',
+                  'details']

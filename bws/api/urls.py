@@ -4,6 +4,10 @@ from api import views
 
 router = DefaultRouter()
 router.register(r'datafiles', views.EntryViewSet)
+router.register(r'refinedModelSources', views.RefinedModelSourceViewSet)
+router.register(r'refinedModelMethods', views.RefinedModelMethodViewSet)
+router.register(r'refinedModels', views.RefinedModelViewSet)
+
 
 urlpatterns = [
     path('', include(router.urls)),

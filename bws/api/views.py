@@ -2,15 +2,16 @@ import re
 import logging
 import requests
 from django.http import HttpResponse, HttpResponseNotFound
-from api import models, serializers
-from api.utils import PdbEntryAnnFromMapsUtils
+from .serializers import *
+from .models import *
+from .utils import PdbEntryAnnFromMapsUtils
 from rest_framework import status, viewsets, permissions
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from api.dataPaths import (COMPUT_MODELS_DIR, LOCAL_DATA_DIR,
-                           MODEL_AND_LIGAND_DIR,
-                           EMV_WS_URL,
-                           EMV_WS_PATH)
+from .dataPaths import *
+from django_filters import FilterSet, ModelChoiceFilter
+from rest_framework.filters import OrderingFilter, SearchFilter
+from django_filters import rest_framework as filters
 
 
 logger = logging.getLogger(__name__)
@@ -108,6 +109,45 @@ class EntryViewSet(viewsets.ModelViewSet):
     """
     This viewset automatically provides `list` and `detail` actions.
     """
-    queryset = models.Entry.objects.all()
-    serializer_class = serializers.EntrySerializer
+    queryset = Entry.objects.all()
+    serializer_class = EntrySerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+
+class RefinedModelMethodViewSet(viewsets.ModelViewSet):
+    """
+    This viewset automatically provides `list` and `detail` actions.
+    """
+    queryset = RefinedModelMethod.objects.all()
+    serializer_class = RefinedModelMethodSerializer
+    filter_backends = (filters.DjangoFilterBackend,
+                       SearchFilter, OrderingFilter)
+    search_fields = ['name', 'details']
+    ordering_fields = ['name', 'details']
+    ordering = ['name']
+
+
+class RefinedModelSourceViewSet(viewsets.ModelViewSet):
+    """
+    This viewset automatically provides `list` and `detail` actions.
+    """
+    queryset = RefinedModelSource.objects.all()
+    serializer_class = RefinedModelSourceSerializer
+    filter_backends = (filters.DjangoFilterBackend,
+                       SearchFilter, OrderingFilter)
+    search_fields = ['name', 'details']
+    ordering_fields = ['name', 'details']
+    ordering = ['name']
+
+
+class RefinedModelViewSet(viewsets.ModelViewSet):
+    """
+    This viewset automatically provides `list` and `detail` actions.
+    """
+    queryset = RefinedModel.objects.all()
+    serializer_class = RefinedModelSerializer
+    filter_backends = (filters.DjangoFilterBackend,
+                       SearchFilter, OrderingFilter)
+    search_fields = ['method', 'emdbId',  'pdbId']
+    ordering_fields = ['method', 'emdbId',  'pdbId']
+    ordering = ['method']
