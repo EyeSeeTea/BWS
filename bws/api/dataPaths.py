@@ -37,5 +37,6 @@ URL_PDB_REDO = 'https://pdb-redo.eu/'
 URL_PDB_REDO_QUERY = '/pdb_redo/'
 URL_CSTF = 'https://insidecorona.net/'
 URL_PHENIX_CERES = 'https://cci.lbl.gov/ceres'
+URL_PHENIX_CERES_QUERY = ''
 URL_LIGAND_IMAGE_EBI = "https://www.ebi.ac.uk/pdbe/static/files/pdbechem_v2/"
 URL_LIGAND_EBI = "https://www.ebi.ac.uk/pdbe-srv/pdbechem/chemicalCompound/show/"
