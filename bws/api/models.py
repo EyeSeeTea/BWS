@@ -456,3 +456,20 @@ class FeatureHCSModelEntity(FeatureModelEntity):
     screen_id = models.CharField(max_length=255, blank=False, default='')
     plate_id = models.CharField(max_length=255, blank=False, default='')
     well_id = models.CharField(max_length=255, blank=False, default='')
+
+class WellEntity(models.Model):
+    '''
+        Well details
+    '''
+    well_id = models.ForeignKey(FeatureHCSModelEntity,
+                                 related_name='highContentScreenings', on_delete=models.CASCADE)
+    image_externalLink = models.URLField(max_length=200)
+    images_ids = models.CharField(max_length=255, blank=False, default='')
+    cell_line = models.CharField(max_length=255, blank=False, default='')
+    quality_control = models.CharField(max_length=255, blank=False, default='')
+    percentage_inhibition = models.CharField(max_length=255, blank=False, default='')
+    hit_over_75_activity = models.CharField(max_length=255, blank=False, default='')
+    number_cells = models.CharField(max_length=255, blank=False, default='')
+    phenotype_annotation_level = models.CharField(max_length=255, blank=False, default='')
+    channels = models.CharField(max_length=255, blank=False, default='')
+
