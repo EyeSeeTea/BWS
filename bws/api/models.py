@@ -433,3 +433,26 @@ class FeatureRegionEntity(FeatureEntity):
     '''
     start = models.IntegerField()
     end = models.IntegerField()
+
+class FeatureHCSModelEntity(FeatureModelEntity):
+    '''
+        Feature that is associated with the whole Model and specific to High Content Screening details
+    '''
+    organism = models.ForeignKey(Organism,
+                                 related_name='highContentScreenings', on_delete=models.CASCADE)
+
+    pubchem_cid = models.ForeignKey(PdbToLigand,
+                                 related_name='highContentScreenings', on_delete=models.CASCADE)
+
+    ligand_name = models.CharField(max_length=255, blank=False, default='')
+    iupac_name = models.CharField(max_length=255, blank=False, default='')
+    inchikey = models.CharField(max_length=255, blank=False, default='')
+    smiles = models.CharField(max_length=255, blank=False, default='')
+    broad_id = models.CharField(max_length=255, blank=False, default='')
+    pubchem_cid = models.CharField(max_length=255, blank=False, default='')
+    pubchem_url = models.URLField(max_length=200)
+    unichem_url = models.URLField(max_length=200)
+    
+    screen_id = models.CharField(max_length=255, blank=False, default='')
+    plate_id = models.CharField(max_length=255, blank=False, default='')
+    well_id = models.CharField(max_length=255, blank=False, default='')
