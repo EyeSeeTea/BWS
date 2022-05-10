@@ -1,3 +1,6 @@
+import fnmatch
+from Bio.PDB import MMCIF2Dict
+from datetime import datetime
 from bs4 import BeautifulSoup
 import requests
 import json
@@ -7,6 +10,15 @@ import re
 from django.core.exceptions import ValidationError
 from .dataPaths import *
 from .models import *
+
+
+STATUS = {"REL": "Released",
+          "UNREL": "Unreleased",
+          "HPUB": "Header released",
+          "HOLD1": "1 year hold",
+          "HOLD2": "2 year hold"}
+FILE_EXT_PATTERN = '*.cif'
+
 
 logger = logging.getLogger(__name__)
 
@@ -378,8 +390,6 @@ def update_RefinedModel(refmodel):
         print(exc, os.strerror)
     return obj
 
-# ========== ========== ========== ========== ========== ========== ==========
-
 
 def initBaseTables():
     """
@@ -493,3 +503,744 @@ def updateRefinedModelMethod(source, name, description='', url=''):
         logger.exception(exc)
         print(exc, os.strerror)
     return obj
+
+
+# ========== ========== ========== ========== ========== ========== ==========
+
+def getStructuresFromPath(path):
+
+    logger.debug("Updating Structure entries from : %s", path)
+    print("Updating Structure entries from", path)
+
+    objs = []
+
+    try:
+        # Get files from path
+        filenames = getCifFiles(path)
+
+        for filename in filenames:
+            entryId = filename.replace('.cif', '')
+
+            # Read mmCIF to dictionary
+            mmCifDict = fileCif2Json(path, filename)
+            obj = readmmCifFile(mmCifDict)
+            # break
+
+    except Exception as exc:
+        logger.exception(exc)
+        print(exc)
+    return objs
+
+
+def getCifFiles(path, pattern='*.cif'):
+    fileList = []
+    for root, dirs, files in os.walk(path):
+        for filename in fnmatch.filter(files, pattern):
+            fileList.append(filename)
+    return fileList
+
+
+def fileCif2Json(path, filename):
+    filepath = os.path.join(path, filename)
+    # filepath = os.path.join(path, filename[1:3], filename)
+    mmcif_dict = MMCIF2Dict.MMCIF2Dict(filepath)
+    return mmcif_dict
+
+
+def readmmCifFile(mmCifDict):
+    hybridmodelObj = None
+    pdbobj = None
+
+    # get PDB Entry
+    pdbId = mmCifDict.get('_entry.id', '')[0]
+    print('PDB file:', pdbId)
+    if pdbId:
+        pdbObj = updatePdbEntrymmCifFile(mmCifDict, pdbId)
+
+    # Find associated EM volume
+    emdbObj = None
+    emdbId = ''
+    related_db_name = mmCifDict.get('_pdbx_database_related.db_name', '')
+    related_content_type = mmCifDict.get(
+        '_pdbx_database_related.content_type', '')
+    related_db_id = mmCifDict.get('_pdbx_database_related.db_id', '')
+
+    for i, db in enumerate(related_db_name):
+        if db == 'EMDB':
+            if related_content_type[i] == 'associated EM volume':
+                emdbId = related_db_id[i]
+
+    # hybrid model
+    if emdbId:
+        emdbObj = updateEmdbEntrymmCifFile(emdbId, mmCifDict)
+
+    hybridmodelObj = updateHybridModel(emdbObj, pdbObj)
+
+    # get list of Polymer Entities (not ligands)
+    entityList = getPdbToEntityListmmCifFile(mmCifDict, pdbObj)
+
+    # get list of branched Ligands
+    branchedligandList = getPdbToLigandListmmCifFile(
+        'branched', mmCifDict, pdbObj)
+
+    # get list of non-polymers Ligands
+    nonPolymerligandList = getPdbToLigandListmmCifFile(
+        'non-polymer', mmCifDict, pdbObj)
+
+    # get refined models
+    # PDB-Redo
+    refModel = getRefinedModelPDBRedo(pdbObj)
+
+    # CERES
+    if emdbObj:
+        refModel = getRefinedModelCeres(pdbObj, emdbObj)
+
+    # get submission authors
+    submAuthors = getPdbEntryAuthors(mmCifDict, pdbObj)
+
+    # Details
+    entryDetails = updatePdbEntryDetails(mmCifDict, pdbObj)
+
+    # get DB citation
+    publications = getPublications(mmCifDict)
+    entryDetails.refdoc.set(publications)
+
+    return pdbObj
+
+
+def updatePdbentry(entryId, title, status, releaseDate, method, keywords):
+    obj = None
+    try:
+        obj, created = PdbEntry.objects.update_or_create(
+            dbId=entryId,
+            defaults={
+                'title': title,
+                'status': status,
+                'relDate': releaseDate,
+                'method': method,
+                'keywords': keywords,
+            })
+        if created:
+            logger.debug('Created new: %s', obj)
+            print('Created new', obj)
+        else:
+            logger.debug('Updated: %s', obj)
+            print('Updated', obj)
+    except Exception as exc:
+        logger.exception(exc)
+        print(exc, os.strerror)
+    return obj
+
+
+def updatePdbEntrymmCifFile(mmCifDict, entryId):
+    obj = None
+    title = mmCifDict.get('_struct.title', '')
+    status = mmCifDict.get('_pdbx_database_status.status_code', '')[0]
+    releaseDate = mmCifDict.get(
+        '_pdbx_audit_revision_history.revision_date', '')
+    method = mmCifDict.get('_exptl.method', '')
+    keywords = mmCifDict.get('_struct_keywords.text', '')
+
+    obj = updatePdbentry(entryId, title[0] if title else '',
+                         STATUS[status] if status in STATUS else '',
+                         releaseDate[0] if releaseDate else None,
+                         method[0] if method else None,
+                         keywords[0] if keywords else None)
+    return obj
+
+
+def updateEmdbEntry(emdbId, title, status, emMethod, resolution):
+    obj = None
+    try:
+        obj, created = EmdbEntry.objects.update_or_create(
+            dbId=emdbId,
+            defaults={
+                'title': title,
+                'status': status,
+                'emMethod': emMethod,
+                'resolution': resolution,
+            })
+        if created:
+            logger.debug('Created new: %s', obj)
+            print('Created new', obj)
+        else:
+            logger.debug('Updated: %s', obj)
+            print('Updated', obj)
+    except Exception as exc:
+        logger.exception(exc)
+        print(exc, os.strerror)
+    return obj
+
+
+def updateEmdbEntrymmCifFile(emdbId, mmCifDict):
+    obj = None
+    title = mmCifDict.get('_struct.title', '')
+    status = mmCifDict.get('_pdbx_database_status.status_code', '')[0]
+    em_method = mmCifDict.get('_em_experiment.reconstruction_method', '')
+    resolution = mmCifDict.get('_em_3d_reconstruction.resolution', '')
+    obj = updateEmdbEntry(emdbId,
+                          title[0] if title else '',
+                          STATUS[status] if status in STATUS else '',
+                          em_method[0] if em_method else None,
+                          resolution[0] if resolution else None)
+    return obj
+
+
+def updateHybridModel(emdbObj, pdbObj):
+    obj = None
+    try:
+        obj, created = HybridModel.objects.update_or_create(
+            emdbId=emdbObj,
+            pdbId=pdbObj,
+        )
+        if created:
+            logger.debug('Created new: %s', obj)
+            print('Created new', obj)
+        else:
+            logger.debug('Updated: %s', obj)
+            print('Updated', obj)
+    except Exception as exc:
+        logger.exception(exc)
+        print(exc, os.strerror)
+    return obj
+
+
+def updateUniProtEntry(db_accession, db_code):
+    obj = None
+    try:
+        obj, created = UniProtEntry.objects.update_or_create(
+            dbId=db_accession,
+            defaults={
+                'name': db_code,
+                'externalLink': URL_UNIPROT + db_accession,
+            })
+        if created:
+            logger.debug('Created new: %s', obj)
+            print('Created new', obj)
+        else:
+            logger.debug('Updated: %s', obj)
+            print('Updated', obj)
+    except Exception as exc:
+        logger.exception(exc)
+        print(exc, os.strerror)
+    return obj
+
+
+def updateOrganism(taxonomy_id, scientific_name, common_name):
+    obj = None
+    try:
+        obj, created = Organism.objects.update_or_create(
+            ncbi_taxonomy_id=taxonomy_id,
+            defaults={
+                'scientific_name': scientific_name if scientific_name else '',
+                'common_name': common_name.replace('?', '') if common_name else '',
+                'externalLink': URL_NCBI_TAXONOMY + taxonomy_id,
+            })
+        if created:
+            logger.debug('Created new: %s', obj)
+            print('Created new', obj)
+        else:
+            logger.debug('Updated: %s', obj)
+            print('Updated', obj)
+    except Exception as exc:
+        logger.exception(exc)
+        print(exc, os.strerror)
+    return obj
+
+
+def getOrganismObjmmCifFile(indx, mmCifDict):
+    entity_id = mmCifDict.get('_entity_src_gen.entity_id', '')
+    common_name = mmCifDict.get('_entity_src_gen.gene_src_common_name', '')
+    scientific_name = mmCifDict.get(
+        '_entity_src_gen.pdbx_gene_src_scientific_name', '')
+    ncbi_taxonomy_id = mmCifDict.get(
+        '_entity_src_gen.pdbx_gene_src_ncbi_taxonomy_id', '')
+
+    commonName = ''
+    scientificName = ''
+    ncbi_taxonomyId = ''
+    for id, cname, sciname, taxid in zip(entity_id, common_name, scientific_name, ncbi_taxonomy_id):
+        if int(id) == indx+1:
+            commonName = cname
+            scientificName = sciname
+            ncbi_taxonomyId = taxid
+    if ncbi_taxonomyId:
+        organismObj = updateOrganism(
+            ncbi_taxonomyId, scientificName, commonName)
+        return organismObj
+
+
+def updateEntitymmCifFile(indx, mmCifDict, uniprotObj=None, organismObj=None):
+    entId = indx+1
+    types = mmCifDict.get('_entity.type', '')
+    names = mmCifDict.get('_entity.pdbx_description', '')
+    quantity = mmCifDict.get('_entity.pdbx_number_of_molecules', '')
+    mutations = mmCifDict.get('_entity.pdbx_mutation', '')
+    details = mmCifDict.get('_entity.details', '')
+    altNames = ''
+    com_entity_ids = mmCifDict.get('_entity_name_com.entity_id', '')
+    com_names = mmCifDict.get('_entity_name_com.name', '')
+    for centId, cname in zip(com_entity_ids, com_names):
+        if int(centId) == entId:
+            altNames = cname
+    obj = None
+    try:
+        obj, created = ModelEntity.objects.update_or_create(
+            name=names[indx],
+            defaults={
+                'altNames': altNames if altNames else '',
+                'type': types[indx] if types[indx] else '',
+                'details': details[indx].replace('?', '') if details[indx] else '',
+                'mutation': mutations[indx].replace('?', '') if mutations[indx] else '',
+                'uniprotAcc': uniprotObj,
+                'organism': organismObj,
+            })
+        if created:
+            logger.debug('Created new: %s', obj)
+            print('Created new', obj)
+        else:
+            logger.debug('Updated: %s', obj)
+            print('Updated', obj)
+    except Exception as exc:
+        logger.exception(exc)
+        print(exc, os.strerror)
+    return obj, quantity[indx]
+
+
+def updatePdbToEntity(pdbObj, polymerObj, quantity=1):
+    obj = None
+    try:
+        obj, created = PdbToEntity.objects.update_or_create(
+            pdbId=pdbObj,
+            entity=polymerObj,
+            defaults={
+                'quantity': quantity,
+            })
+        if created:
+            logger.debug('Created new: %s', obj)
+            print('Created new', obj)
+        else:
+            logger.debug('Updated: %s', obj)
+            print('Updated', obj)
+    except Exception as exc:
+        logger.exception(exc)
+        print(exc, os.strerror)
+    return obj
+
+
+def getPdbToEntityListmmCifFile(mmCifDict, pdbObj):
+    objList = []
+    types = mmCifDict.get('_entity.type', '')
+    entity_ids = mmCifDict.get('_entity.id', '')
+    unp_db_names = mmCifDict.get('_struct_ref.db_name', '')
+    unp_db_codes = mmCifDict.get('_struct_ref.db_code', '')
+    unp_db_accessions = mmCifDict.get('_struct_ref.pdbx_db_accession', '')
+
+    for indx, entity_id in enumerate(entity_ids):
+        if types[indx] == 'polymer':
+            # UniProt
+            uniprotObj = None
+            if unp_db_names[indx] == 'UNP':
+                db_accession = unp_db_accessions[indx]
+                db_code = unp_db_codes[indx]
+                uniprotObj = updateUniProtEntry(db_accession, db_code)
+
+            # Organism
+            organismObj = getOrganismObjmmCifFile(indx, mmCifDict)
+
+            # Polymer Entity
+            entityObj, quantity = updateEntitymmCifFile(
+                indx, mmCifDict, uniprotObj, organismObj)
+
+            # PDB-Polymer
+            pdbEntityOgj = updatePdbToEntity(pdbObj, entityObj, quantity)
+            objList.append(pdbEntityOgj)
+    return objList
+
+
+def updateLigandEntitymmCifFile(lType, indx, entityId, mmCifDict):
+    descriptions = mmCifDict.get('_entity.pdbx_description', '')
+    formula_weights = mmCifDict.get('_entity.formula_weight', '')
+    quantity = mmCifDict.get('_entity.pdbx_number_of_molecules', '')
+
+    ligandType = ''
+    ligandId = ''
+    ligandName = ''
+    if lType == 'branched':
+        ltypes_entity_ids = mmCifDict.get('_pdbx_entity_branch.entity_id', '')
+        ligandTypes = mmCifDict.get('_pdbx_entity_branch.type', '')
+        for i, ltype in enumerate(ligandTypes):
+            if ltypes_entity_ids[i] == entityId:
+                ligandType = ltype
+
+        branch_entity_ids = mmCifDict.get(
+            '_pdbx_entity_branch_list.entity_id', '')
+        comp_ids = mmCifDict.get('_pdbx_entity_branch_list.comp_id', '')
+        ligandUnits = []
+        for i, branch_entity_id in enumerate(branch_entity_ids):
+            if branch_entity_id == entityId:
+                ligandUnits.append(comp_ids[i])
+        ligandId = "-".join(ligandUnits)
+
+        bDescEntId = mmCifDict.get(
+            '_pdbx_entity_branch_descriptor.entity_id', '')
+        bDescriptors = mmCifDict.get(
+            '_pdbx_entity_branch_descriptor.descriptor', '')
+        bDescProgram = mmCifDict.get(
+            '_pdbx_entity_branch_descriptor.program', '')
+        for i, desc in enumerate(bDescriptors):
+            if bDescEntId[i] == entityId and bDescProgram[i] == 'GMML':
+                ligandName = desc
+
+    elif lType == 'non-polymer':
+        mdescEntId = mmCifDict.get(
+            '_pdbx_entity_nonpoly.entity_id', '')
+        mDescriptors = mmCifDict.get('_pdbx_entity_nonpoly.name', '')
+        ligandId = mmCifDict.get('_pdbx_entity_nonpoly.comp_id', '')
+
+        for (entId, desc, ligand) in zip(mdescEntId, mDescriptors, ligandId):
+            if entId == entityId:
+                ligandName = desc
+                ligandId = ligand
+
+    obj = None
+    try:
+        obj, created = LigandEntity.objects.update_or_create(
+            dbId=ligandId,
+            defaults={
+                'ligandType': ligandType if ligandType else '',
+                'name': ligandName if ligandName else '',
+
+                'formula_weight': formula_weights[indx] if formula_weights[indx] else '',
+                'details': descriptions[indx] if descriptions[indx] else '',
+                'imageLink': "" if lType == 'branched' else URL_LIGAND_IMAGE_EBI + ligandId + "_400.svg",
+                'externalLink': "" if lType == 'branched' else URL_LIGAND_EBI + ligandId,
+            })
+        if created:
+            logger.debug('Created new: %s', obj)
+            print('Created new', obj)
+        else:
+            logger.debug('Updated: %s', obj)
+            print('Updated', obj)
+    except Exception as exc:
+        logger.exception(exc)
+        print(exc, os.strerror)
+    return obj, quantity[indx]
+
+
+def updatePdbToLigand(pdbObj, ligandObj, quantity=1):
+    obj = None
+    try:
+        obj, created = PdbToLigand.objects.update_or_create(
+            pdbId=pdbObj,
+            ligand=ligandObj,
+            defaults={
+                'quantity': quantity,
+            })
+        if created:
+            logger.debug('Created new: %s', obj)
+            print('Created new', obj)
+        else:
+            logger.debug('Updated: %s', obj)
+            print('Updated', obj)
+    except Exception as exc:
+        logger.exception(exc)
+        print(exc, os.strerror)
+    return obj
+
+
+def getPdbToLigandListmmCifFile(ligandType, mmCifDict, pdbObj):
+    objList = []
+    entityIds = mmCifDict.get('_entity.id', '')
+    types = mmCifDict.get('_entity.type', '')
+
+    for indx, entityId in enumerate(entityIds):
+        if types[indx] == ligandType:
+            ligandObj, quantity = updateLigandEntitymmCifFile(
+                ligandType, indx, entityId, mmCifDict)
+            # # PDB-Ligand
+            pdbLigandOgj = updatePdbToLigand(pdbObj, ligandObj, quantity)
+            objList.append(pdbLigandOgj)
+        if types[indx] == 'non-polymer':
+            pass
+    return objList
+
+
+def getRefinedModelPDBRedo(pdbObj):
+    refModel = None
+    entryId = pdbObj.dbId.lower()
+    url = URL_PDB_REDO + 'db/' + entryId
+    try:
+        resp = requests.head(url)
+        print('Connecting', url)
+        if resp.status_code == 200:
+            print('-->>> response', resp.status_code)
+            refModelSource = RefinedModelSource.objects.get(name='PDB-REDO')
+            refModelMethod = RefinedModelMethod.objects.get(
+                source=refModelSource, name='PDB-Redo')
+            refModel = updateRefinedModel(
+                None, pdbObj, refModelSource, refModelMethod, entryId + '_final.pdb', url,
+                URL_PDB_REDO_QUERY + entryId, '')
+    except requests.ConnectionError:
+        print("Can't find PDB-Redo model: failed to connect", url)
+    return refModel
+
+
+def getRefinedModelCeres(pdbObj, emdbObj):
+    refModel = None
+    pdbId = pdbObj.dbId.lower()
+    emdbId = emdbObj.dbId.replace("EMD-", "")
+    entry_date = datetime.today().strftime("%m_%Y")  # 0 padded, i.e.: 04_2022
+    # entry_date = datetime.today().strftime("02_%Y")  # 0 padded, i.e.: 04_2022
+    # https://cci.lbl.gov/ceres/goto_entry/7vdf_31916/04_2022
+    url = URL_PHENIX_CERES + '/goto_entry/' + \
+        pdbId + '_' + emdbId + '/' + entry_date
+    try:
+        print('Connecting', url)
+        resp = requests.get(url)
+        if resp.status_code == 200:
+            print('-->>> response', resp.status_code)
+            if resp.text.find('Does not exist') == -1:
+                print('-->>> Found CERES refModel', pdbId, emdbId)
+                refModelSource = RefinedModelSource.objects.get(name='Phenix')
+                refModelMethod = RefinedModelMethod.objects.get(
+                    source=refModelSource, name='CERES')
+                refModel = updateRefinedModel(
+                    emdbObj=emdbObj,
+                    pdbObj=pdbObj,
+                    sourceObj=refModelSource,
+                    methodObj=refModelMethod,
+                    filename=pdbId + '_' + emdbId + '_' + 'trim_real_space_refined_000.pdb',
+                    externalLink=url,
+                    queryLink=URL_PHENIX_CERES_QUERY,
+                    details='')
+            else:
+                print('-->>> No entry found', )
+    except requests.ConnectionError:
+        print("Can't find PDB-Redo model: failed to connect", url)
+    return refModel
+
+
+def updateAuthor(name, orcid):
+    obj = None
+    try:
+        obj, created = Author.objects.update_or_create(
+            name=name,
+            orcid=orcid,
+        )
+        if created:
+            logger.debug('Created new: %s', obj)
+            print('Created new', obj)
+        else:
+            logger.debug('Updated: %s', obj)
+            print('Updated', obj)
+    except Exception as exc:
+        logger.exception(exc)
+        print(exc, os.strerror)
+    return obj
+
+
+def getPdbEntryAuthors(mmCifDict, pdbObj):
+    auths = []
+    # _audit_author.name
+    # _audit_author.pdbx_ordinal
+    # _audit_author.identifier_ORCID
+    names = mmCifDict.get('_audit_author.name', '')
+    orcids = mmCifDict.get('_audit_author.identifier_ORCID', '')
+    ordinals = mmCifDict.get('_audit_author.pdbx_ordinal', '')
+    for idx, name in enumerate(names):
+        orcid = orcids[idx].replace('?', '') if orcids else ''
+        ordinal = ordinals[idx].replace('?', '') if ordinals else ''
+        # authorObj = updatePdbEntryAuthor(name, orcid, ordinal, pdbObj)
+        authorObj = updateAuthor(name, orcid)
+        pdbObj.dbauthors.add(authorObj)
+        auths.append(authorObj)
+    return auths
+
+
+def updateSampleEntity(name, exprSystem,
+                       assembly, ass_method, ass_details,
+                       macromolecules, uniProts, genes,
+                       bioFunction, bioProcess, cellComponent, domains):
+    obj = None
+    try:
+        obj, created = SampleEntity.objects.update_or_create(
+            name=name,
+            exprSystem=exprSystem,
+            assembly=assembly,
+            ass_method=ass_method,
+            ass_details=ass_details,
+            macromolecules=macromolecules,
+            uniProts=uniProts,
+            genes=genes,
+            bioFunction=bioFunction,
+            bioProcess=bioProcess,
+            cellComponent=cellComponent,
+            domains=domains,
+        )
+        if created:
+            logger.debug('Created new: %s', obj)
+            print('Created new', obj)
+        else:
+            logger.debug('Updated: %s', obj)
+            print('Updated', obj)
+    except Exception as exc:
+        logger.exception(exc)
+        print(exc, os.strerror)
+    return obj
+
+
+def getSampleDetails(mmCifDict):
+
+    exprSystem = mmCifDict.get(
+        '_entity_src_gen.pdbx_host_org_scientific_name', '')
+    assembly = mmCifDict.get('_pdbx_struct_assembly.details', '')
+    ass_method = mmCifDict.get('_pdbx_struct_assembly.method_details', '')
+    ass_details = mmCifDict.get('_pdbx_struct_assembly.oligomeric_details', '')
+    genes = mmCifDict.get('_entity_src_gen.pdbx_gene_src_gene', '')
+    name = ''
+    macromolecules = ''
+    uniProts = ''
+    bioFunction = ''
+    bioProcess = ''
+    cellComponent = ''
+    domains = ''
+    sampleObj = updateSampleEntity(
+        name='',
+        exprSystem=exprSystem[0].replace('?', '') if exprSystem else '',
+        assembly=assembly[0].replace('?', '') if exprSystem else '',
+        ass_method=ass_method[0].replace('?', '') if exprSystem else '',
+        ass_details=ass_details[0].replace('?', '') if exprSystem else '',
+        macromolecules='',
+        uniProts='',
+        genes=''.join([str(item.replace('?', '') for item in genes)]),
+        bioFunction='',
+        bioProcess='',
+        cellComponent='',
+        domains='',)
+    return sampleObj
+
+
+def updatePdbEntryDetails(mmCifDict, pdbObj):
+    obj = None
+    # get Sample
+    sample = getSampleDetails(mmCifDict)
+
+    try:
+        obj, created = PdbEntryDetails.objects.update_or_create(
+            pdbentry=pdbObj,
+            sample=sample,
+        )
+        if created:
+            logger.debug('Created new: %s', obj)
+            print('Created new', obj)
+        else:
+            logger.debug('Updated: %s', obj)
+            print('Updated', obj)
+    except Exception as exc:
+        logger.exception(exc)
+        print(exc, os.strerror)
+    return obj
+
+
+def updatePublication(title, journal, issn, issue, volume, firstPage, lastPage, year, doi, pubMedId, abstract):
+    obj = None
+    try:
+        obj, created = Publication.objects.update_or_create(
+            title=title,
+            defaults={
+                'journal_abbrev': journal,
+                'issn': issn,
+                'issue': issue,
+                'volume': volume,
+                'page_first': firstPage,
+                'page_last': lastPage,
+                'year': year,
+                'doi': doi,
+                'pubMedId': pubMedId,
+                'abstract': abstract
+            })
+        if created:
+            logger.debug('Created new: %s', obj)
+            print('Created new', obj)
+        else:
+            logger.debug('Updated: %s', obj)
+            print('Updated', obj)
+    except Exception as exc:
+        logger.exception(exc)
+        print(exc, os.strerror)
+    return obj
+
+
+def updatePublicationAuthor(name, orcid, ordinal, publication):
+    obj = None
+    author = updateAuthor(name, orcid)
+    try:
+        obj, created = PublicationAuthor.objects.update_or_create(
+            publication=publication,
+            author=author,
+            defaults={
+                'ordinal': ordinal,
+            })
+        if created:
+            logger.debug('Created new: %s', obj)
+            print('Created new', obj)
+        else:
+            logger.debug('Updated: %s', obj)
+            print('Updated', obj)
+    except Exception as exc:
+        logger.exception(exc)
+        print(exc, os.strerror)
+    return obj
+
+
+def getCitationAuthors(mmCifDict, citation):
+    auths = []
+    # _citation_author.name
+    # _citation_author.ordinal
+    # _citation_author.identifier_ORCID
+    names = mmCifDict.get('_citation_author.name', '')
+    orcids = mmCifDict.get('_citation_author.identifier_ORCID', '')
+    ordinals = mmCifDict.get('_citation_author.ordinal', '')
+    for idx, name in enumerate(names):
+        orcid = orcids[idx].replace('?', '') if orcids else ''
+        ordinal = ordinals[idx].replace('?', '') if ordinals else ''
+        authorObj = updatePublicationAuthor(name, orcid, ordinal, citation)
+        auths.append(authorObj)
+    return auths
+
+
+def getPublications(mmCifDict):
+    objs = []
+    titleList = mmCifDict.get('_citation.title', '')
+    journalList = mmCifDict.get('_citation.journal_abbrev', '')
+    issnList = mmCifDict.get('_citation.journal_id_ISSN', '')
+    issueList = mmCifDict.get('_citation.journal_issue', '')
+    volumeList = mmCifDict.get('_citation.journal_volume', '')
+    firsPagetList = mmCifDict.get('_citation.page_first', '')
+    lastPageList = mmCifDict.get('_citation.page_last', '')
+    yearList = mmCifDict.get('_citation.year', '')
+    doiList = mmCifDict.get('_citation.pdbx_database_id_DOI', '')
+    pubMedList = mmCifDict.get('_citation.pdbx_database_id_PubMed', '')
+    abstractList = mmCifDict.get('_citation.abstract', '')
+    for idx, title in enumerate(titleList):
+        journal = journalList[idx].replace('?', '') if journalList else ''
+        issn = issnList[idx].replace('?', '') if issnList else ''
+        issue = issueList[idx].replace('?', '') if issueList else ''
+        volume = volumeList[idx].replace('?', '') if volumeList else ''
+        firstPage = firsPagetList[idx].replace(
+            '?', '') if firsPagetList else ''
+        lastPage = lastPageList[idx].replace('?', '') if lastPageList else ''
+        year = yearList[idx].replace('?', '') if yearList else ''
+        doi = doiList[idx].replace('?', '') if doiList else ''
+        pubMedId = pubMedList[idx].replace('?', '') if pubMedList else ''
+        abstract = abstractList[idx].replace('?', '') if abstractList else ''
+
+        refObj = updatePublication(
+            title, journal, issn, issue, volume, firstPage, lastPage, year, doi, pubMedId, abstract)
+        objs.append(refObj)
+
+        auths = getCitationAuthors(mmCifDict, refObj)
+        # pubs = updateCitationToPdb(refObj, entryDetails)
+
+    return objs
