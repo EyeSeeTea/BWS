@@ -400,6 +400,7 @@ def initBaseTables():
     initRefinedModelMethods()
 
 
+
 def initRefinedModelSources():
     """
     Initialize the RefinedModelSources table
@@ -416,10 +417,10 @@ def initRefinedModelSources():
         'The Coronavirus Structural Task Force (CSTF) serve as a public global resource for the macromolecular models for 17 of the 28 different SARS-CoV and SARS-CoV-2 proteins, as well as structures of the most important human coronavirus interaction partners. All structures have been evaluated and some have been reviewed manually, atom by atom.',
         URL_CSTF)
 
-    print('Initializing Refined Model Source', 'Phenix')
+    print('Initializing Refined Model Source', 'CERES')
     source = updateRefinedModelSource(
-        'Phenix',
-        'Re-refined models deposited in the Protein Data Bank that have map resolutions better than 5Å automatically obtained using the latest version of phenix.real_space_refine within the Phenix software package.',
+        'CERES',
+        'The Cryo-EM re-refinement system (CERES) provides automatically re-refined models deposited in the Protein Data Bank that have map resolutions better than 5Å, using the latest version of phenix.real_space_refine within the Phenix software package.',
         URL_PHENIX_CERES)
 
 
@@ -447,11 +448,11 @@ def initRefinedModelMethods():
         'These are manual re-refinements from coot and REFMAC5 done by Dr. Sam Horrell. Structures were validated using inbuilt validation tools from coot in combination with validation through the molprobity server (Duke University School of Medicine).',
         URL_CSTF)
 
-    print('Initializing Refined Model Method', 'CERES')
+    print('Initializing Refined Model Method', 'PHENIX')
     method = updateRefinedModelMethod(
-        RefinedModelSource.objects.get(name='Phenix'),
-        'CERES',
-        'CERES - the Cryo-EM re-refinement system provides automatically re-refined models deposited in the Protein Data Bank that have map resolutions better than 5Å, using the latest version of phenix.real_space_refine within the Phenix software package.',
+        RefinedModelSource.objects.get(name='CERES'),
+        'PHENIX',
+        'Re-refinements have been performed using the latest version of phenix.real_space_refine, a command-line tool inside the PHENIX software package for refinement of a model against a map. Models are taken from the Protein Data Bank and maps from the Electron Microscopy Data Bank, establishing a resolution cut-off of 5 Å because real_space_refine performs best for maps with resolutions better than 5 Å.',
         URL_PHENIX_CERES)
 
 
@@ -858,6 +859,19 @@ def getPdbToEntityListmmCifFile(mmCifDict, pdbObj):
     return objList
 
 
+def geDataFromPubChem(url, jKey):
+
+    jValue = ''
+    try:
+        resp = requests.get(url)
+        if jKey in resp:
+            jvalue = resp[jKey]
+    except Exception as exc:
+        logger.exception(exc)
+        print(exc, os.strerror)
+    return jValue
+
+
 def updateLigandEntitymmCifFile(lType, indx, entityId, mmCifDict):
     descriptions = mmCifDict.get('_entity.pdbx_description', '')
     formula_weights = mmCifDict.get('_entity.formula_weight', '')
@@ -903,6 +917,13 @@ def updateLigandEntitymmCifFile(lType, indx, entityId, mmCifDict):
                 ligandName = desc
                 ligandId = ligand
 
+    # get data from PubChem
+    cid = geDataFromPubChem(url='https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/' + ligandName + '/cids/JSON',jKey='CID')
+    inChIKey = geDataFromPubChem(url='https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/' + cid + '/property/InChIKey/json', jKey='InChIKey')
+    inChI = geDataFromPubChem(url='https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/' + cid + '/property/InChI/json', jKey='InChI')
+    isomericSMILES = geDataFromPubChem(url='https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/' + cid + '/property/isomericSMILES/json', jKey='isomericSMILES')
+    canonicalSMILES = geDataFromPubChem(url='https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/' + cid + '/property/CanonicalSMILES/json', jKey='CanonicalSMILES')
+
     obj = None
     try:
         obj, created = LigandEntity.objects.update_or_create(
@@ -915,6 +936,11 @@ def updateLigandEntitymmCifFile(lType, indx, entityId, mmCifDict):
                 'details': descriptions[indx] if descriptions[indx] else '',
                 'imageLink': "" if lType == 'branched' else URL_LIGAND_IMAGE_EBI + ligandId + "_400.svg",
                 'externalLink': "" if lType == 'branched' else URL_LIGAND_EBI + ligandId,
+                'pubChemCompoundId': cid if cid else '',
+                'IUPACInChIkey': inChIKey if inChIKey else '',
+                'IUPACInChI': inChI if inChI else '',
+                'isomericSMILES': isomericSMILES if isomericSMILES else '',
+                'canonicalSMILES': canonicalSMILES if canonicalSMILES else '',
             })
         if created:
             logger.debug('Created new: %s', obj)
