@@ -249,6 +249,12 @@ class LigandEntity(models.Model):
     altNames = models.CharField(max_length=200)
     imageLink = models.CharField(max_length=200)
     externalLink = models.CharField(max_length=200)
+    pubChemCompoundId = models.CharField(max_length=200, blank=True, null=True)
+    systematicNames = models.CharField(max_length=200, null=True, blank=True)
+    IUPACInChI = models.CharField(max_length=200, null=True, blank=True)
+    IUPACInChIkey = models.CharField(max_length=200, null=True, blank=True)
+    isomericSMILES = models.CharField(max_length=200, null=True, blank=True)
+    canonicalSMILES = models.CharField(max_length=200, null=True, blank=True)
 
     def __str__(self):
         return '%s' % (self.dbId,)

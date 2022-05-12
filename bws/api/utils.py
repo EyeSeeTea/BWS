@@ -400,7 +400,6 @@ def initBaseTables():
     initRefinedModelMethods()
 
 
-
 def initRefinedModelSources():
     """
     Initialize the RefinedModelSources table
@@ -859,17 +858,34 @@ def getPdbToEntityListmmCifFile(mmCifDict, pdbObj):
     return objList
 
 
-def geDataFromPubChem(url, jKey):
+def item_generator(json_input, lookup_key):
+    if isinstance(json_input, dict):
+        for k, v in json_input.items():
+            if k == lookup_key:
+                yield v
+            else:
+                yield from item_generator(v, lookup_key)
+    elif isinstance(json_input, list):
+        for item in json_input:
+            yield from item_generator(item, lookup_key)
 
-    jValue = ''
+
+def geDataFromPubChem(url, jKey, returnList=False):
+    value = ''
+    jdata = ''
     try:
         resp = requests.get(url)
-        if jKey in resp:
-            jvalue = resp[jKey]
+        if resp.status_code == 200:
+            jdata = resp.json()
+            value = item_generator(jdata, jKey).__next__()
+            if isinstance(value, list) and not returnList:
+                value = value[0]
+            if isinstance(value, int):
+                value = str(value)
     except Exception as exc:
         logger.exception(exc)
-        print(exc, os.strerror)
-    return jValue
+        print('- >>>>',  exc, os.strerror)
+    return value
 
 
 def updateLigandEntitymmCifFile(lType, indx, entityId, mmCifDict):
@@ -918,11 +934,21 @@ def updateLigandEntitymmCifFile(lType, indx, entityId, mmCifDict):
                 ligandId = ligand
 
     # get data from PubChem
-    cid = geDataFromPubChem(url='https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/' + ligandName + '/cids/JSON',jKey='CID')
-    inChIKey = geDataFromPubChem(url='https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/' + cid + '/property/InChIKey/json', jKey='InChIKey')
-    inChI = geDataFromPubChem(url='https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/' + cid + '/property/InChI/json', jKey='InChI')
-    isomericSMILES = geDataFromPubChem(url='https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/' + cid + '/property/isomericSMILES/json', jKey='isomericSMILES')
-    canonicalSMILES = geDataFromPubChem(url='https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/' + cid + '/property/CanonicalSMILES/json', jKey='CanonicalSMILES')
+    url_prefix = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/'
+    if ligandName:
+        cid = geDataFromPubChem(url=url_prefix + 'name/' + ligandName +
+                                '/cids/JSON', jKey='CID')
+        inChIKey = geDataFromPubChem(url=url_prefix +
+                                     'cid/' + cid +
+                                     '/property/InChIKey/json', jKey='InChIKey')
+        inChI = geDataFromPubChem(url=url_prefix + 'cid/' + cid +
+                                  '/property/InChI/json', jKey='InChI')
+        isomericSMILES = geDataFromPubChem(url=url_prefix + 'cid/' + cid +
+                                           '/property/isomericSMILES/json', jKey='IsomericSMILES')
+        canonicalSMILES = geDataFromPubChem(url=url_prefix + 'cid/' + cid +
+                                            '/property/CanonicalSMILES/json', jKey='CanonicalSMILES')
+        formula = geDataFromPubChem(url=url_prefix + 'cid/' + cid +
+                                    '/property/MolecularFormula/json', jKey='MolecularFormula')
 
     obj = None
     try:
@@ -931,7 +957,7 @@ def updateLigandEntitymmCifFile(lType, indx, entityId, mmCifDict):
             defaults={
                 'ligandType': ligandType if ligandType else '',
                 'name': ligandName if ligandName else '',
-
+                'formula': formula if formula else '',
                 'formula_weight': formula_weights[indx] if formula_weights[indx] else '',
                 'details': descriptions[indx] if descriptions[indx] else '',
                 'imageLink': "" if lType == 'branched' else URL_LIGAND_IMAGE_EBI + ligandId + "_400.svg",
