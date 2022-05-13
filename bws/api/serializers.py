@@ -46,5 +46,47 @@ class RefinedModelSerializer(serializers.ModelSerializer):
         model = RefinedModel
         fields = ['source', 'method',
                   'filename',
-                  'externalLink', 'queryLink',
+                  'externalLink',
                   'details']
+
+
+class StructureMinimalSerializer(serializers.ModelSerializer):
+    title = serializers.SerializerMethodField('get_title')
+    emdb = serializers.StringRelatedField(source='emdbId')
+    pdb = serializers.StringRelatedField(source='pdbId')
+
+    class Meta:
+        model = HybridModel
+        fields = [
+            'title',
+            'emdb',
+            'pdb',
+        ]
+
+    def get_title(self, obj):
+        return obj.emdbId.title if obj.emdbId else obj.pdbId.title if obj.pdbId else ''
+
+
+class StructureToTopicSerializer(serializers.ModelSerializer):
+    Structure = StructureMinimalSerializer(source='structure')
+
+    class Meta:
+        model = StructureTopic
+        fields = ['Structure']
+
+
+class TopicSerializer(serializers.ModelSerializer):
+    structures = StructureToTopicSerializer(many=True)
+
+    class Meta:
+        model = Topic
+        fields = ['name', 'description', 'structures']
+
+
+class StructureTopicSerializer(serializers.ModelSerializer):
+    topic = serializers.StringRelatedField()
+    Structure = StructureMinimalSerializer(source='structure')
+
+    class Meta:
+        model = StructureTopic
+        fields = ['topic', 'Structure']

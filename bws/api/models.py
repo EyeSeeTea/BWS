@@ -109,9 +109,7 @@ class HybridModel(models.Model):
                               null=True, on_delete=models.CASCADE)
 
     def __str__(self):
-        emdb = self.emdbId.dbId if self.emdbId else ''
-        pdb = self.pdbId.dbId if self.pdbId else ''
-        return '%s - %s' % (emdb, pdb)
+        return '%s(%s)' % (self.pdbId.dbId if self.pdbId else '', self.emdbId.dbId if self.emdbId else '')
 
 
 class UniProtEntry(models.Model):
@@ -448,3 +446,27 @@ class FeatureRegionEntity(FeatureEntity):
     '''
     start = models.IntegerField()
     end = models.IntegerField()
+
+
+class Topic(models.Model):
+    '''
+        Main Topics to organize the structures in the database
+    '''
+    name = models.CharField(max_length=255, blank=False, default='')
+    description = models.CharField(max_length=255, blank=False, default='')
+
+    def __str__(self):
+        return '%s' % (self.name,)
+
+
+class StructureTopic(models.Model):
+    '''
+        Structure to Topic relationship
+    '''
+    structure = models.ForeignKey(HybridModel,
+                                  related_name='topics', on_delete=models.CASCADE)
+    topic = models.ForeignKey(Topic,
+                              related_name='structures', on_delete=models.CASCADE)
+
+    def __str__(self):
+        return '%s: %s(%s)' % (self.topic.name, self.structure.pdbId if self.structure.pdbId else '', self.structure.emdbId if self.structure.emdbId else '')
