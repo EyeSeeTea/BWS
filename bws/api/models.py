@@ -109,9 +109,7 @@ class HybridModel(models.Model):
                               null=True, on_delete=models.CASCADE)
 
     def __str__(self):
-        emdb = self.emdbId.dbId if self.emdbId else ''
-        pdb = self.pdbId.dbId if self.pdbId else ''
-        return '%s - %s' % (emdb, pdb)
+        return '%s(%s)' % (self.pdbId.dbId if self.pdbId else '', self.emdbId.dbId if self.emdbId else '')
 
 
 class UniProtEntry(models.Model):
@@ -471,4 +469,4 @@ class StructureTopic(models.Model):
                               related_name='structures', on_delete=models.CASCADE)
 
     def __str__(self):
-        return '%s: %s-%s' % (self.topic.name, self.structure.pdbentry.pdbid, self.structure.emdbid.dbId)
+        return '%s: %s(%s)' % (self.topic.name, self.structure.pdbId if self.structure.pdbId else '', self.structure.emdbId if self.structure.emdbId else '')

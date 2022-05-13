@@ -164,3 +164,16 @@ class TopicViewSet(viewsets.ModelViewSet):
     search_fields = ['name', 'details']
     ordering_fields = ['name', 'details']
     ordering = ['name']
+
+
+class StructureToTopicViewSet(viewsets.ModelViewSet):
+    """
+    This viewset automatically provides `list` and `detail` actions.
+    """
+    queryset = StructureTopic.objects.all()
+    serializer_class = StructureTopicSerializer
+    filter_backends = (filters.DjangoFilterBackend,
+                       SearchFilter, OrderingFilter)
+    search_fields = ['topic', 'structure']
+    ordering_fields = ['topic', 'structure']
+    ordering = ['topic']
