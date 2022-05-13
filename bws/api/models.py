@@ -413,11 +413,14 @@ class FeatureEntity(models.Model):
     '''
     name = models.CharField(max_length=255, blank=False, default='')
     featureType = models.ForeignKey(FeatureType,
-                                    related_name='features', on_delete=models.CASCADE)
+                                    related_name='%(class)s_features', null=True, on_delete=models.CASCADE)
     description = models.CharField(max_length=255, blank=False, default='')
     pdbentry = models.ForeignKey(PdbEntry,
-                                 related_name='features', on_delete=models.CASCADE)
-    externalLink = models.CharField(max_length=200)
+                                 related_name='%(class)s_features', null=True, on_delete=models.CASCADE)
+    externalLink = models.CharField(max_length=200, default='')
+    class Meta:
+            abstract = True
+
 
 
 class FeatureModelEntity(FeatureEntity):
@@ -425,6 +428,8 @@ class FeatureModelEntity(FeatureEntity):
         Feature that is associated with the whole Model
     '''
     details = models.CharField(max_length=255, blank=False, default='')
+    class Meta:
+            abstract = True
 
 
 class FeatureRegionEntity(FeatureEntity):
@@ -438,6 +443,8 @@ class FeatureHCSModelEntity(FeatureModelEntity):
     '''
         Feature that is associated with the whole Model and specific to High Content Screening details
     '''
+    dbId = models.CharField(max_length=20, blank=False,
+                            default='', primary_key=True)
     organism = models.ForeignKey(Organism,
                                  related_name='highContentScreenings', on_delete=models.CASCADE)
 
