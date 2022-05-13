@@ -468,7 +468,7 @@ class StructureTopic(models.Model):
     structure = models.ForeignKey(HybridModel,
                                   related_name='topics', on_delete=models.CASCADE)
     topic = models.ForeignKey(Topic,
-                              related_name='structuretopics', on_delete=models.CASCADE)
+                              related_name='structures', on_delete=models.CASCADE)
 
     def __str__(self):
-        return '%s' % (self.topic.name,)
+        return '%s: %s-%s' % (self.topic.name, self.structure.pdbentry.pdbid, self.structure.emdbid.dbId)
