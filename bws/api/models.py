@@ -448,3 +448,27 @@ class FeatureRegionEntity(FeatureEntity):
     '''
     start = models.IntegerField()
     end = models.IntegerField()
+
+
+class Topic(models.Model):
+    '''
+        Main Topics to organize the structures in the database
+    '''
+    name = models.CharField(max_length=255, blank=False, default='')
+    description = models.CharField(max_length=255, blank=False, default='')
+
+    def __str__(self):
+        return '%s' % (self.name,)
+
+
+class StructureTopic(models.Model):
+    '''
+        Structure to Topic relationship
+    '''
+    structure = models.ForeignKey(HybridModel,
+                                  related_name='topics', on_delete=models.CASCADE)
+    topic = models.ForeignKey(Topic,
+                              related_name='structuretopics', on_delete=models.CASCADE)
+
+    def __str__(self):
+        return '%s' % (self.topic.name,)

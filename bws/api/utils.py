@@ -398,6 +398,7 @@ def initBaseTables():
     print('Initializing base tables', 'RefinedModelSources')
     initRefinedModelSources()
     initRefinedModelMethods()
+    initTopics()
 
 
 def initRefinedModelSources():
@@ -453,6 +454,33 @@ def initRefinedModelMethods():
         'PHENIX',
         'Re-refinements have been performed using the latest version of phenix.real_space_refine, a command-line tool inside the PHENIX software package for refinement of a model against a map. Models are taken from the Protein Data Bank and maps from the Electron Microscopy Data Bank, establishing a resolution cut-off of 5 Å because real_space_refine performs best for maps with resolutions better than 5 Å.',
         URL_PHENIX_CERES)
+
+
+def initTopics():
+    print('Initializing Topics')
+    updateTopic(
+        'COVID-19', 'COVID-19, All SARS-CoV-2 virus and its proteins structures.')
+
+
+def updateTopic(name, description=''):
+    obj = None
+    try:
+        obj, created = Topic.objects.update_or_create(
+            name=name,
+            defaults={
+                'description': description,
+            }
+        )
+        if created:
+            logger.debug('Created new: %s', obj)
+            print('Created new', obj)
+        else:
+            logger.debug('Updated: %s', obj)
+            print('Updated', obj)
+    except Exception as exc:
+        logger.exception(exc)
+        print(exc, os.strerror)
+    return obj
 
 
 def updateRefinedModelSource(name, description='', url=''):
