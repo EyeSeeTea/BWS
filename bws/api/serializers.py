@@ -48,3 +48,9 @@ class RefinedModelSerializer(serializers.ModelSerializer):
                   'filename',
                   'externalLink', 'queryLink',
                   'details']
+
+
+class TopicSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Topic
+        fields = ['name', 'description']

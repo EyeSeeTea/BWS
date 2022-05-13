@@ -4,6 +4,7 @@ from api import views
 
 router = DefaultRouter()
 # router.register(r'datafiles', views.EntryViewSet)
+router.register(r'topics', views.TopicViewSet)
 router.register(r'refinedModelSources', views.RefinedModelSourceViewSet)
 router.register(r'refinedModelMethods', views.RefinedModelMethodViewSet)
 router.register(r'refinedModels', views.RefinedModelViewSet)
@@ -12,6 +13,6 @@ router.register(r'refinedModels', views.RefinedModelViewSet)
 urlpatterns = [
     path('', include(router.urls)),
 
-    # EM Validation annotations for 3DBionotes - Protvista 
+    # EM Validation annotations for 3DBionotes - Protvista
     # re_path(r'^pdbAnnotFromMap/all/(?P<pdb_id>\d\w{3})/(?P<chain_id>\w{1})/?(?P<modified_model>(pdb-redo|isolde))?/$', views.PdbEntryAllAnnFromMapView.as_view()),
 ]

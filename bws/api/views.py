@@ -151,3 +151,16 @@ class RefinedModelViewSet(viewsets.ModelViewSet):
     search_fields = ['method', 'emdbId',  'pdbId']
     ordering_fields = ['method', 'emdbId',  'pdbId']
     ordering = ['method']
+
+
+class TopicViewSet(viewsets.ModelViewSet):
+    """
+    This viewset automatically provides `list` and `detail` actions.
+    """
+    queryset = Topic.objects.all()
+    serializer_class = TopicSerializer
+    filter_backends = (filters.DjangoFilterBackend,
+                       SearchFilter, OrderingFilter)
+    search_fields = ['name', 'details']
+    ordering_fields = ['name', 'details']
+    ordering = ['name']
