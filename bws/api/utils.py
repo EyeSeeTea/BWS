@@ -459,7 +459,7 @@ def initRefinedModelMethods():
 def initTopics():
     print('Initializing Topics')
     updateTopic(
-        'COVID-19', 'COVID-19, All SARS-CoV-2 virus and its proteins structures.')
+        'COVID19', 'COVID-19, All SARS-CoV-2 virus and its proteins structures.')
 
 
 def updateTopic(name, description=''):
@@ -469,6 +469,27 @@ def updateTopic(name, description=''):
             name=name,
             defaults={
                 'description': description,
+            }
+        )
+        if created:
+            logger.debug('Created new: %s', obj)
+            print('Created new', obj)
+        else:
+            logger.debug('Updated: %s', obj)
+            print('Updated', obj)
+    except Exception as exc:
+        logger.exception(exc)
+        print(exc, os.strerror)
+    return obj
+
+
+def updateStructureTopic(structure, topic):
+    obj = None
+    try:
+        obj, created = StructureTopic.objects.update_or_create(
+            structure=structure,
+            topic=topic,
+            defaults={
             }
         )
         if created:
@@ -603,6 +624,10 @@ def readmmCifFile(mmCifDict):
         emdbObj = updateEmdbEntrymmCifFile(emdbId, mmCifDict)
 
     hybridmodelObj = updateHybridModel(emdbObj, pdbObj)
+
+    # ToDo find a way to select the topic from the dirname
+    topicObj = Topic.objects.get(name='COVID19')
+    structTopicObj = updateStructureTopic(hybridmodelObj, topicObj)
 
     # get list of Polymer Entities (not ligands)
     entityList = getPdbToEntityListmmCifFile(mmCifDict, pdbObj)
