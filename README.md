@@ -15,3 +15,8 @@ DEV
 PROD
 - docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 - docker-compose -f docker-compose.yml -f docker-compose.prod.yml down
+
+# Troubleshooting
+ 
+**Issue:** New migration are ignored
+*Resolution*: Remove absolutely all the tables (even default ones) from mysql server in phpadmin UI and restart docker container
