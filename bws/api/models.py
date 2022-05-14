@@ -471,6 +471,7 @@ class FeatureHCSModelEntity(FeatureModelEntity):
     well_id = models.ForeignKey(IDRWellEntity,
                                  related_name='highContentScreenings', on_delete=models.CASCADE)
 
+    imaging_method = models.CharField(max_length=255, blank=False, default='') 
     ligand_name = models.CharField(max_length=255, blank=False, default='')
     iupac_name = models.CharField(max_length=255, blank=False, default='')
     inchikey = models.CharField(max_length=255, blank=False, default='')
