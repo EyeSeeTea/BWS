@@ -440,11 +440,11 @@ class FeatureRegionEntity(FeatureEntity):
     end = models.IntegerField()
 
 
-class WellEntity(models.Model):
+class IDRWellEntity(models.Model):
     '''
         Well details
     '''
-    well_id = models.CharField(max_length=20, blank=False, default='', primary_key=True)
+    dbId = models.CharField(max_length=20, blank=False, default='', primary_key=True)
     image_externalLink = models.URLField(max_length=200)
     images_ids = models.CharField(max_length=255, blank=False, default='')
     cell_line = models.CharField(max_length=255, blank=False, default='')
@@ -461,14 +461,14 @@ class FeatureHCSModelEntity(FeatureModelEntity):
         Feature that is associated with the whole Model and specific to High Content Screening details
     '''
     dbId = models.CharField(max_length=20, blank=False, default='', primary_key=True)
-    
+
     organism = models.ForeignKey(Organism,
                                  related_name='highContentScreenings', on_delete=models.CASCADE)
 
     pubchem_cid = models.ForeignKey(PdbToLigand,
                                  related_name='highContentScreenings', on_delete=models.CASCADE)
 
-    well_id = models.ForeignKey(WellEntity,
+    well_id = models.ForeignKey(IDRWellEntity,
                                  related_name='highContentScreenings', on_delete=models.CASCADE)
 
     ligand_name = models.CharField(max_length=255, blank=False, default='')
