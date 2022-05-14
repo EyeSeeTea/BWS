@@ -439,16 +439,36 @@ class FeatureRegionEntity(FeatureEntity):
     start = models.IntegerField()
     end = models.IntegerField()
 
+
+class WellEntity(models.Model):
+    '''
+        Well details
+    '''
+    well_id = models.CharField(max_length=20, blank=False, default='', primary_key=True)
+    image_externalLink = models.URLField(max_length=200)
+    images_ids = models.CharField(max_length=255, blank=False, default='')
+    cell_line = models.CharField(max_length=255, blank=False, default='')
+    quality_control = models.CharField(max_length=255, blank=False, default='')
+    percentage_inhibition = models.CharField(max_length=255, blank=False, default='')
+    hit_over_75_activity = models.CharField(max_length=255, blank=False, default='')
+    number_cells = models.CharField(max_length=255, blank=False, default='')
+    phenotype_annotation_level = models.CharField(max_length=255, blank=False, default='')
+    channels = models.CharField(max_length=255, blank=False, default='')
+
+
 class FeatureHCSModelEntity(FeatureModelEntity):
     '''
         Feature that is associated with the whole Model and specific to High Content Screening details
     '''
-    dbId = models.CharField(max_length=20, blank=False,
-                            default='', primary_key=True)
+    dbId = models.CharField(max_length=20, blank=False, default='', primary_key=True)
+    
     organism = models.ForeignKey(Organism,
                                  related_name='highContentScreenings', on_delete=models.CASCADE)
 
     pubchem_cid = models.ForeignKey(PdbToLigand,
+                                 related_name='highContentScreenings', on_delete=models.CASCADE)
+
+    well_id = models.ForeignKey(WellEntity,
                                  related_name='highContentScreenings', on_delete=models.CASCADE)
 
     ligand_name = models.CharField(max_length=255, blank=False, default='')
@@ -462,21 +482,3 @@ class FeatureHCSModelEntity(FeatureModelEntity):
     
     screen_id = models.CharField(max_length=255, blank=False, default='')
     plate_id = models.CharField(max_length=255, blank=False, default='')
-    well_id = models.CharField(max_length=255, blank=False, default='')
-
-class WellEntity(models.Model):
-    '''
-        Well details
-    '''
-    well_id = models.ForeignKey(FeatureHCSModelEntity,
-                                 related_name='highContentScreenings', on_delete=models.CASCADE)
-    image_externalLink = models.URLField(max_length=200)
-    images_ids = models.CharField(max_length=255, blank=False, default='')
-    cell_line = models.CharField(max_length=255, blank=False, default='')
-    quality_control = models.CharField(max_length=255, blank=False, default='')
-    percentage_inhibition = models.CharField(max_length=255, blank=False, default='')
-    hit_over_75_activity = models.CharField(max_length=255, blank=False, default='')
-    number_cells = models.CharField(max_length=255, blank=False, default='')
-    phenotype_annotation_level = models.CharField(max_length=255, blank=False, default='')
-    channels = models.CharField(max_length=255, blank=False, default='')
-
