@@ -111,3 +111,16 @@ class EntryViewSet(viewsets.ModelViewSet):
     queryset = models.Entry.objects.all()
     serializer_class = serializers.EntrySerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+ 
+class FeatureHCSModelEntityViewSet(viewsets.ModelViewSet):
+   """
+   """
+ 
+   queryset = models.FeatureHCSModelEntity.objects.all()
+   serializer_class = serializers.FeatureHCSModelEntitySerializer
+   permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+ 
+   def get(self, request):
+       pass
+ 

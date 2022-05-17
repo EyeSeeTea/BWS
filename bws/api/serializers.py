@@ -22,3 +22,10 @@ class DataFileSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.DataFile
         fields = ['unique_id', 'path', 'filename', 'entry', 'data', 'fileType']
+
+
+
+class FeatureHCSModelEntitySerializer(serializers.ModelSerializer):
+   class Meta:
+       model = models.FeatureHCSModelEntity
+       fields = ['name', 'description', 'externalLink']
