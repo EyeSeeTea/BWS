@@ -33,7 +33,7 @@ class IDRWellEntitySerializer(serializers.ModelSerializer):
  
 class FeatureHCSModelEntitySerializer(serializers.ModelSerializer):
  
-   well_id = serializers.SlugRelatedField(read_only=True, slug_field='get_fields')
+   well_id = IDRWellEntitySerializer(read_only=True)
  
    class Meta:
       model = models.FeatureHCSModelEntity
