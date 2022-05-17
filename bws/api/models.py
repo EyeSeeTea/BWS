@@ -455,6 +455,9 @@ class IDRWellEntity(models.Model):
     phenotype_annotation_level = models.CharField(max_length=255, blank=False, default='')
     channels = models.CharField(max_length=255, blank=False, default='')
 
+    @property
+    def get_fields(self):
+        return "{'well': '%s', 'image_externalLink': '%s'}" % (self.dbId, self.image_externalLink)
 
 class FeatureHCSModelEntity(FeatureModelEntity):
     '''

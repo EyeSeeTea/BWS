@@ -24,8 +24,18 @@ class DataFileSerializer(serializers.ModelSerializer):
         fields = ['unique_id', 'path', 'filename', 'entry', 'data', 'fileType']
 
 
-
-class FeatureHCSModelEntitySerializer(serializers.ModelSerializer):
+ 
+class IDRWellEntitySerializer(serializers.ModelSerializer):
+ 
    class Meta:
-       model = models.FeatureHCSModelEntity
-       fields = ['name', 'description', 'externalLink']
+       model = models.IDRWellEntity
+       fields = '__all__'
+ 
+class FeatureHCSModelEntitySerializer(serializers.ModelSerializer):
+ 
+   well_id = serializers.SlugRelatedField(read_only=True, slug_field='get_fields')
+ 
+   class Meta:
+      model = models.FeatureHCSModelEntity
+      fields = ['name', 'well_id']
+
