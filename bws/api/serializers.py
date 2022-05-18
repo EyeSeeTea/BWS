@@ -33,9 +33,9 @@ class IDRWellEntitySerializer(serializers.ModelSerializer):
  
 class FeatureHCSModelEntitySerializer(serializers.ModelSerializer):
  
-   well_id = IDRWellEntitySerializer(read_only=True)
+   well = IDRWellEntitySerializer(read_only=True)
  
    class Meta:
       model = models.FeatureHCSModelEntity
-      fields = ['name', 'well_id']
+      fields = ['name', 'well']
 

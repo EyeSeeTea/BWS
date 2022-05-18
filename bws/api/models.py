@@ -464,10 +464,10 @@ class FeatureHCSModelEntity(FeatureModelEntity):
     organism = models.ForeignKey(Organism,
                                  related_name='highContentScreenings', on_delete=models.CASCADE)
 
-    pubchem_cid = models.ForeignKey(PdbToLigand,
+    ligand = models.ForeignKey(PdbToLigand,
                                  related_name='highContentScreenings', on_delete=models.CASCADE)
 
-    well_id = models.ForeignKey(IDRWellEntity,
+    well = models.ForeignKey(IDRWellEntity,
                                  related_name='highContentScreenings', on_delete=models.CASCADE)
 
     imaging_method = models.CharField(max_length=255, blank=False, default='') 
@@ -476,7 +476,6 @@ class FeatureHCSModelEntity(FeatureModelEntity):
     inchikey = models.CharField(max_length=255, blank=False, default='')
     smiles = models.CharField(max_length=255, blank=False, default='')
     broad_id = models.CharField(max_length=255, blank=False, default='')
-    pubchem_cid = models.CharField(max_length=255, blank=False, default='')
     pubchem_url = models.URLField(max_length=200)
     unichem_url = models.URLField(max_length=200)
     
