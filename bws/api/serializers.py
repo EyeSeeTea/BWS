@@ -30,12 +30,19 @@ class IDRWellEntitySerializer(serializers.ModelSerializer):
    class Meta:
        model = models.IDRWellEntity
        fields = '__all__'
+
+class FeatureTypeSerializer(serializers.ModelSerializer):
+ 
+   class Meta:
+       model = models.FeatureType
+       fields = ['dataSource']
  
 class FeatureHCSModelEntitySerializer(serializers.ModelSerializer):
  
    well = IDRWellEntitySerializer(read_only=True)
+   featureType = FeatureTypeSerializer(read_only=True)
  
    class Meta:
       model = models.FeatureHCSModelEntity
-      fields = ['name', 'well']
+      fields = ['featureType', 'name', 'description', 'screen_id', 'plate_id', 'well']
 
