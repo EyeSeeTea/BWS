@@ -24,7 +24,28 @@ class DataFileSerializer(serializers.ModelSerializer):
         fields = ['unique_id', 'path', 'filename', 'entry', 'data', 'fileType']
 
 
+# ========== ========== ========== ========== ========== ========== ==========
+
+class PublicationSerializer(serializers.ModelSerializer):
  
+   class Meta:
+       model = models.Publication
+       fields = ['title', 'doi']
+
+class AuthorSerializer(serializers.ModelSerializer):
+ 
+   class Meta:
+       model = models.Author
+       fields = ['name']
+
+class PublicationAuthorSerializer(serializers.ModelSerializer):
+ 
+   publication = PublicationSerializer(read_only=True)
+   author = AuthorSerializer(read_only=True)
+   class Meta:
+       model = models.PublicationAuthor
+       fields = ['publication', 'author']
+
 class IDRWellEntitySerializer(serializers.ModelSerializer):
  
    class Meta:
@@ -41,8 +62,9 @@ class FeatureHCSModelEntitySerializer(serializers.ModelSerializer):
  
    well = IDRWellEntitySerializer(read_only=True)
    featureType = FeatureTypeSerializer(read_only=True)
+   publication = PublicationAuthorSerializer(read_only=True)
  
    class Meta:
       model = models.FeatureHCSModelEntity
-      fields = ['featureType', 'name', 'description', 'screen_id', 'plate_id', 'well']
+      fields = ['featureType', 'name', 'description', 'publication', 'screen_id', 'plate_id', 'well']
 
