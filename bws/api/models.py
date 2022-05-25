@@ -441,20 +441,20 @@ class FeatureRegionEntity(FeatureEntity):
 
 
 class StudyToOrganism(models.Model):
-   studyId = models.ForeignKey('StudyEntity',
+   study = models.ForeignKey('StudyEntity',
                              related_name='studyorganisms', on_delete=models.CASCADE)
-   organismId = models.ForeignKey(Organism,
+   organism = models.ForeignKey(Organism,
                               related_name='studyorganisms', on_delete=models.CASCADE)
  
    def __str__(self):
-       return '(%s) %s' % (self.studyId.dbId, self.organismId.ncbi_taxonomy_id)
+       return '(%s) %s' % (self.study.dbId, self.organism.ncbi_taxonomy_id)
 
 
 class StudyEntity(models.Model):
 
     organisms = models.ManyToManyField(Organism, through=StudyToOrganism)
-    publication = models.ForeignKey(PublicationAuthor,
-                                 related_name='highContentScreenings', on_delete=models.CASCADE)
+    publicationAuthor = models.ForeignKey(PublicationAuthor,
+                                 related_name='studies', on_delete=models.CASCADE)
 
     dbId = models.CharField(max_length=50, blank=False, default='', primary_key=True)
     name = models.CharField(max_length=255, blank=False, default='')
@@ -464,23 +464,23 @@ class StudyEntity(models.Model):
 
 class ScreenEntity(models.Model):
 
-    assays = models.ForeignKey(StudyEntity,
-                                 related_name='highContentScreenings', on_delete=models.CASCADE)
+    assay = models.ForeignKey(StudyEntity,
+                                 related_name='screens', on_delete=models.CASCADE)
 
     dbId = models.CharField(max_length=50, blank=False, default='', primary_key=True)
     name = models.CharField(max_length=255, blank=False, default='')
     type = models.CharField(max_length=255, blank=False, default='')
     technologyType = models.CharField(max_length=255, blank=False, default='')
     imagingMethod1 = models.CharField(max_length=255, blank=False, default='')
-    imagingMethod2 = models.CharField(max_length=255, blank=False, default='')
+    imagingMethod2 = models.CharField(max_length=255, null=True, blank=False, default='')
     plateCount = models.CharField(max_length=255, blank=False, default='')
     dataDoi = models.CharField(max_length=255, blank=False, default='')
 
 
 class PlateEntity(models.Model):
 
-    plates = models.ForeignKey(ScreenEntity,
-                                 related_name='highContentScreenings', on_delete=models.CASCADE)
+    screen = models.ForeignKey(ScreenEntity,
+                                 related_name='plates', on_delete=models.CASCADE)
 
     dbId = models.CharField(max_length=50, blank=False, default='', primary_key=True)
     creationDate = models.CharField(max_length=255, blank=False, default='')
@@ -491,17 +491,16 @@ class WellEntity(FeatureModelEntity):
         Well details
     '''
 
-    well = models.ForeignKey(PdbToLigand,
-                                 related_name='highContentScreenings', on_delete=models.CASCADE)
+    ligand = models.ForeignKey(PdbToLigand,
+                                 related_name='wells', on_delete=models.CASCADE)
     
-    wells = models.ForeignKey(PlateEntity,
-                                 related_name='highContentScreenings', on_delete=models.CASCADE)
+    plate = models.ForeignKey(PlateEntity,
+                                 related_name='wells', on_delete=models.CASCADE)
 
     dbId = models.CharField(max_length=50, blank=False, default='', primary_key=True)
-    imageLink = models.URLField(max_length=200)
     imageThumbailLink = models.URLField(max_length=200)
     imagesIds = models.CharField(max_length=255, blank=False, default='')
-    micromolarConcentration = models.CharField(max_length=255, blank=False, default='')
+    micromolarConcentration = models.CharField(max_length=255, null=True, blank=False, default='')
     cellLine = models.CharField(max_length=255, blank=False, default='')
     qualityControl = models.CharField(max_length=255, blank=False, default='')
     percentageInhibition = models.CharField(max_length=255, blank=False, default='')
