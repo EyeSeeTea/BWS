@@ -440,6 +440,21 @@ class FeatureRegionEntity(FeatureEntity):
     end = models.IntegerField()
 
 
+class ScreenEntity(models.Model):
+
+    assays = models.ForeignKey(StudyEntity,
+                                 related_name='highContentScreenings', on_delete=models.CASCADE)
+
+    dbId = models.CharField(max_length=50, blank=False, default='', primary_key=True)
+    name = models.CharField(max_length=255, blank=False, default='')
+    type = models.CharField(max_length=255, blank=False, default='')
+    technologyType = models.CharField(max_length=255, blank=False, default='')
+    imagingMethod1 = models.CharField(max_length=255, blank=False, default='')
+    imagingMethod2 = models.CharField(max_length=255, blank=False, default='')
+    plateCount = models.CharField(max_length=255, blank=False, default='')
+    dataDoi = models.CharField(max_length=255, blank=False, default='')
+
+
 class PlateEntity(models.Model):
 
     plates = models.ForeignKey(ScreenEntity,
