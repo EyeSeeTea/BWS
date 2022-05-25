@@ -30,7 +30,7 @@ class PublicationSerializer(serializers.ModelSerializer):
  
    class Meta:
        model = models.Publication
-       fields = ['title', 'doi']
+       fields = ['title', 'doi', 'pubMedId']
 
 class AuthorSerializer(serializers.ModelSerializer):
  
@@ -58,13 +58,28 @@ class FeatureTypeSerializer(serializers.ModelSerializer):
        model = models.FeatureType
        fields = ['dataSource']
  
+
+class LigandEntitySerializer(serializers.ModelSerializer):
+ 
+   class Meta:
+       model = models.LigandEntity
+       fields = ['dbId']
+
+class PdbToLigandSerializer(serializers.ModelSerializer):
+ 
+   ligand = LigandEntitySerializer(read_only=True)
+   class Meta:
+       model = models.LigandEntity
+       fields = ['ligand']
+
 class FeatureHCSModelEntitySerializer(serializers.ModelSerializer):
  
    well = IDRWellEntitySerializer(read_only=True)
    featureType = FeatureTypeSerializer(read_only=True)
    publication = PublicationAuthorSerializer(read_only=True)
+   ligand = PdbToLigandSerializer(read_only=True)
  
    class Meta:
       model = models.FeatureHCSModelEntity
-      fields = ['featureType', 'name', 'description', 'publication', 'screen_id', 'plate_id', 'well']
+      fields = ['ligand', 'ligand_name', 'featureType', 'name', 'description', 'publication', 'screen_id', 'plate_id', 'well']
 
