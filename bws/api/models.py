@@ -454,6 +454,8 @@ class StudyToOrganism(models.Model):
 class StudyEntity(models.Model):
 
     organisms = models.ManyToManyField(Organism, through=StudyToOrganism)
+    study = models.ForeignKey(PublicationAuthor,
+                                 related_name='highContentScreenings', on_delete=models.CASCADE)
 
     dbId = models.CharField(max_length=50, blank=False, default='', primary_key=True)
     name = models.CharField(max_length=255, blank=False, default='')
