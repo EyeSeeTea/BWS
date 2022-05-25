@@ -440,6 +440,16 @@ class FeatureRegionEntity(FeatureEntity):
     end = models.IntegerField()
 
 
+class StudyEntity(models.Model):
+
+    organisms = models.ManyToManyField(Organism, through=StudyToOrganism)
+
+    dbId = models.CharField(max_length=50, blank=False, default='', primary_key=True)
+    name = models.CharField(max_length=255, blank=False, default='')
+    description = models.CharField(max_length=255, blank=False, default='')
+    sampleType = models.CharField(max_length=255, blank=False, default='')
+    dataDoi = models.CharField(max_length=255, blank=False, default='')
+
 class ScreenEntity(models.Model):
 
     assays = models.ForeignKey(StudyEntity,
