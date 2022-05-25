@@ -454,7 +454,7 @@ class StudyEntity(models.Model):
 
     organisms = models.ManyToManyField(Organism, through=StudyToOrganism)
     publicationAuthor = models.ForeignKey(PublicationAuthor,
-                                 related_name='studies', on_delete=models.CASCADE)
+                                 related_name='studies', default='', on_delete=models.CASCADE)
 
     dbId = models.CharField(max_length=50, blank=False, default='', primary_key=True)
     name = models.CharField(max_length=255, blank=False, default='')
@@ -465,7 +465,7 @@ class StudyEntity(models.Model):
 class ScreenEntity(models.Model):
 
     assay = models.ForeignKey(StudyEntity,
-                                 related_name='screens', on_delete=models.CASCADE)
+                                 related_name='screens', default='', on_delete=models.CASCADE)
 
     dbId = models.CharField(max_length=50, blank=False, default='', primary_key=True)
     name = models.CharField(max_length=255, blank=False, default='')
@@ -480,7 +480,7 @@ class ScreenEntity(models.Model):
 class PlateEntity(models.Model):
 
     screen = models.ForeignKey(ScreenEntity,
-                                 related_name='plates', on_delete=models.CASCADE)
+                                 related_name='plates', default='', on_delete=models.CASCADE)
 
     dbId = models.CharField(max_length=50, blank=False, default='', primary_key=True)
     creationDate = models.CharField(max_length=255, blank=False, default='')
@@ -492,10 +492,10 @@ class WellEntity(FeatureModelEntity):
     '''
 
     ligand = models.ForeignKey(PdbToLigand,
-                                 related_name='wells', on_delete=models.CASCADE)
+                                 related_name='wells', default='', on_delete=models.CASCADE)
     
     plate = models.ForeignKey(PlateEntity,
-                                 related_name='wells', on_delete=models.CASCADE)
+                                 related_name='wells', default='', on_delete=models.CASCADE)
 
     dbId = models.CharField(max_length=50, blank=False, default='', primary_key=True)
     imageThumbailLink = models.URLField(max_length=200)
