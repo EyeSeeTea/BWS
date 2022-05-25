@@ -444,7 +444,7 @@ class IDRWellEntity(models.Model):
     '''
         Well details
     '''
-    dbId = models.CharField(max_length=20, blank=False, default='', primary_key=True)
+    dbId = models.CharField(max_length=50, blank=False, default='', primary_key=True)
     image_externalLink = models.URLField(max_length=200)
     images_ids = models.CharField(max_length=255, blank=False, default='')
     cell_line = models.CharField(max_length=255, blank=False, default='')
