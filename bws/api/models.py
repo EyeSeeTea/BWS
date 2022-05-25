@@ -440,6 +440,15 @@ class FeatureRegionEntity(FeatureEntity):
     end = models.IntegerField()
 
 
+class PlateEntity(models.Model):
+
+    plates = models.ForeignKey(ScreenEntity,
+                                 related_name='highContentScreenings', on_delete=models.CASCADE)
+
+    dbId = models.CharField(max_length=50, blank=False, default='', primary_key=True)
+    creationDate = models.CharField(max_length=255, blank=False, default='')
+
+
 class WellEntity(FeatureModelEntity):
     '''
         Well details
