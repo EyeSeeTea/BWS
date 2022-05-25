@@ -445,7 +445,6 @@ class StudyToOrganism(models.Model):
                              related_name='studyorganisms', on_delete=models.CASCADE)
    organismId = models.ForeignKey(Organism,
                               related_name='studyorganisms', on_delete=models.CASCADE)
-   quantity = models.IntegerField()
  
    def __str__(self):
        return '(%s) %s' % (self.studyId.dbId, self.organismId.ncbi_taxonomy_id)
