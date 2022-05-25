@@ -440,6 +440,17 @@ class FeatureRegionEntity(FeatureEntity):
     end = models.IntegerField()
 
 
+class StudyToOrganism(models.Model):
+   studyId = models.ForeignKey('StudyEntity',
+                             related_name='studyorganisms', on_delete=models.CASCADE)
+   organismId = models.ForeignKey(Organism,
+                              related_name='studyorganisms', on_delete=models.CASCADE)
+   quantity = models.IntegerField()
+ 
+   def __str__(self):
+       return '(%s) %s' % (self.studyId.dbId, self.organismId.ncbi_taxonomy_id)
+
+
 class StudyEntity(models.Model):
 
     organisms = models.ManyToManyField(Organism, through=StudyToOrganism)
