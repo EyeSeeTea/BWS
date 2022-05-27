@@ -307,7 +307,7 @@ class SampleModel(models.Model):
 
 class Author(models.Model):
     name = models.CharField(max_length=255, blank=False, default='')
-    orcid = models.CharField(max_length=25, blank=False, default='')
+    orcid = models.CharField(max_length=25, blank=True, default='')
 
     def __str__(self):
         if self.orcid:
