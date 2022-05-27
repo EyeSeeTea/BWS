@@ -347,7 +347,7 @@ class Publication(models.Model):
     pubMedId = models.CharField(max_length=255, blank=False, default='')
     abstract = models.CharField(max_length=255, blank=False, default='')
 
-    authors = models.ManyToManyField(Author, through='PublicationAuthor')
+    authors = models.ManyToManyField(Author)
 
     def __str__(self):
         return '(%s) %s - %s' % (self.year, self.issn, self.title)
@@ -440,21 +440,24 @@ class FeatureRegionEntity(FeatureEntity):
     end = models.IntegerField()
 
 
-class StudyToOrganism(models.Model):
-   study = models.ForeignKey('StudyEntity',
-                             related_name='studyorganisms', on_delete=models.CASCADE)
-   organism = models.ForeignKey(Organism,
-                              related_name='studyorganisms', on_delete=models.CASCADE)
+# class StudyToOrganism(models.Model):
+#    study = models.ForeignKey('StudyEntity',
+#                              related_name='studyorganisms', on_delete=models.CASCADE)
+#    organism = models.ForeignKey(Organism,
+#                               related_name='studyorganisms', on_delete=models.CASCADE)
  
-   def __str__(self):
-       return '(%s) %s' % (self.study.dbId, self.organism.ncbi_taxonomy_id)
+#    def __str__(self):
+#        return '(%s) %s' % (self.study.dbId, self.organism.ncbi_taxonomy_id)
 
 
 class StudyEntity(models.Model):
 
-    organisms = models.ManyToManyField(Organism, through=StudyToOrganism)
-    publicationAuthor = models.ForeignKey(PublicationAuthor,
+    organisms = models.ManyToManyField(Organism)
+    publication =  models.ForeignKey(Publication,
                                  related_name='studies', default='', on_delete=models.CASCADE)
+
+    #publicationAuthor = models.ForeignKey(PublicationAuthor,
+    #               related_name='studies', default='', on_delete=models.CASCADE)
 
     dbId = models.CharField(max_length=50, blank=False, default='', primary_key=True)
     name = models.CharField(max_length=255, blank=False, default='')
