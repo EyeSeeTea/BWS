@@ -4,7 +4,7 @@ from api import views
 
 router = DefaultRouter()
 router.register(r'datafiles', views.EntryViewSet)
-router.register(r'featureHCSModelEntity', views.FeatureHCSModelEntityViewSet)
+router.register(r'LigandToImageData', views.LigandEntityViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
