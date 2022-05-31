@@ -249,6 +249,8 @@ class LigandEntity(models.Model):
     altNames = models.CharField(max_length=200)
     imageLink = models.CharField(max_length=200)
     externalLink = models.CharField(max_length=200)
+    IUPACInChIkey = models.CharField(max_length=200, default='')
+    pubChemCompoundId = models.CharField(max_length=200, default='')
 
     def __str__(self):
         return '%s' % (self.dbId,)
@@ -494,7 +496,7 @@ class WellEntity(FeatureModelEntity):
         Well details
     '''
 
-    ligand = models.ForeignKey(PdbToLigand,
+    imageData = models.ForeignKey(PdbToLigand,
                                  related_name='wells', default='', on_delete=models.CASCADE)
     
     plate = models.ForeignKey(PlateEntity,
