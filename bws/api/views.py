@@ -113,12 +113,12 @@ class EntryViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
  
-class FeatureHCSModelEntityViewSet(viewsets.ModelViewSet):
+class LigandEntityViewSet(viewsets.ModelViewSet):
    """
    """
  
-   queryset = models.FeatureHCSModelEntity.objects.all()
-   serializer_class = serializers.FeatureHCSModelEntitySerializer
+   queryset = models.LigandEntity.objects.all()
+   serializer_class = serializers.LigandEntitySerializer
    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
  
    def get(self, request):
