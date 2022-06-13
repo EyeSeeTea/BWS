@@ -441,17 +441,6 @@ class FeatureRegionEntity(FeatureEntity):
     start = models.IntegerField()
     end = models.IntegerField()
 
-
-# class StudyToOrganism(models.Model):
-#    study = models.ForeignKey('StudyEntity',
-#                              related_name='studyorganisms', on_delete=models.CASCADE)
-#    organism = models.ForeignKey(Organism,
-#                               related_name='studyorganisms', on_delete=models.CASCADE)
- 
-#    def __str__(self):
-#        return '(%s) %s' % (self.study.dbId, self.organism.ncbi_taxonomy_id)
-
-
 class StudyEntity(models.Model):
 
     organisms = models.ManyToManyField(Organism)
@@ -465,7 +454,7 @@ class StudyEntity(models.Model):
     name = models.CharField(max_length=255, blank=False, default='')
     description = models.CharField(max_length=255, blank=False, default='')
     sampleType = models.CharField(max_length=255, blank=False, default='')
-    dataDoi = models.CharField(max_length=255, blank=False, default='')
+    dataDoi = models.CharField(max_length=255, blank=True, default='')
 
 class ScreenEntity(models.Model):
 
@@ -477,9 +466,9 @@ class ScreenEntity(models.Model):
     type = models.CharField(max_length=255, blank=False, default='')
     technologyType = models.CharField(max_length=255, blank=False, default='')
     imagingMethod1 = models.CharField(max_length=255, blank=False, default='')
-    imagingMethod2 = models.CharField(max_length=255, null=True, blank=False, default='')
-    plateCount = models.CharField(max_length=255, blank=False, default='')
-    dataDoi = models.CharField(max_length=255, blank=False, default='')
+    imagingMethod2 = models.CharField(max_length=255, null=True, blank=True, default='')
+    plateCount = models.CharField(max_length=255, blank=True, default='')
+    dataDoi = models.CharField(max_length=255, blank=True, default='')
 
 
 class PlateEntity(models.Model):
@@ -488,7 +477,7 @@ class PlateEntity(models.Model):
                                  related_name='plates', default='', on_delete=models.CASCADE)
 
     dbId = models.CharField(max_length=50, blank=False, default='', primary_key=True)
-    creationDate = models.CharField(max_length=255, blank=False, default='')
+    creationDate = models.CharField(max_length=255, blank=True, default='')
     
 
 
@@ -506,7 +495,7 @@ class WellEntity(FeatureModelEntity):
     dbId = models.CharField(max_length=50, blank=False, default='', primary_key=True)
     imageThumbailLink = models.URLField(max_length=200)
     imagesIds = models.CharField(max_length=255, blank=False, default='')
-    micromolarConcentration = models.CharField(max_length=255, null=True, blank=False, default='')
+    micromolarConcentration = models.CharField(max_length=255, null=True, blank=True, default='')
     cellLine = models.CharField(max_length=255, blank=False, default='')
     qualityControl = models.CharField(max_length=255, blank=False, default='')
     percentageInhibition = models.CharField(max_length=255, blank=False, default='')
