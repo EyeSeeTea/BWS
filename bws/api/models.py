@@ -489,6 +489,7 @@ class PlateEntity(models.Model):
 
     dbId = models.CharField(max_length=50, blank=False, default='', primary_key=True)
     creationDate = models.CharField(max_length=255, blank=False, default='')
+    
 
 
 class WellEntity(FeatureModelEntity):
@@ -496,8 +497,8 @@ class WellEntity(FeatureModelEntity):
         Well details
     '''
 
-    imageData = models.ForeignKey(PdbToLigand,
-                                 related_name='wells', default='', on_delete=models.CASCADE)
+    ligand = models.ForeignKey(LigandEntity,
+                                 related_name='well', default='', on_delete=models.CASCADE)
     
     plate = models.ForeignKey(PlateEntity,
                                  related_name='wells', default='', on_delete=models.CASCADE)
