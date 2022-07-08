@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from api import models
-
+from collections import OrderedDict
 
 class DataFileNestedSerializer(serializers.ModelSerializer):
     class Meta:
@@ -26,60 +26,43 @@ class DataFileSerializer(serializers.ModelSerializer):
 
 # ========== ========== ========== ========== ========== ========== ==========
 
-class PublicationSerializer(serializers.ModelSerializer):
+# class PdbToLigandSerializer(serializers.ModelSerializer):
  
-   class Meta:
-       model = models.Publication
-       fields = ['title', 'doi', 'pubMedId']
+#    #ligand = LigandEntitySerializer(read_only=True)
+#    #pdbId = PdbEntrySerializer(read_only=True)
+#    #imageData = WellEntitySerializer(read_only=True)
+#    class Meta:
+#        model = models.PdbToLigand
+#        fields = ['quantity']
 
-class AuthorSerializer(serializers.ModelSerializer):
- 
-   class Meta:
-       model = models.Author
-       fields = ['name']
 
-class PublicationAuthorSerializer(serializers.ModelSerializer):
- 
-   publication = PublicationSerializer(read_only=True)
-   author = AuthorSerializer(read_only=True)
-   class Meta:
-       model = models.PublicationAuthor
-       fields = ['publication', 'author']
+# class PdbToLigandListingField(serializers.RelatedField):
+#     def to_representation(self, value):
+#         return 'Ligand %s: %s' % (value.pdbId, value.quantity)
 
-class IDRWellEntitySerializer(serializers.ModelSerializer):
- 
-   class Meta:
-       model = models.IDRWellEntity
-       fields = '__all__'
+class WellEntitySerializer(serializers.ModelSerializer):
+    
+     class Meta:
+        model = models.WellEntity
+        fields =  ['dbId', 'imageThumbailLink', 'imagesIds', 'micromolarConcentration', 'cellLine', 'qualityControl', 'percentageInhibition', 'hitOver75Activity', 'numbeCells', 'phenotypeAnnotationLevel', 'channels']
 
-class FeatureTypeSerializer(serializers.ModelSerializer):
- 
-   class Meta:
-       model = models.FeatureType
-       fields = ['dataSource']
- 
+class PlateEntitySerializer(serializers.ModelSerializer):
+    wells = WellEntitySerializer(read_only=True, many=True)
+    #wells = WellEntitySerializer(source='filtered_wells', many=True, read_only=True)
+    class Meta:
+       model = models.PlateEntity
+       fields = ['dbId', 'wells']
 
-class LigandEntitySerializer(serializers.ModelSerializer):
- 
-   class Meta:
-       model = models.LigandEntity
-       fields = ['dbId']
+class ScreenEntitySerializer(serializers.ModelSerializer):
+    plates = PlateEntitySerializer(read_only=True, many=True)
+    #plates = PlateEntitySerializer(source='filtered_plates', many=True, read_only=True)
+    class Meta:
+       model = models.ScreenEntity
+       fields = ['dbId', 'name', 'type', 'technologyType', 'imagingMethod1', 'imagingMethod2', 'plateCount', 'dataDoi', 'plates']
 
-class PdbToLigandSerializer(serializers.ModelSerializer):
- 
-   ligand = LigandEntitySerializer(read_only=True)
+class StudyEntitySerializer(serializers.ModelSerializer):
+   screens = ScreenEntitySerializer(read_only=True, many=True)
+   #screens = ScreenEntitySerializer(source='filtered_screens', many=True, read_only=True)
    class Meta:
-       model = models.LigandEntity
-       fields = ['ligand']
-
-class FeatureHCSModelEntitySerializer(serializers.ModelSerializer):
- 
-   well = IDRWellEntitySerializer(read_only=True)
-   featureType = FeatureTypeSerializer(read_only=True)
-   publication = PublicationAuthorSerializer(read_only=True)
-   ligand = PdbToLigandSerializer(read_only=True)
- 
-   class Meta:
-      model = models.FeatureHCSModelEntity
-      fields = ['ligand', 'ligand_name', 'featureType', 'name', 'description', 'publication', 'screen_id', 'plate_id', 'well']
-
+       model = models.StudyEntity
+       fields = ['dbId', 'name', 'description', 'sampleType', 'dataDoi', 'screens']
