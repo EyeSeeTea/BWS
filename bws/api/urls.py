@@ -1,10 +1,11 @@
 from django.urls import include, path, re_path
 from rest_framework.routers import DefaultRouter
-from api import views
+from api import views, models
 
 router = DefaultRouter()
 router.register(r'datafiles', views.EntryViewSet)
-router.register(r'LigandToImageData', views.LigandEntityViewSet)
+router.register(r'LigandToImageData', views.LigandToStudyViewSet, basename=models.LigandEntity)
+router.register(r'pruebaStudy', views.StudyEntityViewSet, basename=models.StudyEntity)
 
 urlpatterns = [
     path('', include(router.urls)),
