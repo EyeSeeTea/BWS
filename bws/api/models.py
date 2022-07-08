@@ -418,7 +418,7 @@ class FeatureEntity(models.Model):
                                     related_name='%(class)s_features', null=True, on_delete=models.CASCADE)
     description = models.CharField(max_length=255, blank=False, default='')
     pdbentry = models.ForeignKey(PdbEntry,
-                                 related_name='%(class)s_features', null=True, on_delete=models.CASCADE)
+                                 related_name='%(class)s_features', null=True, blank=True, on_delete=models.CASCADE)
     externalLink = models.CharField(max_length=200, default='')
     class Meta:
             abstract = True
