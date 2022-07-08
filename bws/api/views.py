@@ -11,6 +11,8 @@ from api.dataPaths import (COMPUT_MODELS_DIR, LOCAL_DATA_DIR,
                            MODEL_AND_LIGAND_DIR,
                            EMV_WS_URL,
                            EMV_WS_PATH)
+from django_filters import rest_framework as filters
+from django.db.models import Prefetch
 
 
 logger = logging.getLogger(__name__)
@@ -113,14 +115,12 @@ class EntryViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
  
-class LigandEntityViewSet(viewsets.ModelViewSet):
-   """
-   """
- 
-   queryset = models.LigandEntity.objects.all()
-   serializer_class = serializers.LigandEntitySerializer
-   permission_classes = [permissions.IsAuthenticatedOrReadOnly]
- 
-   def get(self, request):
-       pass
- 
+class LigandToImageDataViewSet(viewsets.ModelViewSet):
+    """
+    This viewset automatically provides list of all ligand entries and "imageData" associated to them.
+    """
+
+    #queryset = models.LigandEntity.objects.all().prefetch_related(Prefetch("well__plate__screen__assay", queryset=models.StudyEntity.objects.all(), to_attr='filtered_assay'))
+    queryset = models.LigandEntity.objects.all()
+    serializer_class = serializers.LigandEntitySerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
