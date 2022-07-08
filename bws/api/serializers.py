@@ -66,3 +66,34 @@ class StudyEntitySerializer(serializers.ModelSerializer):
    class Meta:
        model = models.StudyEntity
        fields = ['dbId', 'name', 'description', 'sampleType', 'dataDoi', 'screens']
+
+# class SerializerMethodNestedSerializer(serializers.SerializerMethodField):
+#     """Returns nested serializer in serializer method field"""
+
+#     def __init__(self, kls, kls_kwargs=None, **kwargs):
+#         self.kls = kls
+#         self.kls_kwargs = kls_kwargs or {}
+#         super(SerializerMethodNestedSerializer, self).__init__(**kwargs)
+
+#     def to_representation(self, value):
+#         repr_value = super(SerializerMethodNestedSerializer, self).to_representation(value)
+#         if repr_value is not None:
+#             return self.kls(repr_value, **self.kls_kwargs).data
+
+class LigandToImageDataSerializer(serializers.ModelSerializer):
+    
+    imageData = serializers.SerializerMethodField()
+    #imageData = SerializerMethodNestedSerializer(kls=StudyEntitySerializer)
+    class Meta:
+        model = models.LigandEntity
+        fields = ['dbId', 'name', 'details', 'imageLink', 'externalLink', 'IUPACInChIkey', 'pubChemCompoundId', 'imageData']
+        depth = 6
+
+    def get_imageData(self, obj):  
+        return  [StudyEntitySerializer(source='filtered_assay').to_representation(cat.plate.screen.assay) for cat in obj.well.all()]
+
+    # To avoid showing imageData field in final JSON file when there is no info associated to it (avoid "imgaData []")
+    def to_representation(self, value):
+        repr_dict = super(serializers.ModelSerializer, self).to_representation(value)
+        return OrderedDict((k, v) for k, v in repr_dict.items() 
+                           if v not in [None, [], '', {}])

@@ -4,7 +4,7 @@ from api import views, models
 
 router = DefaultRouter()
 router.register(r'datafiles', views.EntryViewSet)
-router.register(r'LigandToImageData', views.LigandToStudyViewSet, basename=models.LigandEntity)
+router.register(r'LigandToImageData', views.LigandToImageDataViewSet, basename=models.LigandEntity)
 router.register(r'pruebaStudy', views.StudyEntityViewSet, basename=models.StudyEntity)
 
 urlpatterns = [

@@ -155,5 +155,5 @@ class LigandToImageDataViewSet(viewsets.ModelViewSet):
 
     #queryset = models.LigandEntity.objects.all().prefetch_related(Prefetch("well__plate__screen__assay", queryset=models.StudyEntity.objects.all(), to_attr='filtered_assay'))
     queryset = models.LigandEntity.objects.all()
-    serializer_class = serializers.LigandEntitySerializer
+    serializer_class = serializers.LigandToImageDataSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
