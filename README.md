@@ -12,6 +12,10 @@ DEV
  Connection to the running container "bws_web_1" in DEV
 - docker exec -it bws_web_1 /bin/bash
 
+Django-debug-toolbar usage for APIs in DEV
+In the browser, append "?debug-toolbar" at the end of url.
+ e.g.: http://localhost:8003/api/LigandToImageData/?debug-toolbar
+
 PROD
 - docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 - docker-compose -f docker-compose.yml -f docker-compose.prod.yml down

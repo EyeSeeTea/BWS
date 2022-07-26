@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'drf_yasg',  # enable Yet another Swagger generator https://github.com/axnsan12/drf-yasg
     'api',
+    'debug_toolbar',
 ]
 
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
@@ -65,6 +66,8 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'corsheaders.middleware.CorsMiddleware',
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
+    'debug_toolbar_force.middleware.ForceDebugToolbarMiddleware', # debug_toolbar_force enable to show debug_toolbar in non- or partial-HTML views (APIs) 
 ]
 
 CORS_ORIGIN_ALLOW_ALL = True
@@ -183,3 +186,19 @@ SWAGGER_SETTINGS = {
 # See https://docs.djangoproject.com/en/1.8/ref/settings/#use-x-forwarded-host
 USE_X_FORWARDED_HOST = True
 USE_X_FORWARDED_PORT = True
+
+# To fix bug: Django’s Debug Toolbar not Showing Inside Docker
+INTERNAL_IPS = [
+    '127.0.0.1',
+    'localhost',
+    '0.0.0.0',
+]
+
+import socket
+hostname, _, ips = socket.gethostbyname_ex(socket.gethostname())
+INTERNAL_IPS += [".".join(ip.split(".")[:-1] + ["1"]) for ip in ips]
+
+DEBUG_TOOLBAR_CONFIG = {
+    "SHOW_TOOLBAR_CALLBACK": lambda request: True,
+}
+
