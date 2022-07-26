@@ -24,7 +24,7 @@ services:
         window: 120s
 
   db:
-    image: mysql:8.0.29-debian
+    image: mysql:8.0.29
     command: --default-authentication-plugin=mysql_native_password
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWD}
