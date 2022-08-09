@@ -40,58 +40,251 @@ class DataFileSerializer(serializers.ModelSerializer):
 #     def to_representation(self, value):
 #         return 'Ligand %s: %s' % (value.pdbId, value.quantity)
 
+
+#NOTE-INITIAL TRIAL for LiganToImageData url: Block Comment Start
+# class WellEntitySerializer(serializers.ModelSerializer):
+    
+#      class Meta:
+#         model = models.WellEntity
+#         fields =  ['dbId', 'imageThumbailLink', 'imagesIds', 'micromolarConcentration', 'cellLine', 'qualityControl', 'percentageInhibition', 'hitOver75Activity', 'numbeCells', 'phenotypeAnnotationLevel', 'channels']
+
+#      def to_representation(self, instance):
+#         well_list = []
+#         for well in instance:
+#            well_dict = {
+#            'dbId': well.dbId,
+#            'imageThumbailLink': well.imageThumbailLink,
+#            'imagesIds': well.imagesIds,
+#            'micromolarConcentration': well.micromolarConcentration,
+#            'cellLine': well.cellLine,
+#            'qualityControl': well.qualityControl,
+#            'percentageInhibition': well.percentageInhibition,
+#            'hitOver75Activity': well.hitOver75Activity,
+#            'numbeCells': well.numbeCells,
+#            'phenotypeAnnotationLevel': well.phenotypeAnnotationLevel,
+#            'channels': well.channels
+#      }
+#            well_list.append(well_dict)
+#         return well_list
+
+
+# class PlateEntitySerializer(serializers.ModelSerializer):
+#     wells = WellEntitySerializer(read_only=True, many=True)
+#     #wells = WellEntitySerializer(source='filtered_wells', many=True, read_only=True)
+#     class Meta:
+#        model = models.PlateEntity
+#        fields = ['dbId', 'wells']
+    
+#     def to_representation(self, instance):
+#        my_dict = {}
+#        for study in instance:
+#             my_dict = {
+#        'dbId': study.plate.dbId,
+#        'creationDate': study.plate.creationDate,
+#        'wells': WellEntitySerializer().to_representation(instance)
+#      }
+#        return my_dict
+
+# class ScreenEntitySerializer(serializers.ModelSerializer):
+#     plates = PlateEntitySerializer(read_only=True, many=True)
+#     #plates = PlateEntitySerializer(source='filtered_plates', many=True, read_only=True)
+#     class Meta:
+#        model = models.ScreenEntity
+#        fields = ['dbId', 'name', 'type', 'technologyType', 'imagingMethod1', 'imagingMethod2', 'plateCount', 'dataDoi', 'plates']
+
+#     def to_representation(self, instance):
+#        my_dict = {}
+#        for study in instance:
+#            my_dict = {
+#        'dbId': study.plate.screen.dbId,
+#        'name': study.plate.screen.name,
+#        'type': study.plate.screen.type,
+#        'technologyType': study.plate.screen.technologyType,
+#        'imagingMethod1': study.plate.screen.imagingMethod1,
+#        'imagingMethod2': study.plate.screen.imagingMethod2,
+#        'plateCount': study.plate.screen.plateCount,
+#        'dataDoi': study.plate.screen.dataDoi,
+#        'plates': PlateEntitySerializer().to_representation(instance)
+#      }
+#        return my_dict
+
+# class StudyEntitySerializer(serializers.ModelSerializer):
+#    screens = ScreenEntitySerializer(read_only=True, many=True)
+#    #screens = ScreenEntitySerializer(source='filtered_screens', many=True, read_only=True)
+#    class Meta:
+#        model = models.StudyEntity
+#        fields = ['dbId', 'name', 'description', 'sampleType', 'dataDoi', 'screens']
+
+
+#    def to_representation(self, instance):
+#       my_dict = {}
+#       for well in instance:
+#         my_dict = {
+#         'dbId': well.plate.screen.assay.dbId,
+#         'name': well.plate.screen.assay.name,
+#         'description': well.plate.screen.assay.description,
+#         'sampleType': well.plate.screen.assay.sampleType,
+#         'dataDoi': well.plate.screen.assay.dataDoi,
+#         'screens': ScreenEntitySerializer().to_representation(instance)
+#       }
+#       return my_dict
+
+# class LigandToImageDataSerializer(serializers.ModelSerializer):
+    
+#     imageData = serializers.SerializerMethodField()
+
+#     class Meta:
+#         model = models.LigandEntity
+#         fields = ['dbId', 'name', 'details', 'imageLink', 'externalLink', 'IUPACInChIkey', 'pubChemCompoundId', 'imageData']
+#         depth = 6
+
+#     def get_imageData(self, obj):
+        
+#         #TODO: Find differences between the following to options:
+#         #[ ]
+#         well_list = []
+#         for cat in obj.well.all():
+#             well_list.append(cat)
+#         result = StudyEntitySerializer().to_representation(well_list)
+        
+#         #[ ]
+#         #result = StudyEntitySerializer().to_representation(obj.well.all())
+
+#         return result
+
+#     # To avoid showing imageData field in final JSON file when there is no info associated to it (avoid "imgaData []")
+#     def to_representation(self, value):
+#         repr_dict = super(serializers.ModelSerializer, self).to_representation(value)
+#         return OrderedDict((k, v) for k, v in repr_dict.items() 
+#                            if v not in [None, [], '', {}])
+
+#NOTE-INITIAL TRIAL for LiganToImageData url: Block Comment End
+
 class WellEntitySerializer(serializers.ModelSerializer):
     
      class Meta:
         model = models.WellEntity
         fields =  ['dbId', 'imageThumbailLink', 'imagesIds', 'micromolarConcentration', 'cellLine', 'qualityControl', 'percentageInhibition', 'hitOver75Activity', 'numbeCells', 'phenotypeAnnotationLevel', 'channels']
 
+
 class PlateEntitySerializer(serializers.ModelSerializer):
-    wells = WellEntitySerializer(read_only=True, many=True)
-    #wells = WellEntitySerializer(source='filtered_wells', many=True, read_only=True)
+    wells = serializers.SerializerMethodField()
+
     class Meta:
        model = models.PlateEntity
        fields = ['dbId', 'wells']
 
+    def get_wells(self, obj):
+
+        # Get ligand ID from queryset context to pass it to WellEntitySerializer
+        context = self.context
+        ligand_id = self.context.get('ligand_id')
+
+        # Given the ligand ID, check which of the wells inside obj (Plate obj) are associated to that ligand
+        if ligand_id:
+            wellid_list = []
+
+            for w in obj.wells.all():
+                if w.ligand_id == ligand_id:
+                    wellid_list.append(w.dbId)
+
+            # Given the unique list of Well IDs, get queryset including all WellEntity models and pass it to WellEntitySerializer
+                #TODO: Optimize to avoid querying the database. Instead, try to get the same info from the obj (Plate queryset)
+            well_qs = models.WellEntity.objects.filter(dbId__in=wellid_list)
+            return WellEntitySerializer(many=True,  context=context).to_representation(well_qs)
+
+        #NOTE: is this line useful? (adapted from https://stackoverflow.com/questions/35878235/django-rest-framework-filter-related-data-based-on-parent-object)
+        #return WellEntitySerializer(many=True).to_representation(obj.wells.all())
+
+
 class ScreenEntitySerializer(serializers.ModelSerializer):
-    plates = PlateEntitySerializer(read_only=True, many=True)
-    #plates = PlateEntitySerializer(source='filtered_plates', many=True, read_only=True)
+    plates = serializers.SerializerMethodField()
     class Meta:
        model = models.ScreenEntity
        fields = ['dbId', 'name', 'type', 'technologyType', 'imagingMethod1', 'imagingMethod2', 'plateCount', 'dataDoi', 'plates']
 
+    def get_plates(self, obj):
+
+        # Get ligand ID from queryset context to pass it to PlateEntitySerializer
+        context = self.context
+        ligand_id = self.context.get('ligand_id')
+
+        # Given the ligand ID, check which of the plates inside obj (Screen obj) include well(s) associated to that ligand and get the unique list
+        if ligand_id:
+
+            plateid_list = []
+            for p in obj.plates.all():
+                for w in p.wells.all():
+                    if w.ligand_id == ligand_id:
+                        plateid_list.append(p.dbId)
+
+            unique_plateid_list = list(set(plateid_list))
+
+            # Given the unique list of Plate IDs, get queryset including all PlateEntity models and pass it to PlateEntitySerializer
+                #TODO: Optimize to avoid querying the database. Instead, try to get the same info from the obj (Screen queryset)
+            plate_qs = models.PlateEntity.objects.filter(dbId__in=unique_plateid_list)
+            return PlateEntitySerializer(many=True,  context=context).to_representation(plate_qs)
+
+        #NOTE: is this line useful? (adapted from https://stackoverflow.com/questions/35878235/django-rest-framework-filter-related-data-based-on-parent-object)
+        #return PlateEntitySerializer(many=True).to_representation(obj.files.all())
+
 class StudyEntitySerializer(serializers.ModelSerializer):
-   screens = ScreenEntitySerializer(read_only=True, many=True)
-   #screens = ScreenEntitySerializer(source='filtered_screens', many=True, read_only=True)
-   class Meta:
-       model = models.StudyEntity
-       fields = ['dbId', 'name', 'description', 'sampleType', 'dataDoi', 'screens']
+    screens = serializers.SerializerMethodField()
+    class Meta:
+        model = models.StudyEntity
+        fields = ['dbId', 'name', 'description', 'sampleType', 'dataDoi', 'screens']
 
-# class SerializerMethodNestedSerializer(serializers.SerializerMethodField):
-#     """Returns nested serializer in serializer method field"""
+    def get_screens(self, obj):
 
-#     def __init__(self, kls, kls_kwargs=None, **kwargs):
-#         self.kls = kls
-#         self.kls_kwargs = kls_kwargs or {}
-#         super(SerializerMethodNestedSerializer, self).__init__(**kwargs)
+        # Get ligand ID from queryset context to pass it to ScreenEntitySerializer
+        context = self.context
+        ligand_id = self.context.get('ligand_id')
 
-#     def to_representation(self, value):
-#         repr_value = super(SerializerMethodNestedSerializer, self).to_representation(value)
-#         if repr_value is not None:
-#             return self.kls(repr_value, **self.kls_kwargs).data
+        # Given the ligand ID, check which of the screens inside obj (Assay obj) include well(s) associated to that ligand and get the unique list
+        if ligand_id:
+
+            screenid_list = []
+            for s in obj.screens.all():
+                for p in s.plates.all():
+                    for w in p.wells.all():
+                        if w.ligand_id == ligand_id:
+                            screenid_list.append(s.dbId)
+            
+            unique_screenid_list = list(set(screenid_list))
+
+            # Given the unique list of Screen IDs, get queryset including all ScreenEntity models and pass it to ScreenEntitySerializer
+                #TODO: Optimize to avoid querying the database. Instead, try to get the same info from the obj (Assay queryset)
+            screen_qs = models.ScreenEntity.objects.filter(dbId__in=unique_screenid_list)
+            return ScreenEntitySerializer(many=True,  context=context).to_representation(screen_qs)
+
+        #NOTE: is this line useful? (adapted from https://stackoverflow.com/questions/35878235/django-rest-framework-filter-related-data-based-on-parent-object)
+        #return ScreenEntitySerializer(many=True).to_representation(obj.files.all())
 
 class LigandToImageDataSerializer(serializers.ModelSerializer):
     
     imageData = serializers.SerializerMethodField()
-    #imageData = SerializerMethodNestedSerializer(kls=StudyEntitySerializer)
     class Meta:
         model = models.LigandEntity
         fields = ['dbId', 'name', 'details', 'imageLink', 'externalLink', 'IUPACInChIkey', 'pubChemCompoundId', 'imageData']
         depth = 6
 
-    def get_imageData(self, obj):  
-        return  [StudyEntitySerializer(source='filtered_assay').to_representation(cat.plate.screen.assay) for cat in obj.well.all()]
+    def get_imageData(self, obj):
 
+        # Update the queryset context with the ligand ID to pass it to the rest of serializers involved (StudyEntitySerializer, ScreenEntitySerializer, PlateEntitySerializer and WellEntitySerializer)
+        context = self.context
+        context.update({'ligand_id': obj.dbId})
+
+        # Given all wells associated to a specific ligand, get the unique list of all Assay IDs associated to it (assays in which the ligand has been proved)
+        studyid_list = []
+        for well in obj.well.all():
+            studyid_list.append(well.plate.screen.assay.dbId)
+        unique_studyid_list = list(set(studyid_list))
+
+        # Given the unique list of Assay IDs, get queryset including all AssayEntity models and pass it to AssayEntitySerializer
+            #TODO: Optimize to avoid querying the database. Instead, try to get the same info from the obj (Ligand queryset)
+        study_qs = models.StudyEntity.objects.filter(dbId__in=unique_studyid_list)
+        return StudyEntitySerializer(many=True, context=context).to_representation(study_qs)
+        
     # To avoid showing imageData field in final JSON file when there is no info associated to it (avoid "imgaData []")
     def to_representation(self, value):
         repr_dict = super(serializers.ModelSerializer, self).to_representation(value)
