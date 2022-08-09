@@ -114,48 +114,10 @@ class EntryViewSet(viewsets.ModelViewSet):
     serializer_class = serializers.EntrySerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
- # class WellEntityFilter(filters.FilterSet):
-#     class Meta:
-#         model = models.WellEntity
-#         fields = ['dbId']
-
-# class PlateEntityFilter(filters.FilterSet):
-#     well = filters.RelatedFilter(WellEntityFilter, field_name='well', queryset=models.WellEntity.objects.filter(dbId=1560940))
-
-#     class Meta:
-#         model = models.PlateEntity
-#         fields = ['dbId']
-
-# class ScreenEntityFilter(filters.FilterSet):
-#     plate = filters.RelatedFilter(PlateEntityFilter, field_name='well', queryset=models.PlateEntity.objects.all())
-
-#     class Meta:
-#         model = models.ScreenEntity
-#         fields = ['dbId']
-
-# class StudyEntityFilter(filters.FilterSet):
-#     screen = filters.RelatedFilter(ScreenEntityFilter, field_name='well', queryset=models.ScreenEntity.objects.all())
-#     class Meta:
-#         model = models.StudyEntity
-#         fields = ['dbId']
-
-
-class StudyEntityViewSet(viewsets.ModelViewSet):
-   """
-   """
-   #queryset = models.StudyEntity.objects.prefetch_related(Prefetch("screens__plates", queryset=models.PlateEntity.objects.filter(dbId='4444'), to_attr='filtered_plates'))
-   #queryset = models.StudyEntity.objects.prefetch_related(Prefetch("screens__plates__wells", queryset=models.WellEntity.objects.filter(dbId='1560940'), to_attr='filtered_wells'))
-   queryset = models.StudyEntity.objects.all().select_related('screens')
-   serializer_class = serializers.StudyEntitySerializer
-   permission_classes = [permissions.IsAuthenticatedOrReadOnly]
-   #filter_class = StudyEntityFilter
 class LigandToImageDataViewSet(viewsets.ModelViewSet):
     """
     This viewset automatically provides list of all ligand entries and "imageData" associated to them.
     """
     queryset = models.LigandEntity.objects.prefetch_related("well__plate__screen__assay")
-    #queryset = models.LigandEntity.objects.all()
-    #queryset = models.LigandEntity.objects.all().prefetch_related(Prefetch("well__plate__screen__assay", queryset=models.StudyEntity.objects.filter(dbId='idr0094'), to_attr='filtered_assay'))
-    #queryset = models.LigandEntity.objects.all().select_related('well')
     serializer_class = serializers.LigandToImageDataSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
