@@ -441,7 +441,7 @@ class FeatureRegionEntity(FeatureEntity):
     start = models.IntegerField()
     end = models.IntegerField()
 
-class StudyEntity(models.Model):
+class StudyEntity(FeatureModelEntity):
 
     organisms = models.ManyToManyField(Organism)
     publication =  models.ForeignKey(Publication,
@@ -451,8 +451,8 @@ class StudyEntity(models.Model):
     #               related_name='studies', default='', on_delete=models.CASCADE)
 
     dbId = models.CharField(max_length=50, blank=False, default='', primary_key=True)
-    name = models.CharField(max_length=255, blank=False, default='')
-    description = models.CharField(max_length=255, blank=False, default='')
+    #name = models.CharField(max_length=255, blank=False, default='')
+    #description = models.CharField(max_length=255, blank=False, default='')
     sampleType = models.CharField(max_length=255, blank=False, default='')
     dataDoi = models.CharField(max_length=255, blank=True, default='')
 
@@ -481,18 +481,19 @@ class PlateEntity(models.Model):
     
 
 
-class WellEntity(FeatureModelEntity):
+class WellEntity(models.Model):
     '''
         Well details
     '''
-
+    dbId = models.CharField(max_length=50, blank=False, default='', primary_key=True)
+    name = models.CharField(max_length=255, blank=False, default='')
     ligand = models.ForeignKey(LigandEntity,
                                  related_name='well', default='', on_delete=models.CASCADE)
     
     plate = models.ForeignKey(PlateEntity,
                                  related_name='wells', default='', on_delete=models.CASCADE)
 
-    dbId = models.CharField(max_length=50, blank=False, default='', primary_key=True)
+    externalLink = models.URLField(max_length=200)
     imageThumbailLink = models.URLField(max_length=200)
     imagesIds = models.CharField(max_length=255, blank=False, default='')
     micromolarConcentration = models.CharField(max_length=255, null=True, blank=True, default='')
