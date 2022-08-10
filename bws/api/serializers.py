@@ -110,12 +110,12 @@ class ScreenEntitySerializer(serializers.ModelSerializer):
         #NOTE: is this line useful? (adapted from https://stackoverflow.com/questions/35878235/django-rest-framework-filter-related-data-based-on-parent-object)
         #return PlateEntitySerializer(many=True).to_representation(obj.files.all())
 
-class StudyEntitySerializer(serializers.ModelSerializer):
+class AssayEntitySerializer(serializers.ModelSerializer):
     screens = serializers.SerializerMethodField()
     organisms = OrganismSerializer(read_only=True, many=True)
     publication = PublicationSerializer(read_only=True)
     class Meta:
-        model = models.StudyEntity
+        model = models.AssayEntity
         fields = ['dbId', 'name', 'description', 'externalLink', 'organisms', 'sampleType', 'publication', 'dataDoi', 'screens']
 
     def get_screens(self, obj):
@@ -158,20 +158,20 @@ class FeatureTypeSerializer(serializers.ModelSerializer):
         # Given the ligand ID, check which of the screens inside obj (Assay obj) include well(s) associated to that ligand and get the unique list
         if ligand_id:
 
-            studyid_list = []
-            for st in obj.studyentity_features.all():
+            assayid_list = []
+            for st in obj.assayentity_features.all():
                 for s in st.screens.all():
                     for p in s.plates.all():
                         for w in p.wells.all():
                             if w.ligand_id == ligand_id:
-                                studyid_list.append(st.dbId)
+                                assayid_list.append(st.dbId)
             
-            unique_studyid_list = list(set(studyid_list))
+            unique_assayid_list = list(set(assayid_list))
 
             # Given the unique list of Assay IDs, get queryset including all AssayEntity models and pass it to AssayEntitySerializer
                 #TODO: Optimize to avoid querying the database. Instead, try to get the same info from the obj (FeatureType queryset)
-            study_qs = models.StudyEntity.objects.filter(dbId__in=unique_studyid_list)
-            return StudyEntitySerializer(many=True,  context=context).to_representation(study_qs)
+            assay_qs = models.AssayEntity.objects.filter(dbId__in=unique_assayid_list)
+            return AssayEntitySerializer(many=True,  context=context).to_representation(assay_qs)
 
 class LigandToImageDataSerializer(serializers.ModelSerializer):
     
@@ -183,7 +183,7 @@ class LigandToImageDataSerializer(serializers.ModelSerializer):
 
     def get_imageData(self, obj):
 
-        # Update the queryset context with the ligand ID to pass it to the rest of serializers involved (FeatureTypeSerializer, StudyEntitySerializer, ScreenEntitySerializer, PlateEntitySerializer and WellEntitySerializer)
+        # Update the queryset context with the ligand ID to pass it to the rest of serializers involved (FeatureTypeSerializer, AssayEntitySerializer, ScreenEntitySerializer, PlateEntitySerializer and WellEntitySerializer)
         context = self.context
         context.update({'ligand_id': obj.dbId})
 

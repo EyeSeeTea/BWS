@@ -5,7 +5,7 @@ from api import models
 
 admin.site.register(models.FeatureType)
 #admin.site.register(models.StudyToOrganism)
-admin.site.register(models.StudyEntity)
+admin.site.register(models.AssayEntity)
 admin.site.register(models.ScreenEntity)
 admin.site.register(models.PlateEntity)
 admin.site.register(models.WellEntity)

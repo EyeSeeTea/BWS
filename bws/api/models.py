@@ -444,12 +444,12 @@ class FeatureRegionEntity(FeatureEntity):
     start = models.IntegerField()
     end = models.IntegerField()
 
-class StudyEntity(FeatureModelEntity):
+class AssayEntity(FeatureModelEntity):
 
     dbId = models.CharField(max_length=50, blank=False, default='', primary_key=True)
     organisms = models.ManyToManyField(Organism)
     publication =  models.ForeignKey(Publication,
-                                 related_name='studies', default='', on_delete=models.CASCADE)
+                                 related_name='assays', default='', on_delete=models.CASCADE)
     sampleType = models.CharField(max_length=255, blank=False, default='')
     dataDoi = models.CharField(max_length=255, blank=True, default='')
 
@@ -457,7 +457,7 @@ class StudyEntity(FeatureModelEntity):
         return '%s' % (self.dbId)
 class ScreenEntity(models.Model):
 
-    assay = models.ForeignKey(StudyEntity,
+    assay = models.ForeignKey(AssayEntity,
                                  related_name='screens', default='', on_delete=models.CASCADE)
 
     dbId = models.CharField(max_length=50, blank=False, default='', primary_key=True)
