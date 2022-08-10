@@ -408,6 +408,9 @@ class FeatureType(models.Model):
     dataSource = models.CharField(max_length=255, blank=False, default='')
     externalLink = models.CharField(max_length=200)
 
+    def __str__(self):
+        return '%s (%s)' % (self.name, self.dataSource)
+
 
 class FeatureEntity(models.Model):
     '''
@@ -443,19 +446,15 @@ class FeatureRegionEntity(FeatureEntity):
 
 class StudyEntity(FeatureModelEntity):
 
+    dbId = models.CharField(max_length=50, blank=False, default='', primary_key=True)
     organisms = models.ManyToManyField(Organism)
     publication =  models.ForeignKey(Publication,
                                  related_name='studies', default='', on_delete=models.CASCADE)
-
-    #publicationAuthor = models.ForeignKey(PublicationAuthor,
-    #               related_name='studies', default='', on_delete=models.CASCADE)
-
-    dbId = models.CharField(max_length=50, blank=False, default='', primary_key=True)
-    #name = models.CharField(max_length=255, blank=False, default='')
-    #description = models.CharField(max_length=255, blank=False, default='')
     sampleType = models.CharField(max_length=255, blank=False, default='')
     dataDoi = models.CharField(max_length=255, blank=True, default='')
 
+    def __str__(self):
+        return '%s' % (self.dbId)
 class ScreenEntity(models.Model):
 
     assay = models.ForeignKey(StudyEntity,
@@ -470,6 +469,8 @@ class ScreenEntity(models.Model):
     plateCount = models.CharField(max_length=255, blank=True, default='')
     dataDoi = models.CharField(max_length=255, blank=True, default='')
 
+    def __str__(self):
+        return '%s' % (self.dbId)
 
 class PlateEntity(models.Model):
 
@@ -478,6 +479,9 @@ class PlateEntity(models.Model):
 
     dbId = models.CharField(max_length=50, blank=False, default='', primary_key=True)
     creationDate = models.CharField(max_length=255, blank=True, default='')
+
+    def __str__(self):
+        return '%s' % (self.dbId)
     
 
 
@@ -504,3 +508,6 @@ class WellEntity(models.Model):
     numbeCells = models.CharField(max_length=255, blank=False, default='')
     phenotypeAnnotationLevel = models.CharField(max_length=255, blank=False, default='')
     channels = models.CharField(max_length=255, blank=False, default='')
+
+    def __str__(self):
+        return '%s' % (self.dbId)
