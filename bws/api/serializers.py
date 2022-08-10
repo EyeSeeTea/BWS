@@ -26,6 +26,22 @@ class DataFileSerializer(serializers.ModelSerializer):
 
 # ========== ========== ========== ========== ========== ========== ==========
 
+class AuthorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.Author
+        fields = ['name', 'orcid']
+
+class PublicationSerializer(serializers.ModelSerializer):
+    authors = AuthorSerializer(read_only=True, many=True)
+    class Meta:
+        model = models.Publication
+        fields = ['title', 'journal_abbrev', 'issn', 'issue', 'volume', 'page_first', 'page_last', 'year', 'doi', 'pubMedId', 'abstract', 'authors']
+
+class OrganismSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.Organism
+        fields = ['ncbi_taxonomy_id', 'scientific_name', 'common_name', 'externalLink']
+
 class WellEntitySerializer(serializers.ModelSerializer):
     
      class Meta:
@@ -96,9 +112,11 @@ class ScreenEntitySerializer(serializers.ModelSerializer):
 
 class StudyEntitySerializer(serializers.ModelSerializer):
     screens = serializers.SerializerMethodField()
+    organisms = OrganismSerializer(read_only=True, many=True)
+    publication = PublicationSerializer(read_only=True)
     class Meta:
         model = models.StudyEntity
-        fields = ['dbId', 'name', 'description', 'externalLink', 'sampleType', 'dataDoi', 'screens']
+        fields = ['dbId', 'name', 'description', 'externalLink', 'organisms', 'sampleType', 'publication', 'dataDoi', 'screens']
 
     def get_screens(self, obj):
 
