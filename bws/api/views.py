@@ -13,6 +13,7 @@ from api.dataPaths import (COMPUT_MODELS_DIR, LOCAL_DATA_DIR,
                            EMV_WS_PATH)
 from django_filters import rest_framework as filters
 from django.db.models import Prefetch
+from rest_framework import generics
 
 
 logger = logging.getLogger(__name__)
@@ -121,3 +122,16 @@ class LigandToImageDataViewSet(viewsets.ModelViewSet):
     queryset = models.LigandEntity.objects.prefetch_related("well__plate__screen__assay")
     serializer_class = serializers.LigandToImageDataSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+# class FilteredLigandToImageDataViewSet(generics.ListAPIView):
+#     """
+#     This viewset automatically provides list of all ligand entries and "imageData" associated to them as 
+#     determined by the dbId/name portion of the URL.
+#     """
+#     serializer_class = serializers.LigandToImageDataSerializer
+#     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+#     def get_queryset(self):
+
+#         dbId = self.kwargs['dbId']
+#         return models.LigandEntity.objects.filter(dbId=dbId).prefetch_related("well__plate__screen__assay")
