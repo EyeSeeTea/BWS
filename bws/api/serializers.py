@@ -29,13 +29,13 @@ class DataFileSerializer(serializers.ModelSerializer):
 class AuthorSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Author
-        fields = ['name', 'orcid']
+        fields = ['name', 'email', 'address', 'orcid', 'role']
 
 class PublicationSerializer(serializers.ModelSerializer):
     authors = AuthorSerializer(read_only=True, many=True)
     class Meta:
         model = models.Publication
-        fields = ['title', 'journal_abbrev', 'issn', 'issue', 'volume', 'page_first', 'page_last', 'year', 'doi', 'pubMedId', 'abstract', 'authors']
+        fields = ['title', 'journal_abbrev', 'issn', 'issue', 'volume', 'page_first', 'page_last', 'year', 'doi', 'pubMedId', 'PMCId', 'abstract', 'authors']
 
 class OrganismSerializer(serializers.ModelSerializer):
     class Meta:
@@ -116,7 +116,7 @@ class AssayEntitySerializer(serializers.ModelSerializer):
     publication = PublicationSerializer(read_only=True)
     class Meta:
         model = models.AssayEntity
-        fields = ['dbId', 'name', 'description', 'externalLink', 'organisms', 'sampleType', 'publication', 'dataDoi', 'screens']
+        fields = ['dbId', 'name', 'description', 'assayType', 'assayTypeTermAccession', 'organisms', 'externalLink','releaseDate', 'publication', 'dataDoi', 'BIAId', 'screenCount', 'screens']
 
     def get_screens(self, obj):
 
