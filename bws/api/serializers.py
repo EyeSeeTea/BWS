@@ -54,7 +54,7 @@ class PlateEntitySerializer(serializers.ModelSerializer):
 
     class Meta:
        model = models.PlateEntity
-       fields = ['dbId', 'wells']
+       fields = ['dbId', 'name', 'wells']
 
     def get_wells(self, obj):
 

@@ -490,7 +490,7 @@ class PlateEntity(models.Model):
                                  related_name='plates', default='', on_delete=models.CASCADE)
 
     dbId = models.CharField(max_length=50, blank=False, default='', primary_key=True)
-    creationDate = models.CharField(max_length=255, blank=True, default='')
+    name = models.CharField(max_length=255, blank=True, default='')
 
     def __str__(self):
         return '%s' % (self.dbId)
