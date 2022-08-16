@@ -46,7 +46,7 @@ class WellEntitySerializer(serializers.ModelSerializer):
     
      class Meta:
         model = models.WellEntity
-        fields =  ['dbId', 'imageThumbailLink', 'imagesIds', 'micromolarConcentration', 'cellLine', 'qualityControl', 'percentageInhibition', 'hitOver75Activity', 'numbeCells', 'phenotypeAnnotationLevel', 'channels']
+        fields =  ['dbId', 'name', 'externalLink', 'imagesIds', 'imageThumbailLink', 'cellLine', 'cellLineTermAccession', 'controlType', 'qualityControl', 'micromolarConcentration', 'percentageInhibition', 'hitOver75Activity', 'numberCells', 'phenotypeAnnotationLevel', 'channels']
 
 
 class PlateEntitySerializer(serializers.ModelSerializer):
