@@ -456,9 +456,9 @@ class AssayEntity(FeatureModelEntity):
     organisms = models.ManyToManyField(Organism)
     publication =  models.ForeignKey(Publication,
                                  related_name='assays', default='', on_delete=models.CASCADE)
-    screenCount = models.IntegerField(blank=True, default='')
+    screenCount = models.IntegerField(blank=True, null=True, default='')
     BIAId = models.CharField(max_length=255, blank=True, default='')
-    releaseDate = models.DateField(max_length=255, blank=True, default='')
+    releaseDate = models.DateField(max_length=255, blank=True, null=True, default='')
     dataDoi = models.CharField(max_length=255, blank=True, default='')
 
 
