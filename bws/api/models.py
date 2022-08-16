@@ -516,10 +516,10 @@ class WellEntity(models.Model):
     cellLineTermAccession = models.CharField(max_length=255, blank=True, default='')
     controlType = models.CharField(max_length=255, blank=True, default='')
     qualityControl = models.CharField(max_length=255, blank=True, default='')
-    micromolarConcentration = models.CharField(max_length=255, null=True, blank=True, default='')
-    percentageInhibition = models.CharField(max_length=255, blank=True, default='')
+    micromolarConcentration = models.FloatField(null=True, blank=True, default='')
+    percentageInhibition = models.FloatField(null=True, blank=True, default='')
     hitOver75Activity = models.CharField(max_length=255, blank=True, default='')
-    numberCells = models.CharField(max_length=255, blank=True, default='')
+    numberCells = models.IntegerField(null=True, blank=True, default='')
     phenotypeAnnotationLevel = models.CharField(max_length=255, blank=True, default='')
     channels = models.CharField(max_length=255, blank=True, default='')
 
