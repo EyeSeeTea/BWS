@@ -472,10 +472,13 @@ class ScreenEntity(models.Model):
     dbId = models.CharField(max_length=50, blank=False, default='', primary_key=True)
     name = models.CharField(max_length=255, blank=False, default='')
     type = models.CharField(max_length=255, blank=False, default='')
+    typeTermAccession = models.CharField(max_length=255, null=True, blank=True, default='')
     technologyType = models.CharField(max_length=255, blank=False, default='')
-    imagingMethod1 = models.CharField(max_length=255, blank=False, default='')
-    imagingMethod2 = models.CharField(max_length=255, null=True, blank=True, default='')
-    plateCount = models.CharField(max_length=255, blank=True, default='')
+    technologyTypeTermAccession = models.CharField(max_length=255, null=True, blank=True, default='')
+    imagingMethod = models.CharField(max_length=255, blank=False, default='')
+    imagingMethodTermAccession = models.CharField(max_length=255, null=True, blank=True, default='')
+    sampleType = models.CharField(max_length=255, blank=True, default='')
+    plateCount = models.IntegerField(blank=True, null=True, default='')
     dataDoi = models.CharField(max_length=255, blank=True, default='')
 
     def __str__(self):
