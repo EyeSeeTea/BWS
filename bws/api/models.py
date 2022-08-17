@@ -241,19 +241,22 @@ class LigandEntity(models.Model):
     dbId = models.CharField(max_length=20, blank=False,
                             default='', primary_key=True)
 
-    ligandType = models.CharField(max_length=25)
+    ligandType = models.CharField(max_length=25, blank=True)
     name = models.CharField(max_length=200)
-    formula = models.CharField(max_length=200)
-    formula_weight = models.FloatField()
-    details = models.CharField(max_length=200)
-    altNames = models.CharField(max_length=200)
-    imageLink = models.CharField(max_length=200)
-    externalLink = models.CharField(max_length=200)
-    IUPACInChIkey = models.CharField(max_length=200, default='')
-    pubChemCompoundId = models.CharField(max_length=200, default='')
+    SMILES = models.CharField(max_length=200, blank=True)
+    formula = models.CharField(max_length=200, blank=True)
+    formula_weight = models.FloatField(null=True, blank=True)
+    details = models.CharField(max_length=200, blank=True)
+    altNames = models.CharField(max_length=200, blank=True)
+    imageLink = models.CharField(max_length=200, blank=True)
+    externalLink = models.URLField(max_length=200, blank=True)
+    IUPACInChIkey = models.CharField(max_length=200, blank=True, default='')
+    pubChemCompoundId = models.CharField(max_length=200, blank=True, default='')
+    pubChemURL = models.URLField(max_length=200, blank=True, default='')
+
 
     def __str__(self):
-        return '%s' % (self.dbId,)
+        return '%s' % (self.dbId)
 
 
 class RefinedModel(models.Model):

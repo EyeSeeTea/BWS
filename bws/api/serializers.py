@@ -178,7 +178,7 @@ class LigandToImageDataSerializer(serializers.ModelSerializer):
     imageData = serializers.SerializerMethodField()
     class Meta:
         model = models.LigandEntity
-        fields = ['dbId', 'name', 'details', 'imageLink', 'externalLink', 'IUPACInChIkey', 'pubChemCompoundId', 'imageData']
+        fields = ['dbId', 'name', 'ligandType', 'formula', 'formula_weight', 'details', 'altNames', 'SMILES', 'IUPACInChIkey', 'pubChemCompoundId', 'pubChemURL', 'imageLink', 'externalLink', 'imageData']
         depth = 6
 
     def get_imageData(self, obj):
