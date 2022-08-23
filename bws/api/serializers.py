@@ -113,10 +113,10 @@ class ScreenEntitySerializer(serializers.ModelSerializer):
 class AssayEntitySerializer(serializers.ModelSerializer):
     screens = serializers.SerializerMethodField()
     organisms = OrganismSerializer(read_only=True, many=True)
-    publication = PublicationSerializer(read_only=True)
+    publications = PublicationSerializer(read_only=True, many=True)
     class Meta:
         model = models.AssayEntity
-        fields = ['dbId', 'name', 'description', 'assayType', 'assayTypeTermAccession', 'organisms', 'externalLink','releaseDate', 'publication', 'dataDoi', 'BIAId', 'screenCount', 'screens']
+        fields = ['dbId', 'name', 'description', 'assayType', 'assayTypeTermAccession', 'organisms', 'externalLink','releaseDate', 'publications', 'dataDoi', 'BIAId', 'screenCount', 'screens']
 
     def get_screens(self, obj):
 

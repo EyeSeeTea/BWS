@@ -353,7 +353,7 @@ class Publication(models.Model):
     year = models.CharField(max_length=255, blank=True, default='')
     doi = models.CharField(max_length=255, blank=False, default='')
     pubMedId = models.CharField(max_length=255, blank=False, default='')
-    PMDId = models.CharField(max_length=255, blank=False, default='')
+    PMCId = models.CharField(max_length=255, blank=False, default='')
     abstract = models.TextField(max_length=255, blank=True, default='')
 
     authors = models.ManyToManyField(Author)
@@ -416,7 +416,7 @@ class FeatureType(models.Model):
     externalLink = models.CharField(max_length=200)
 
     def __str__(self):
-        return '%s (%s)' % (self.name, self.dataSource)
+        return '%s / %s' % (self.name, self.dataSource)
 
 
 class FeatureEntity(models.Model):
@@ -457,8 +457,7 @@ class AssayEntity(FeatureModelEntity):
     assayType = models.CharField(max_length=255, blank=True, default='')
     assayTypeTermAccession = models.CharField(max_length=255, blank=True, default='')
     organisms = models.ManyToManyField(Organism)
-    publication =  models.ForeignKey(Publication,
-                                 related_name='assays', default='', on_delete=models.CASCADE)
+    publications =  models.ManyToManyField(Publication)
     screenCount = models.IntegerField(blank=True, null=True, default='')
     BIAId = models.CharField(max_length=255, blank=True, default='')
     releaseDate = models.DateField(max_length=255, blank=True, null=True, default='')
