@@ -21,3 +21,6 @@ MODEL_AND_LIGAND_DIR = os.path.join(LOCAL_DATA_DIR, MODEL_AND_LIGAND_BASEDIR)
 
 EMV_WS_URL = "http://finlay.cnb.csic.es:8010"
 EMV_WS_PATH = "emv"
+
+IDR_BASEDIR = "IDR/"
+IDR_DIR = os.path.join(LOCAL_DATA_DIR, IDR_BASEDIR)
