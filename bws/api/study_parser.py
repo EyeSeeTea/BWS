@@ -1,5 +1,10 @@
 #! /usr/bin/env python
 
+'''
+Adapted from https://github.com/IDR/idr-utils/blob/1ba5e3810751b6df04ae0d0472a7a09c852d7e7a/pyidr/study_parser.py
+'''
+#TODO: mejorar la cita a el archivo study_parser.py de IDR
+
 from builtins import str
 from builtins import zip
 from builtins import range
