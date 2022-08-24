@@ -473,6 +473,7 @@ class ScreenEntity(models.Model):
 
     dbId = models.CharField(max_length=50, blank=False, default='', primary_key=True)
     name = models.CharField(max_length=255, blank=False, default='')
+    description = models.CharField(max_length=255, blank=True, default='')
     type = models.CharField(max_length=255, blank=False, default='')
     typeTermAccession = models.CharField(max_length=255, null=True, blank=True, default='')
     technologyType = models.CharField(max_length=255, blank=False, default='')
