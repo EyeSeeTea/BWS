@@ -98,6 +98,14 @@ KEYS = (
     Key('Screen Organism', 'Screen', optional=True),
     Key('Screen Organism Term Source REF', 'Screen', optional=True),
     Key('Screen Organism Term Accession', 'Screen', optional=True),
+    Key('Screen Sample Type', 'Screen', optional=True),
+    Key('Screen Size', 'Screen', optional=True),
+    Key('Screen Imaging Method Term Source REF', 'Screen', optional=True),
+    Key('Screen Imaging Method Term Accession', 'Screen', optional=True),
+    Key('Screen Technology Type Term Source REF', 'Screen', optional=True),
+    Key('Screen Technology Type Term Accession', 'Screen', optional=True),
+    Key('Screen Type Term Source REF', 'Screen', optional=True),
+    Key('Screen Type Term Accession', 'Screen', optional=True),
 )
 
 DOI_PATTERN = re.compile(
