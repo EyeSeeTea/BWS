@@ -458,7 +458,7 @@ class AssayEntity(FeatureModelEntity):
     assayTypeTermAccession = models.CharField(max_length=255, blank=True, default='')
     organisms = models.ManyToManyField(Organism)
     publications =  models.ManyToManyField(Publication)
-    screenCount = models.IntegerField(blank=True, null=True, default='')
+    screenCount = models.IntegerField(blank=True, null=True, default=0)
     BIAId = models.CharField(max_length=255, blank=True, default='')
     releaseDate = models.DateField(max_length=255, blank=True, null=True, default='')
     dataDoi = models.CharField(max_length=255, blank=True, default='')
@@ -481,7 +481,7 @@ class ScreenEntity(models.Model):
     imagingMethod = models.CharField(max_length=255, blank=True, default='')
     imagingMethodTermAccession = models.CharField(max_length=255, null=True, blank=True, default='')
     sampleType = models.CharField(max_length=255, blank=True, default='')
-    plateCount = models.IntegerField(blank=True, null=True, default='')
+    plateCount = models.IntegerField(blank=True, null=True, default=0)
     dataDoi = models.CharField(max_length=255, blank=True, default='')
 
     def __str__(self):
@@ -522,7 +522,7 @@ class WellEntity(models.Model):
     micromolarConcentration = models.FloatField(null=True, blank=True, default='')
     percentageInhibition = models.FloatField(null=True, blank=True, default='')
     hitOver75Activity = models.CharField(max_length=255, blank=True, default='')
-    numberCells = models.IntegerField(null=True, blank=True, default='')
+    numberCells = models.IntegerField(null=True, blank=True, default=0)
     phenotypeAnnotationLevel = models.CharField(max_length=255, blank=True, default='')
     channels = models.CharField(max_length=255, blank=True, default='')
 
