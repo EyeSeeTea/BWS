@@ -16,9 +16,9 @@ router = routers.DefaultRouter()
 
 schema_view = get_schema_view(
     openapi.Info(
-        title="Bionotes Structural HUB API",
+        title="EM-Validations API",
         default_version=REST_FRAMEWORK['DEFAULT_VERSION'],
-        description="API documentation for the Bionotes Structural HUB WebServices",
+        description="API documentation for the Cryo-EM Validation annotation WebServices",
         contact=openapi.Contact(email="3dbionotes@cnb.csic.es"),
     ),
     public=True,
