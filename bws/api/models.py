@@ -291,18 +291,27 @@ class RefinedModelMethod(models.Model):
         return "{0}{1}{2}".format(self.URL_QUERYLINK, 'pdb_redo/', self.pdbId.dbId.lower())
 
 
-class RefinedIsoldeRedoModel(RefinedModel):
-    # https://insidecorona.net/our-database/
-    URL_EXTERNAL = 'https://insidecorona.net/our-database/'
+class RefinedModel(models.Model):
+    emdbId = models.ForeignKey(EmdbEntry, related_name='refMaps',
+                               null=True, on_delete=models.CASCADE)  # EMDB entry
+    pdbId = models.ForeignKey(PdbEntry, related_name='refModels',
+                              null=True, on_delete=models.CASCADE)  # PDB entry
+    source = models.ForeignKey(
+        RefinedModelSource, on_delete=models.CASCADE)  # Data source
+    method = models.ForeignKey(
+        RefinedModelMethod, on_delete=models.CASCADE)  # Refinement method
+    # filename of the refined model
+    filename = models.CharField(max_length=200)
+    externalLink = models.CharField(
+        max_length=200)  # link to the refined model
+    # link to the query used to display the refined model in 3DBionotes
+    queryLink = models.CharField(max_length=200)
+    # description of the refined model, notes, etc.
+    details = models.TextField()
 
-    filename = models.CharField(max_length=255, blank=False, default='')
+    def __str__(self):
+        return '%s' % (self.filename,)
 
-    def externalLink(self):
-        return "{0}".format(self.URL_EXTERNAL,)
-
-    def queryLink(self):
-        # https://3dbionotes.cnb.csic.es/isolde/6w9c/6w9c_refine_15
-        return "{0}{1}{2}{3}".format(self.URL_QUERYLINK, 'isolde/', self.pdbId.dbId.lower(), self.filename)
 
 
 class SampleModel(models.Model):
