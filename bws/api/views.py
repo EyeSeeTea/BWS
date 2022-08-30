@@ -115,23 +115,41 @@ class EntryViewSet(viewsets.ModelViewSet):
     serializer_class = serializers.EntrySerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
-class LigandToImageDataViewSet(viewsets.ModelViewSet):
+
+class RefinedModelMethodViewSet(viewsets.ModelViewSet):
     """
-    This viewset automatically provides list of all ligand entries and "imageData" associated to them.
+    This viewset automatically provides `list` and `detail` actions.
     """
-    queryset = models.LigandEntity.objects.prefetch_related("well__plate__screen__assay")
-    serializer_class = serializers.LigandToImageDataSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    queryset = RefinedModelMethod.objects.all()
+    serializer_class = RefinedModelMethodSerializer
+    filter_backends = (filters.DjangoFilterBackend,
+                       SearchFilter, OrderingFilter)
+    search_fields = ['name', 'details']
+    ordering_fields = ['name', 'details']
+    ordering = ['name']
 
-# class FilteredLigandToImageDataViewSet(generics.ListAPIView):
-#     """
-#     This viewset automatically provides list of all ligand entries and "imageData" associated to them as 
-#     determined by the dbId/name portion of the URL.
-#     """
-#     serializer_class = serializers.LigandToImageDataSerializer
-#     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
-#     def get_queryset(self):
+class RefinedModelSourceViewSet(viewsets.ModelViewSet):
+    """
+    This viewset automatically provides `list` and `detail` actions.
+    """
+    queryset = RefinedModelSource.objects.all()
+    serializer_class = RefinedModelSourceSerializer
+    filter_backends = (filters.DjangoFilterBackend,
+                       SearchFilter, OrderingFilter)
+    search_fields = ['name', 'details']
+    ordering_fields = ['name', 'details']
+    ordering = ['name']
 
-#         dbId = self.kwargs['dbId']
-#         return models.LigandEntity.objects.filter(dbId=dbId).prefetch_related("well__plate__screen__assay")
+
+class RefinedModelViewSet(viewsets.ModelViewSet):
+    """
+    This viewset automatically provides `list` and `detail` actions.
+    """
+    queryset = RefinedModel.objects.all()
+    serializer_class = RefinedModelSerializer
+    filter_backends = (filters.DjangoFilterBackend,
+                       SearchFilter, OrderingFilter)
+    search_fields = ['method', 'emdbId',  'pdbId']
+    ordering_fields = ['method', 'emdbId',  'pdbId']
+    ordering = ['method']

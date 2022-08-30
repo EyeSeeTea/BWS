@@ -109,9 +109,7 @@ class HybridModel(models.Model):
                               null=True, on_delete=models.CASCADE)
 
     def __str__(self):
-        emdb = self.emdbId.dbId if self.emdbId else ''
-        pdb = self.pdbId.dbId if self.pdbId else ''
-        return '%s - %s' % (emdb, pdb)
+        return '%s(%s)' % (self.pdbId.dbId if self.pdbId else '', self.emdbId.dbId if self.emdbId else '')
 
 
 class UniProtEntry(models.Model):
@@ -243,40 +241,47 @@ class LigandEntity(models.Model):
 
     ligandType = models.CharField(max_length=25, blank=True)
     name = models.CharField(max_length=200)
-    SMILES = models.CharField(max_length=200, blank=True)
-    formula = models.CharField(max_length=200, blank=True)
-    formula_weight = models.FloatField(null=True, blank=True)
-    details = models.CharField(max_length=200, blank=True)
-    altNames = models.CharField(max_length=200, blank=True)
-    imageLink = models.CharField(max_length=200, blank=True)
-    externalLink = models.URLField(max_length=200, blank=True)
-    IUPACInChIkey = models.CharField(max_length=200, blank=True, default='')
-    pubChemCompoundId = models.CharField(max_length=200, blank=True, default='')
-    pubChemURL = models.URLField(max_length=200, blank=True, default='')
-
+    formula = models.CharField(max_length=200)
+    formula_weight = models.FloatField()
+    details = models.CharField(max_length=200)
+    altNames = models.CharField(max_length=200)
+    imageLink = models.CharField(max_length=200)
+    externalLink = models.CharField(max_length=200)
+    pubChemCompoundId = models.CharField(max_length=200, blank=True, null=True)
+    systematicNames = models.CharField(max_length=200, null=True, blank=True)
+    IUPACInChI = models.CharField(max_length=200, null=True, blank=True)
+    IUPACInChIkey = models.CharField(max_length=200, null=True, blank=True)
+    isomericSMILES = models.CharField(max_length=200, null=True, blank=True)
+    canonicalSMILES = models.CharField(max_length=200, null=True, blank=True)
 
     def __str__(self):
         return '%s' % (self.dbId)
 
 
-class RefinedModel(models.Model):
-    URL_QUERYLINK = 'https://3dbionotes.cnb.csic.es/'
+class RefinedModelSource(models.Model):
+    # name of the data source, e.g. 'PDB-REDO', 'CSTF (Coronavirus Structural TaskForce)', etc
+    name = models.CharField(max_length=200, unique=True)
+    # description of the data source
+    description = models.TextField()
+    externalLink = models.CharField(max_length=200)  # link to the data source
 
-    method = models.CharField(
-        max_length=25, choices=REF_METHOD, default=PDB_REDO)
-
-    emdbId = models.ForeignKey(EmdbEntry, related_name='%(class)s_refMaps',
-                               null=True, on_delete=models.CASCADE)
-    pdbId = models.ForeignKey('PdbEntry', related_name='%(class)s_refModels',
-                              null=True, on_delete=models.CASCADE)
-
-    class Meta:
-        abstract = True
+    def __str__(self):
+        return '%s' % (self.name,)
 
 
-class RefinedPdbRedoModel(RefinedModel):
-    # https://pdb-redo.eu/db/6lxt
-    URL_EXTERNAL = 'https://pdb-redo.eu/db/'
+class RefinedModelMethod(models.Model):
+    source = models.ForeignKey(
+        RefinedModelSource, on_delete=models.CASCADE)  # Data source
+    # name of the refinement method, e.g. 'PDB-REDO', 'Isolde', etc
+    name = models.CharField(max_length=200, unique=True)
+    # description of the refinement method
+    description = models.TextField()
+    # link to the refinement method
+    externalLink = models.CharField(max_length=200)
+
+    def __str__(self):
+        return '%s' % (self.name,)
+
 
     def externalLink(self):
         return "{0}{1}".format(self.URL_EXTERNAL, self.pdbId.dbId.lower())
@@ -428,11 +433,11 @@ class FeatureEntity(models.Model):
                                     related_name='%(class)s_features', null=True, on_delete=models.CASCADE)
     description = models.TextField(blank=True, default='')
     pdbentry = models.ForeignKey(PdbEntry,
-                                 related_name='%(class)s_features', null=True, blank=True, on_delete=models.CASCADE)
-    externalLink = models.URLField(max_length=200, default='', blank=True)
-    class Meta:
-            abstract = True
+                                 related_name='features', on_delete=models.CASCADE)
+    externalLink = models.CharField(max_length=200)
 
+    class meta:
+        abstract = True
 
 
 class FeatureModelEntity(FeatureEntity):
@@ -528,3 +533,26 @@ class WellEntity(models.Model):
 
     def __str__(self):
         return '%s' % (self.dbId)
+
+class Topic(models.Model):
+    '''
+        Main Topics to organize the structures in the database
+    '''
+    name = models.CharField(max_length=255, blank=False, default='')
+    description = models.CharField(max_length=255, blank=False, default='')
+
+    def __str__(self):
+        return '%s' % (self.name,)
+
+
+class StructureTopic(models.Model):
+    '''
+        Structure to Topic relationship
+    '''
+    structure = models.ForeignKey(HybridModel,
+                                  related_name='topics', on_delete=models.CASCADE)
+    topic = models.ForeignKey(Topic,
+                              related_name='structures', on_delete=models.CASCADE)
+
+    def __str__(self):
+        return '%s: %s(%s)' % (self.topic.name, self.structure.pdbId if self.structure.pdbId else '', self.structure.emdbId if self.structure.emdbId else '')
