@@ -2,8 +2,9 @@ import re
 import logging
 import requests
 from django.http import HttpResponse, HttpResponseNotFound
-from api import models, serializers
-from api.utils import PdbEntryAnnFromMapsUtils
+from .serializers import *
+from .models import *
+from .utils import PdbEntryAnnFromMapsUtils
 from rest_framework import status, viewsets, permissions
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -11,9 +12,6 @@ from api.dataPaths import (COMPUT_MODELS_DIR, LOCAL_DATA_DIR,
                            MODEL_AND_LIGAND_DIR,
                            EMV_WS_URL,
                            EMV_WS_PATH)
-from django_filters import rest_framework as filters
-from django.db.models import Prefetch
-from rest_framework import generics
 
 
 logger = logging.getLogger(__name__)
@@ -111,27 +109,6 @@ class EntryViewSet(viewsets.ModelViewSet):
     """
     This viewset automatically provides `list` and `detail` actions.
     """
-    queryset = models.Entry.objects.all()
-    serializer_class = serializers.EntrySerializer
+    queryset = Entry.objects.all()
+    serializer_class = EntrySerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
-
-class LigandToImageDataViewSet(viewsets.ModelViewSet):
-    """
-    This viewset automatically provides list of all ligand entries and "imageData" associated to them.
-    """
-    queryset = models.LigandEntity.objects.prefetch_related("well__plate__screen__assay")
-    serializer_class = serializers.LigandToImageDataSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
-
-# class FilteredLigandToImageDataViewSet(generics.ListAPIView):
-#     """
-#     This viewset automatically provides list of all ligand entries and "imageData" associated to them as 
-#     determined by the dbId/name portion of the URL.
-#     """
-#     serializer_class = serializers.LigandToImageDataSerializer
-#     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
-
-#     def get_queryset(self):
-
-#         dbId = self.kwargs['dbId']
-#         return models.LigandEntity.objects.filter(dbId=dbId).prefetch_related("well__plate__screen__assay")
