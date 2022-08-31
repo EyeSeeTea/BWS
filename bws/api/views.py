@@ -1,4 +1,5 @@
 import re
+import json
 import logging
 import requests
 from django.http import HttpResponse, HttpResponseNotFound
@@ -177,3 +178,138 @@ class StructureToTopicViewSet(viewsets.ModelViewSet):
     search_fields = ['topic', 'structure']
     ordering_fields = ['topic', 'structure']
     ordering = ['topic']
+
+
+class FunPDBeEntryListView(APIView):
+    """
+    Retrieve a list of all FunPDBe entries.
+    """
+
+    def get(self, request, format=None):
+        """
+        Get a list of entries
+        """
+        path = FUNPDBE_DATA_PATH
+        entries = []
+        try:
+            logger.debug("Reading data folder: %s", path)
+            for root, dirs, data_files in os.walk(path):
+                for file in data_files:
+                    entries.append({"entry": {
+                        "pdb": os.path.basename(file).split(".", 1)[0][:4],
+                        "filename": file}
+                    })
+
+        except(Exception) as exc:
+            logger.exception(exc)
+
+        return Response(entries)
+
+
+class FunPDBeEntryByPDBView(APIView):
+    """
+    Retrieve a FunPDBe JSON file for the PDB entry
+    """
+
+    def get(self, request, pdb_id, format=None):
+        path = os.path.join(FUNPDBE_DATA_PATH, pdb_id[1:3])
+        entries = []
+        try:
+            logger.debug("Reading data folder: %s", path)
+            data_files = [x for x in os.listdir(
+                path) if x.startswith(pdb_id) and x.endswith("-emv.json")]
+
+            if not data_files:
+                return not_found_resp(pdb_id)
+
+            for file in data_files:
+                entries.append({"entry": {
+                    "pdb": os.path.basename(data_files[0]).split(".", 1)[0],
+                    "filename": file}
+                })
+
+            with open(os.path.join(path, data_files[0])) as json_file:
+                data = json.load(json_file)
+
+        except(Exception) as exc:
+            logger.exception(exc)
+            return not_found_resp(pdb_id)
+
+        return Response(data)
+
+
+def getEmdbMappings(pdb_id):
+    """
+    Find all PDB models fitted in a volume map, by EMDB ID
+    Use the 3DBionotes API:
+        https://3dbionotes.cnb.csic.es/api/mappings/PDB/EMDB/7a02/
+    """
+    url = BIONOTES_URL + "/" + MAPPINGS_WS_PATH + "/PDB/EMDB/" + pdb_id
+    logger.debug("Check Bionotes WS for EMDB mappings for %s", pdb_id)
+    logger.debug("WS-qry: %s", url)
+    try:
+        headers = {'accept': 'application/json'}
+        resp = requests.get(url, headers=headers, timeout=(2, 5), verify=False)
+        jresp = resp.json()
+
+        logger.debug("WS-response: %s, %s", resp.status_code, jresp)
+        if not resp.status_code == 200:
+            return []
+        return jresp[pdb_id]
+
+    except Exception as exc:
+        logger.exception(exc)
+
+
+def getPdbMappings(emdb_id):
+    """
+    Find all EMDB volume maps with fitted atomic models, by PDB ID
+    Use the 3DBionotes API:
+        https://3dbionotes.cnb.csic.es/api/mappings/EMDB/PDB/EMD-2810
+    """
+    url = BIONOTES_URL + "/" + MAPPINGS_WS_PATH + "/EMDB/PDB/" + emdb_id
+    logger.debug("Check Bionotes WS for PDB mappings for %s", emdb_id)
+    logger.debug("WS-qry: %s", url)
+    try:
+        headers = {'accept': 'application/json'}
+        resp = requests.get(url, headers=headers, timeout=(2, 5))
+        jresp = resp.json()
+
+        logger.debug("WS-response: %s, %s", resp.status_code, jresp)
+        if not resp.status_code == 200:
+            return []
+        return jresp[emdb_id]
+
+    except Exception as exc:
+        logger.exception(exc)
+
+
+class FunPDBeEntryByPDBMethodView(APIView):
+    """
+    Retrieve a JSON file with EMV validation data for the PDB entry
+    by validation method
+    """
+
+    def get(self, request, pdb_id, method, format=None):
+        volmaps = getEmdbMappings(pdb_id)
+        if volmaps:
+            # there should be only one
+            emdb_id = volmaps[0]
+            path = os.path.join(EMDB_DATA_DIR, emdb_id.lower())
+            try:
+                logger.debug("Reading data folder: %s", path)
+                # emd-31319_7ey8_emv_mapq.json
+                data_files = [x for x in os.listdir(path) if x.startswith(emdb_id.lower() + '_' + pdb_id)
+                              and x.endswith(method + '.json')]
+                if data_files:
+                    # there should be only one
+                    filepath = os.path.join(path, data_files[0])
+                    with open(filepath, 'r') as jfile:
+                        data = jfile.read()
+                    response = HttpResponse(content=data)
+                    response['Content-Type'] = 'application/json'
+                    return response
+            except(Exception) as exc:
+                logger.exception(exc)
+
+        return Response(status=status.HTTP_404_NOT_FOUND)
