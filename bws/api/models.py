@@ -235,11 +235,8 @@ class PdbToLigand(models.Model):
         return '(%s) %s' % (self.pdbId.dbId, self.ligand.name)
 
 
-#TODO: cuando hagas el pubchemid como PK tendras que borrar los fields pubChemCompoundId y pubChemURL porque ahora pasaran a ser  dbId y externalLink
 class LigandEntity(models.Model):
-    dbId = models.CharField(max_length=20, blank=False,
-                            default='', primary_key=True)
-
+    dbId = models.CharField(max_length=20, null=True, blank=True)
     ligandType = models.CharField(max_length=25, null=True, blank=True)
     name = models.CharField(max_length=200)
     formula = models.CharField(max_length=200, null=True, blank=True)
@@ -256,7 +253,7 @@ class LigandEntity(models.Model):
     canonicalSMILES = models.CharField(max_length=200, null=True, blank=True)
 
     def __str__(self):
-        return '%s' % (self.dbId)
+        return '%s' % (self.chebiId if self.chebiId else self.pubChemCompoundId)
 
 
 class RefinedModelSource(models.Model):

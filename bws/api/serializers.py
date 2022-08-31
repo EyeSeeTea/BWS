@@ -2,6 +2,7 @@ from rest_framework import serializers
 from collections import OrderedDict
 from .models import *
 
+
 class DataFileNestedSerializer(serializers.ModelSerializer):
     class Meta:
         model = DataFile
@@ -31,30 +32,37 @@ class AuthorSerializer(serializers.ModelSerializer):
         model = Author
         fields = ['name', 'email', 'address', 'orcid', 'role']
 
+
 class PublicationSerializer(serializers.ModelSerializer):
     authors = AuthorSerializer(read_only=True, many=True)
+
     class Meta:
         model = Publication
-        fields = ['title', 'journal_abbrev', 'issn', 'issue', 'volume', 'page_first', 'page_last', 'year', 'doi', 'pubMedId', 'PMCId', 'abstract', 'authors']
+        fields = ['title', 'journal_abbrev', 'issn', 'issue', 'volume', 'page_first',
+                  'page_last', 'year', 'doi', 'pubMedId', 'PMCId', 'abstract', 'authors']
+
 
 class OrganismSerializer(serializers.ModelSerializer):
     class Meta:
         model = Organism
-        fields = ['ncbi_taxonomy_id', 'scientific_name', 'common_name', 'externalLink']
+        fields = ['ncbi_taxonomy_id', 'scientific_name',
+                  'common_name', 'externalLink']
+
 
 class WellEntitySerializer(serializers.ModelSerializer):
-    
-     class Meta:
+
+    class Meta:
         model = WellEntity
-        fields =  ['dbId', 'name', 'externalLink', 'imagesIds', 'imageThumbailLink', 'cellLine', 'cellLineTermAccession', 'controlType', 'qualityControl', 'micromolarConcentration', 'percentageInhibition', 'hitOver75Activity', 'numberCells', 'phenotypeAnnotationLevel', 'channels']
+        fields = ['dbId', 'name', 'externalLink', 'imagesIds', 'imageThumbailLink', 'cellLine', 'cellLineTermAccession', 'controlType', 'qualityControl',
+                  'micromolarConcentration', 'percentageInhibition', 'hitOver75Activity', 'numberCells', 'phenotypeAnnotationLevel', 'channels']
 
 
 class PlateEntitySerializer(serializers.ModelSerializer):
     wells = serializers.SerializerMethodField()
 
     class Meta:
-       model = PlateEntity
-       fields = ['dbId', 'name', 'wells']
+        model = PlateEntity
+        fields = ['dbId', 'name', 'wells']
 
     def get_wells(self, obj):
 
@@ -71,19 +79,21 @@ class PlateEntitySerializer(serializers.ModelSerializer):
                     wellid_list.append(w.dbId)
 
             # Given the unique list of Well IDs, get queryset including all WellEntity models and pass it to WellEntitySerializer
-                #TODO: Optimize to avoid querying the database. Instead, try to get the same info from the obj (Plate queryset)
+                # TODO: Optimize to avoid querying the database. Instead, try to get the same info from the obj (Plate queryset)
             well_qs = WellEntity.objects.filter(dbId__in=wellid_list)
             return WellEntitySerializer(many=True,  context=context).to_representation(well_qs)
 
-        #NOTE: is this line useful? (adapted from https://stackoverflow.com/questions/35878235/django-rest-framework-filter-related-data-based-on-parent-object)
-        #return WellEntitySerializer(many=True).to_representation(obj.wells.all())
+        # NOTE: is this line useful? (adapted from https://stackoverflow.com/questions/35878235/django-rest-framework-filter-related-data-based-on-parent-object)
+        # return WellEntitySerializer(many=True).to_representation(obj.wells.all())
 
 
 class ScreenEntitySerializer(serializers.ModelSerializer):
     plates = serializers.SerializerMethodField()
+
     class Meta:
-       model = ScreenEntity
-       fields = ['dbId', 'name', 'type', 'typeTermAccession', 'technologyType', 'technologyTypeTermAccession', 'imagingMethod', 'imagingMethodTermAccession', 'sampleType', 'dataDoi', 'plateCount', 'plates']
+        model = ScreenEntity
+        fields = ['dbId', 'name', 'type', 'typeTermAccession', 'technologyType', 'technologyTypeTermAccession',
+                  'imagingMethod', 'imagingMethodTermAccession', 'sampleType', 'dataDoi', 'plateCount', 'plates']
 
     def get_plates(self, obj):
 
@@ -103,20 +113,23 @@ class ScreenEntitySerializer(serializers.ModelSerializer):
             unique_plateid_list = list(set(plateid_list))
 
             # Given the unique list of Plate IDs, get queryset including all PlateEntity models and pass it to PlateEntitySerializer
-                #TODO: Optimize to avoid querying the database. Instead, try to get the same info from the obj (Screen queryset)
+            # TODO: Optimize to avoid querying the database. Instead, try to get the same info from the obj (Screen queryset)
             plate_qs = PlateEntity.objects.filter(dbId__in=unique_plateid_list)
             return PlateEntitySerializer(many=True,  context=context).to_representation(plate_qs)
 
-        #NOTE: is this line useful? (adapted from https://stackoverflow.com/questions/35878235/django-rest-framework-filter-related-data-based-on-parent-object)
-        #return PlateEntitySerializer(many=True).to_representation(obj.files.all())
+        # NOTE: is this line useful? (adapted from https://stackoverflow.com/questions/35878235/django-rest-framework-filter-related-data-based-on-parent-object)
+        # return PlateEntitySerializer(many=True).to_representation(obj.files.all())
+
 
 class AssayEntitySerializer(serializers.ModelSerializer):
     screens = serializers.SerializerMethodField()
     organisms = OrganismSerializer(read_only=True, many=True)
     publications = PublicationSerializer(read_only=True, many=True)
+
     class Meta:
         model = AssayEntity
-        fields = ['dbId', 'name', 'description', 'assayType', 'assayTypeTermAccession', 'organisms', 'externalLink','releaseDate', 'publications', 'dataDoi', 'BIAId', 'screenCount', 'screens']
+        fields = ['dbId', 'name', 'description', 'assayType', 'assayTypeTermAccession', 'organisms',
+                  'externalLink', 'releaseDate', 'publications', 'dataDoi', 'BIAId', 'screenCount', 'screens']
 
     def get_screens(self, obj):
 
@@ -133,22 +146,26 @@ class AssayEntitySerializer(serializers.ModelSerializer):
                     for w in p.wells.all():
                         if w.ligand_id == ligand_id:
                             screenid_list.append(s.dbId)
-            
+
             unique_screenid_list = list(set(screenid_list))
 
             # Given the unique list of Screen IDs, get queryset including all ScreenEntity models and pass it to ScreenEntitySerializer
-                #TODO: Optimize to avoid querying the database. Instead, try to get the same info from the obj (Assay queryset)
-            screen_qs = ScreenEntity.objects.filter(dbId__in=unique_screenid_list)
+            # TODO: Optimize to avoid querying the database. Instead, try to get the same info from the obj (Assay queryset)
+            screen_qs = ScreenEntity.objects.filter(
+                dbId__in=unique_screenid_list)
             return ScreenEntitySerializer(many=True,  context=context).to_representation(screen_qs)
 
-        #NOTE: is this line useful? (adapted from https://stackoverflow.com/questions/35878235/django-rest-framework-filter-related-data-based-on-parent-object)
-        #return ScreenEntitySerializer(many=True).to_representation(obj.files.all())
+        # NOTE: is this line useful? (adapted from https://stackoverflow.com/questions/35878235/django-rest-framework-filter-related-data-based-on-parent-object)
+        # return ScreenEntitySerializer(many=True).to_representation(obj.files.all())
+
 
 class FeatureTypeSerializer(serializers.ModelSerializer):
     assays = serializers.SerializerMethodField()
+
     class Meta:
         model = FeatureType
-        fields = ['dataSource', 'name', 'description', 'externalLink', 'assays']
+        fields = ['dataSource', 'name',
+                  'description', 'externalLink', 'assays']
 
     def get_assays(self, obj):
         # Get ligand ID from queryset context to pass it to AssayEntitySerializer
@@ -165,20 +182,23 @@ class FeatureTypeSerializer(serializers.ModelSerializer):
                         for w in p.wells.all():
                             if w.ligand_id == ligand_id:
                                 assayid_list.append(st.dbId)
-            
+
             unique_assayid_list = list(set(assayid_list))
 
             # Given the unique list of Assay IDs, get queryset including all AssayEntity models and pass it to AssayEntitySerializer
-                #TODO: Optimize to avoid querying the database. Instead, try to get the same info from the obj (FeatureType queryset)
+            # TODO: Optimize to avoid querying the database. Instead, try to get the same info from the obj (FeatureType queryset)
             assay_qs = AssayEntity.objects.filter(dbId__in=unique_assayid_list)
             return AssayEntitySerializer(many=True,  context=context).to_representation(assay_qs)
 
+
 class LigandToImageDataSerializer(serializers.ModelSerializer):
-    
+
     imageData = serializers.SerializerMethodField()
+
     class Meta:
         model = LigandEntity
-        fields = ['dbId', 'name', 'ligandType', 'formula', 'formula_weight', 'details', 'altNames', 'SMILES', 'IUPACInChIkey', 'pubChemCompoundId', 'pubChemURL', 'imageLink', 'externalLink', 'imageData']
+        fields = ['dbId', 'name', 'ligandType', 'formula', 'formula_weight', 'details', 'altNames', 'SMILES',
+                  'IUPACInChIkey', 'pubChemCompoundId', 'pubChemURL', 'imageLink', 'externalLink', 'imageData']
         depth = 6
 
     def get_imageData(self, obj):
@@ -194,14 +214,16 @@ class LigandToImageDataSerializer(serializers.ModelSerializer):
         unique_featureTypeId_list = list(set(featureTypeId_list))
 
         # Given the unique list of FeatureType IDs, get queryset including all FeatureType models and pass it to FeatureTypeSerializer
-            #TODO: Optimize to avoid querying the database. Instead, try to get the same info from the obj (Ligand queryset)
-        featureType_qs = FeatureType.objects.filter(pk__in=unique_featureTypeId_list)
+        # TODO: Optimize to avoid querying the database. Instead, try to get the same info from the obj (Ligand queryset)
+        featureType_qs = FeatureType.objects.filter(
+            pk__in=unique_featureTypeId_list)
         return FeatureTypeSerializer(many=True, context=context).to_representation(featureType_qs)
-        
+
     # To avoid showing imageData field in final JSON file when there is no info associated to it (avoid "imgaData []")
     def to_representation(self, value):
-        repr_dict = super(serializers.ModelSerializer, self).to_representation(value)
-        return OrderedDict((k, v) for k, v in repr_dict.items() 
+        repr_dict = super(serializers.ModelSerializer,
+                          self).to_representation(value)
+        return OrderedDict((k, v) for k, v in repr_dict.items()
                            if v not in [None, [], '', {}])
 
 
@@ -230,3 +252,44 @@ class RefinedModelSourceSerializer(serializers.ModelSerializer):
         model = RefinedModelSource
         fields = ['name', 'description', 'externalLink']
 
+
+class StructureMinimalSerializer(serializers.ModelSerializer):
+    title = serializers.SerializerMethodField('get_title')
+    emdb = serializers.StringRelatedField(source='emdbId')
+    pdb = serializers.StringRelatedField(source='pdbId')
+
+    class Meta:
+        model = HybridModel
+        fields = [
+            'title',
+            'emdb',
+            'pdb',
+        ]
+
+    def get_title(self, obj):
+        return obj.emdbId.title if obj.emdbId else obj.pdbId.title if obj.pdbId else ''
+
+
+class StructureToTopicSerializer(serializers.ModelSerializer):
+    Structure = StructureMinimalSerializer(source='structure')
+
+    class Meta:
+        model = StructureTopic
+        fields = ['Structure']
+
+
+class TopicSerializer(serializers.ModelSerializer):
+    structures = StructureToTopicSerializer(many=True)
+
+    class Meta:
+        model = Topic
+        fields = ['name', 'description', 'structures']
+
+
+class StructureTopicSerializer(serializers.ModelSerializer):
+    topic = serializers.StringRelatedField()
+    Structure = StructureMinimalSerializer(source='structure')
+
+    class Meta:
+        model = StructureTopic
+        fields = ['topic', 'Structure']

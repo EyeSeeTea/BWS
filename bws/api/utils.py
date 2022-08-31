@@ -1147,6 +1147,7 @@ def updateLigandEntitymmCifFile(lType, indx, entityId, mmCifDict):
                                     '/property/MolecularFormula/json', jKey='MolecularFormula')
 
     obj = None
+    #  TODO: be aware dbId is not longer the primary key
     try:
         obj, created = LigandEntity.objects.update_or_create(
             dbId=ligandId,
