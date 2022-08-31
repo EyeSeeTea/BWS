@@ -139,6 +139,12 @@ if not os.path.exists(LOGS_PATH):
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
+    'formatters': {
+        'simple': {
+            'format': '{asctime} {levelname} {message}',
+            'style': '{',
+        },
+    },
     'handlers': {
         'file': {
             'level': 'DEBUG',
@@ -146,6 +152,7 @@ LOGGING = {
             'filename': os.path.join(LOGS_PATH, 'bws.log'),
             'maxBytes': 1024*1024*50,  # 50MB
             'backupCount': 7,
+            'formatter': 'simple'
         },
     },
     'loggers': {
@@ -202,3 +209,4 @@ DEBUG_TOOLBAR_CONFIG = {
     "SHOW_TOOLBAR_CALLBACK": lambda request: True,
 }
 
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 6000 # higher than the count of fields

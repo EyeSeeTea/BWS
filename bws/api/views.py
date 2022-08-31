@@ -153,3 +153,13 @@ class RefinedModelViewSet(viewsets.ModelViewSet):
     search_fields = ['method', 'emdbId',  'pdbId']
     ordering_fields = ['method', 'emdbId',  'pdbId']
     ordering = ['method']
+
+
+
+class LigandToImageDataViewSet(viewsets.ModelViewSet):
+    """
+    This viewset automatically provides list of all ligand entries and "imageData" associated to them.
+    """
+    queryset = LigandEntity.objects.prefetch_related("well__plate__screen__assay")
+    serializer_class = LigandToImageDataSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]

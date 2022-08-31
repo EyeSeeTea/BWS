@@ -3,17 +3,16 @@ import logging
 import os
 import re
 from subprocess import check_output
-from api import models
-from api.models import ENTRY_TYPES, FILE_TYPES
 from django.core.exceptions import ValidationError
 from api.study_parser import StudyParser
-import fnmatch
-from Bio.PDB import MMCIF2Dict
-from datetime import datetime
-from bs4 import BeautifulSoup
-import requests
 from .dataPaths import *
 from .models import *
+import requests
+import fnmatch
+from Bio.PDB import MMCIF2Dict
+from bs4 import BeautifulSoup
+from datetime import datetime
+import pandas as pd
 
 
 STATUS = {"REL": "Released",
@@ -33,6 +32,20 @@ REGEX_PDB_FILE = re.compile('^(pdb)\d\w{3}\.ent$')
 REGEX_LR_FILE = re.compile('^\d\w{3}\.(deepres|monores)\.pdb$')
 REGEX_MAP2MODELQUALITY_FILE = re.compile('^\d\w{3}\.(mapq|fscq)\.pdb$')
 REGEX_IDR_ID = re.compile('(idr\d{4})-.*-.*')
+
+SCREEN_TABLE_URL = 'https://idr.openmicroscopy.org/webgateway/table/Screen/{screen_id}/query/?query=*'
+
+
+# #TODO: en caso de que haga la creacion de plate entry por url. BORRAR SI NO ES NECESARIO
+# # Create http session
+# INDEX_PAGE = "https://idr.openmicroscopy.org/webclient/?experimenter=-1"
+
+# with requests.Session() as session:
+#     request = requests.Request('GET', INDEX_PAGE)
+#     prepped = session.prepare_request(request)
+#     response = session.send(prepped)
+#     if response.status_code != 200:
+#         response.raise_for_status()
 
 
 def findGeneric(pattern, dirToLook=THORN_DATA_DIR):
@@ -78,14 +91,14 @@ class PdbEntryAnnFromMapsUtils(object):
 
         try:
             logger.debug("Searching %s in DB", targetFname)
-            fileRecord = models.DataFile.objects.get(
+            fileRecord = DataFile.objects.get(
                 filename__iexact=targetFname, fileType__iexact=ENTRY_TYPES[0])
             if fileRecord:
                 return os.path.join(fileRecord.path, fileRecord.filename)
             else:
                 logger.debug("Not found %s in DB", targetFname)
                 return None
-        except (ValueError, ValidationError, models.DataFile.DoesNotExist) as exc:
+        except (ValueError, ValidationError, DataFile.DoesNotExist) as exc:
             logger.exception(exc)
             # check from disk
             logger.debug("Searching %s in Disk", targetFname)
@@ -1402,7 +1415,7 @@ class ImageDataFromIDRAssayUtils(object):
 
         try:
             # update or create FeatureType entry 
-            FeatureTypeEntry, created = models.FeatureType.objects.update_or_create(
+            FeatureTypeEntry, created = FeatureType.objects.update_or_create(
                 name=name,
                 description=description,
                 dataSource=dataSource,
@@ -1426,7 +1439,7 @@ class ImageDataFromIDRAssayUtils(object):
         metadataFile = assayId + metadataFileExtention
 
         # Parse metadata file using StudyParser
-        studypath=os.path.join(dirToLook, assayName, metadataFile)
+        studypath = os.path.join(dirToLook, assayName, metadataFile)
         studyParserObj = StudyParser(studypath)
 
         # Create Organism entries
@@ -1447,7 +1460,7 @@ class ImageDataFromIDRAssayUtils(object):
             if TaxonRefMatchObj:                
                 try:
                     # update or create Organism entries
-                    OrganismEntry, created = models.Organism.objects.update_or_create(
+                    OrganismEntry, created = Organism.objects.update_or_create(
                         ncbi_taxonomy_id=ncbi_taxonomy_id,
                         scientific_name=scientific_name,
                         externalLink='https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=%s&lvl=0' % (ncbi_taxonomy_id))
@@ -1455,7 +1468,7 @@ class ImageDataFromIDRAssayUtils(object):
                     if created:
                         logger.debug('Created new entry: %s', OrganismEntry)
                         print('Created new entry: ', OrganismEntry)
-                except Exception as exc: #TODO: mira a ver si hay otro tipo de excepcion mas concreta que Exception
+                except Exception as exc:
                     logger.debug(exc)
             else:
                 print('Study Organism Term Source REF for "%s" different from NCBI Taxonomy: '\
@@ -1478,19 +1491,19 @@ class ImageDataFromIDRAssayUtils(object):
             for author in author_list: #TODO: incluir last name y first name en Author entries?? #TODO: quitar esta linea y poner el bucle for directamente? (for author in publication['Author List'].split(", "):)
                 try:
                     # update or create Author entries
-                    AuthorEntry, created = models.Author.objects.update_or_create(
+                    AuthorEntry, created = Author.objects.update_or_create(
                         name=author)
                     author_entry_list.append(AuthorEntry)
                     if created:
                         logger.debug('Created new entry: %s', AuthorEntry)
                         print('Created new entry: ', AuthorEntry)
-                except Exception as exc: #TODO: mira a ver si hay otro tipo de excepcion mas concreta que Exception
+                except Exception as exc:
                     logger.debug(exc)
 
             try:
                 
                 # update or create Publication entries
-                PublicationEntry, created = models.Publication.objects.update_or_create(
+                PublicationEntry, created = Publication.objects.update_or_create(
                     title=title,
                     doi=doi,
                     pubMedId=pubMedId,
@@ -1503,7 +1516,7 @@ class ImageDataFromIDRAssayUtils(object):
                 if created:
                     logger.debug('Created new entry: %s', PublicationEntry)
                     print('Created new entry: ', PublicationEntry)
-            except Exception as exc: #TODO: mira a ver si hay otro tipo de excepcion mas concreta que Exception
+            except Exception as exc:
                 logger.debug(exc)
 
         # Update Author entries with "Study Contacts" details if exist.
@@ -1524,17 +1537,17 @@ class ImageDataFromIDRAssayUtils(object):
 
             try:
                 # update or create Author entries
-                AuthorEntry, created = models.Author.objects.update_or_create(
+                AuthorEntry, created = Author.objects.update_or_create(
                     name__contains=nonExactName,
                     defaults={'email': email,'address': address, 'orcid': orcid, 'role': role}
                 )
                 if created:
                     logger.debug('Created new entry: %s', AuthorEntry)
                     print('Created new entry: ', AuthorEntry)
-            except Exception as exc: #TODO: mira a ver si hay otro tipo de excepcion mas concreta que Exception
+            except Exception as exc:
                 logger.debug(exc)
 
-        # Create Assay entry
+        # Create AssayEntity entry
         assayTitle = studyParserObj.study['Study Title']
         assayDescription = studyParserObj.study['Study Description']
         #assayExternalLinks = [assayExternalLink for assayExternalLink in studyParserObj.study['Study External URL'].split("\t")] #TODO: en los study.txt que no aparece la key ['Study External URL'] esto falla (como en idr0094-ellinger-sarscov2) SOLUCIONALO
@@ -1548,7 +1561,7 @@ class ImageDataFromIDRAssayUtils(object):
 
         try:
             # update or create Assay entry
-            AssayEntityEntry, created = models.AssayEntity.objects.update_or_create(
+            AssayEntityEntry, created = AssayEntity.objects.update_or_create(
                 name=assayTitle,
                 featureType=FeatureTypeEntry,
                 description=assayDescription,
@@ -1569,19 +1582,157 @@ class ImageDataFromIDRAssayUtils(object):
             if created:
                 logger.debug('Created new entry: %s', AssayEntityEntry)
                 print('Created new entry: ', AssayEntityEntry)
-        except Exception as exc: #TODO: mira a ver si hay otro tipo de excepcion mas concreta que Exception
+        except Exception as exc:
             logger.debug(exc)
 
         
-        # Create Screen entries
-        print(studyParserObj.components)
+        # Create ScreenEntity entries
+        REGEX_SCREEN_NAME = re.compile('.*\/(screen)(.*)')
+        custom_ascending_dbId=0 # Stablish a custom ascending Id for those ligands that has no PubChem ID associated to them.
+
+        for screen in studyParserObj.components:
+
+            
+            #screenId = #TODO: buscar id por el modulo request (script mio de api)
+
+            screenDir = screen['Comment\\[IDR Screen Name\\]'] #TODO: buscar otro nombre mas descriptivo
+            screenNameMatchObj = re.match(REGEX_SCREEN_NAME, screenDir)
+            screenName = ' '.join([screenNameMatchObj.group(1), screenNameMatchObj.group(2)])
+
+            #TODO: CAMBIAR!!
+            if screenName == 'screen A':
+                screenId = '2602'
+            else:
+                screenId = '2603'
+
+            screenDescription = screen['Screen Description']
+            screenType = screen['Screen Type']
+            screenTypeTermAccession = screen['Screen Type Term Accession']
+            screenTechnologyType = screen['Screen Technology Type']
+            screenTechnologyTypeTermAccession = screen['Screen Technology Type Term Accession']
+            screenImagingMethods = [screenImagingMethod for screenImagingMethod in screen['Screen Imaging Method'].split("\t")]
+            screenImagingTermAccessions = [screenImagingTermAccession for screenImagingTermAccession in screen['Screen Imaging Method Term Accession'].split("\t")]
+            screenSampleType = screen['Screen Sample Type']
+            #plateCount = 
+            screenDataDoi = screen['Screen Data DOI']
+
+            try:
+                # update or create Screen entries
+                ScreenEntityEntry, created = ScreenEntity.objects.update_or_create(
+                    #dbId=screenName[-1], #TODO: cambiar esto para añadir el id real del screen
+                    dbId=screenId,
+                    name=screenName,
+                    description=screenDescription,
+                    type=screenType,
+                    typeTermAccession=screenTypeTermAccession,
+                    technologyType=screenTechnologyType,
+                    technologyTypeTermAccession=screenTechnologyTypeTermAccession,
+                    imagingMethod='; '.join(screenImagingMethods),
+                    imagingMethodTermAccession='; '.join(screenImagingTermAccessions),
+                    sampleType=screenSampleType,
+                    #plateCount=plateCount,
+                    dataDoi=screenDataDoi,
+                    assay=AssayEntityEntry,                
+                )
+                if created:
+                    logger.debug('Created new entry: %s', ScreenEntityEntry)
+                    print('Created new entry: ', ScreenEntityEntry)
+            except Exception as exc:
+                logger.debug(exc)
 
 
+            '''
+            Create PlateEntity, Ligand and WellEntity entries
+            '''
+
+            #_____________ Crear Plates basado en annotation file from github ____________
+            # screenAnnotationFile = screen['Annotations'][0]['Annotation File'].split(" ")[0] #TODO: cambiar esto para el caso en el que haya mas de un elemeto en la lista screen['Annotations']
+            # annotationFilePath = os.path.join(dirToLook, screenDir, screenAnnotationFile)
+            # df = pd.read_csv(annotationFilePath)
+            
+            # print(len(df['Plate']))
+            # print(len(df['Plate'].unique()))
+            # ______________________________________________________
 
 
+            #_____________ Crear Plates basado en url from OMERO webgateway ____________
+
+            qs = {'screen_id': screenId} #TODO: cambiar esta forma de formatear a la que has usado en el resto del script
+            url = SCREEN_TABLE_URL.format(**qs)
+            
+            #TODO: uncomment
+            # # Create a dataframe from "data" key in json format output got from url
+            # jsonData = session.get(url).json()
+            # columns = jsonData['data']['columns']
+            # data = jsonData['data']['rows']
+            # screenDf = pd.DataFrame(data, columns = columns)
+            screenDf = pd.read_csv('data/%s.csv' % (screenId))
+        
+
+            # Create PlateEntity entries
+            plateDf = screenDf[['Plate', 'Plate Name']]
+            for index, row in plateDf.iterrows():
+                plateId = row['Plate']
+                plateName = row['Plate Name']
+
+                try:
+                    # update or create Plate entries
+                    PlateEntityEntry, created = PlateEntity.objects.update_or_create(
+                        dbId=plateId,
+                        name=plateName,
+                        screen=ScreenEntityEntry,
+                    )
+                    if created:
+                        logger.debug('Created new entry: %s', PlateEntityEntry)
+                        print('Created new entry: ', PlateEntityEntry)
+                except Exception as exc: 
+                    logger.debug(exc)
 
 
-    def _PRUEBAS_STUDY_TXT(self, study_txt, dirToLook=IDR_DIR): #TODO: eliminar esta funcion
-        studyParserObj = StudyParser(study_txt)
-        print(studyParserObj.study)
+            # Create LigandEntity entries
+            #TODO: ojo tienes que asegurarte que el pubchem id va a ser el id de los ligands tanto aqui como en el proyecto de JR. 
+            #TODO: no incluir las columnas que no vayas a usar como iupac name ... etc. Consulta con JR cuales si nos interesan
+            ligandDf_nan = screenDf[['Compound Name', 'Compound PubChem CID', 'Compound PubChem URL', 'Compound SMILES', 'Compound IUPAC Name', 'Compound Unichem URL', 'Compound InChIKey', 'Compound Broad Identifier']]
+            # TODO: ahora mismo solo aliminamos los NaN de 'Compound Name' porque en idr0094-ellinger-sarscov2 (unico HCS de covid hasta ahora en IDR) lo que ellos usan como unque PK para diferenciar los ligandos es el nombre. En el futuro seria intereasnte ver si lo cambian a algun ID (PubChem ID, por ejemplo) y lo podemos actualizar nosotros tb
+            ligandDf = ligandDf_nan.dropna(subset=['Compound Name']) # Drop control rows (i.e. no ligand tested).  
+            ligandDf = ligandDf.fillna({'Compound PubChem CID': 0.0}) # Fill missing values for 'Compound PubChem CID' with float 0.0
+            ligandDf['Compound PubChem CID'] = ligandDf['Compound PubChem CID'].astype(int).astype(str) # Change data type from float to str for 'Compound PubChem CID'
+            count=0
+
+            for index, row in ligandDf.iterrows():
+
+                # Stablish a custom ascending Id for those ligands that has no PubChem ID associated to them.
+                if row['Compound PubChem CID'] == '0':
+                    ligandId = 'cust' + str(custom_ascending_dbId)
+                    custom_ascending_dbId=custom_ascending_dbId+1
+                else:
+                    ligandId = row['Compound PubChem CID']
+
+                ligandName = row['Compound Name']
+                ligandSMILES = row['Compound SMILES']
+                ligandIUPACInChIkey = row['Compound InChIKey']
+
+                #TODO: solucionar!!!!!!!!!!!!!!!!!!!!!!!!! que se creen entradas de ligando a partir del Screen B (no tendria que suceder)
+                try:
+                    # update or create LigandEntity entries
+                    LigandEntityEntry, created = LigandEntity.objects.update_or_create(
+                        name=ligandName,
+                        dbId=ligandId,
+                        #SMILES=ligandSMILES,
+                        IUPACInChIkey=ligandIUPACInChIkey,
+                        # defaults={
+                        #     'dbId': ligandId, 
+                        #     'SMILES': ligandSMILES,
+                        #     'IUPACInChIkey': ligandIUPACInChIkey,
+                        #     },
+                    )
+                    if created:
+                        logger.debug('Created new entry: %s', LigandEntityEntry)
+                        print('Created new entry: ', LigandEntityEntry)
+                        count=count+1
+                        #print(count)
+                except Exception as exc:
+                    logger.debug(exc)
+
+            #print(len(ligandDf['Compound PubChem CID'].unique()))
         

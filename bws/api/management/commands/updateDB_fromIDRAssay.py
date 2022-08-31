@@ -24,5 +24,4 @@ class Command(BaseCommand):
         assayName = options['assayName'][0]
         print("Reading data for ", assayName)
         ImageDataFromIDRAssayUtils()._updateLigandEntryFromIDRAssay(assayName=assayName)
-        #ImageDataFromIDRAssayUtils()._PRUEBAS_STUDY_TXT(study_txt=assayName) #TODO: eliminar esta linea
 

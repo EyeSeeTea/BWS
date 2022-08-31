@@ -235,18 +235,19 @@ class PdbToLigand(models.Model):
         return '(%s) %s' % (self.pdbId.dbId, self.ligand.name)
 
 
+#TODO: cuando hagas el pubchemid como PK tendras que borrar los fields pubChemCompoundId y pubChemURL porque ahora pasaran a ser  dbId y externalLink
 class LigandEntity(models.Model):
     dbId = models.CharField(max_length=20, blank=False,
                             default='', primary_key=True)
 
-    ligandType = models.CharField(max_length=25, blank=True)
+    ligandType = models.CharField(max_length=25, null=True, blank=True)
     name = models.CharField(max_length=200)
-    formula = models.CharField(max_length=200)
-    formula_weight = models.FloatField()
-    details = models.CharField(max_length=200)
-    altNames = models.CharField(max_length=200)
-    imageLink = models.CharField(max_length=200)
-    externalLink = models.CharField(max_length=200)
+    formula = models.CharField(max_length=200, null=True, blank=True)
+    formula_weight = models.FloatField(null=True, blank=True)
+    details = models.CharField(max_length=200, null=True, blank=True)
+    altNames = models.CharField(max_length=200, null=True, blank=True)
+    imageLink = models.CharField(max_length=200, null=True, blank=True)
+    externalLink = models.CharField(max_length=200, null=True, blank=True)
     pubChemCompoundId = models.CharField(max_length=200, blank=True, null=True)
     systematicNames = models.CharField(max_length=200, null=True, blank=True)
     IUPACInChI = models.CharField(max_length=200, null=True, blank=True)
@@ -442,7 +443,7 @@ class FeatureEntity(models.Model):
                                     related_name='%(class)s_features', null=True, on_delete=models.CASCADE)
     description = models.TextField(blank=True, default='')
     pdbentry = models.ForeignKey(PdbEntry,
-                                 related_name='features', on_delete=models.CASCADE)
+                                 related_name='features', on_delete=models.CASCADE, null=True)
     externalLink = models.CharField(max_length=200)
 
     class meta:
