@@ -85,3 +85,4 @@ venv.bak/
 */logs/*
 *.log.*
 data/
+migrations/
