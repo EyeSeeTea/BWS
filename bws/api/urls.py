@@ -16,4 +16,11 @@ urlpatterns = [
 
     # EM Validation annotations for 3DBionotes - Protvista
     # re_path(r'^pdbAnnotFromMap/all/(?P<pdb_id>\d\w{3})/(?P<chain_id>\w{1})/?(?P<modified_model>(pdb-redo|isolde))?/$', views.PdbEntryAllAnnFromMapView.as_view()),
+
+    # FunPDBe, integration with PDBe-KB
+    re_path(r'^funpdbe/$', views.FunPDBeEntryListView.as_view()),
+    re_path(r'^funpdbe/(?P<pdb_id>\d[a-zA-Z]\w{2})/$', views.FunPDBeEntryByPDBView.as_view()),
+    re_path(r'^funpdbe/(?P<pdb_id>\d[a-zA-Z]\w{2})/(?P<method>(deepres|monores|blocres|mapq|fscq))/$',
+            views.FunPDBeEntryByPDBMethodView.as_view()),
+
 ]
