@@ -1,15 +1,18 @@
-import fnmatch
-from Bio.PDB import MMCIF2Dict
-from datetime import datetime
-from bs4 import BeautifulSoup
-import requests
 import json
 import logging
 import os
 import re
+from subprocess import check_output
 from django.core.exceptions import ValidationError
+from api.study_parser import StudyParser
 from .dataPaths import *
 from .models import *
+import requests
+import fnmatch
+from Bio.PDB import MMCIF2Dict
+from bs4 import BeautifulSoup
+from datetime import datetime
+import pandas as pd
 
 
 STATUS = {"REL": "Released",
@@ -19,9 +22,50 @@ STATUS = {"REL": "Released",
           "HOLD2": "2 year hold"}
 FILE_EXT_PATTERN = '*.cif'
 
-
 logger = logging.getLogger(__name__)
 
+PDB_FOLDER_PATTERN = re.compile(".*/(\d\w{3})/.*\.pdb$")
+
+REGEX_EMDB_ID = re.compile('^emd-\d{4,5}$')
+REGEX_VOL_FILE = re.compile('^(emd)-\d{4,5}\.map$')
+REGEX_PDB_FILE = re.compile('^(pdb)\d\w{3}\.ent$')
+REGEX_LR_FILE = re.compile('^\d\w{3}\.(deepres|monores)\.pdb$')
+REGEX_MAP2MODELQUALITY_FILE = re.compile('^\d\w{3}\.(mapq|fscq)\.pdb$')
+REGEX_IDR_ID = re.compile('(idr\d{4})-.*-.*')
+
+SCREEN_TABLE_URL = 'https://idr.openmicroscopy.org/webgateway/table/Screen/{screen_id}/query/?query=*'
+
+
+# #TODO: en caso de que haga la creacion de plate entry por url. BORRAR SI NO ES NECESARIO
+# # Create http session
+# INDEX_PAGE = "https://idr.openmicroscopy.org/webclient/?experimenter=-1"
+
+# with requests.Session() as session:
+#     request = requests.Request('GET', INDEX_PAGE)
+#     prepped = session.prepare_request(request)
+#     response = session.send(prepped)
+#     if response.status_code != 200:
+#         response.raise_for_status()
+
+
+def findGeneric(pattern, dirToLook=THORN_DATA_DIR):
+    data = {}
+    cmd = ["find", os.path.join(dirToLook, "pdb"), "-wholename", pattern]
+    logger.debug(" ".join(cmd))
+    isoldesCandidates = check_output(cmd).decode()
+    for candidate in isoldesCandidates.split("\n"):
+        matchObj = re.match(PDB_FOLDER_PATTERN, candidate)
+        if matchObj:
+            pdbId = matchObj.group(1)
+            try:
+                data[pdbId].append(candidate)
+            except KeyError:
+                data[pdbId] = [candidate]
+    return data
+
+
+def findIDR(dirToLook=IDR_DIR):
+    return findGeneric("*isolde/*pdb", dirToLook=dirToLook)
 
 class PdbEntryAnnFromMapsUtils(object):
 
@@ -47,14 +91,14 @@ class PdbEntryAnnFromMapsUtils(object):
 
         try:
             logger.debug("Searching %s in DB", targetFname)
-            fileRecord = models.DataFile.objects.get(
+            fileRecord = DataFile.objects.get(
                 filename__iexact=targetFname, fileType__iexact=ENTRY_TYPES[0])
             if fileRecord:
                 return os.path.join(fileRecord.path, fileRecord.filename)
             else:
                 logger.debug("Not found %s in DB", targetFname)
                 return None
-        except (ValueError, ValidationError, models.DataFile.DoesNotExist) as exc:
+        except (ValueError, ValidationError, DataFile.DoesNotExist) as exc:
             logger.exception(exc)
             # check from disk
             logger.debug("Searching %s in Disk", targetFname)
@@ -625,10 +669,6 @@ def readmmCifFile(mmCifDict):
 
     hybridmodelObj = updateHybridModel(emdbObj, pdbObj)
 
-    # ToDo find a way to select the topic from the dirname
-    topicObj = Topic.objects.get(name='COVID19')
-    structTopicObj = updateStructureTopic(hybridmodelObj, topicObj)
-
     # get list of Polymer Entities (not ligands)
     entityList = getPdbToEntityListmmCifFile(mmCifDict, pdbObj)
 
@@ -683,6 +723,109 @@ def updatePdbentry(entryId, title, status, releaseDate, method, keywords):
         logger.exception(exc)
         print(exc, os.strerror)
     return obj
+
+
+def getCitationAuthors(mmCifDict, citation):
+    auths = []
+    # _citation_author.name
+    # _citation_author.ordinal
+    # _citation_author.identifier_ORCID
+    names = mmCifDict.get('_citation_author.name', '')
+    orcids = mmCifDict.get('_citation_author.identifier_ORCID', '')
+    ordinals = mmCifDict.get('_citation_author.ordinal', '')
+    for idx, name in enumerate(names):
+        orcid = orcids[idx].replace('?', '') if orcids else ''
+        ordinal = ordinals[idx].replace('?', '') if ordinals else ''
+        authorObj = updatePublicationAuthor(name, orcid, ordinal, citation)
+        auths.append(authorObj)
+    return auths
+
+
+def updatePublicationAuthor(name, orcid, ordinal, publication):
+    obj = None
+    author = updateAuthor(name, orcid)
+    try:
+        obj, created = PublicationAuthor.objects.update_or_create(
+            publication=publication,
+            author=author,
+            defaults={
+                'ordinal': ordinal,
+            })
+        if created:
+            logger.debug('Created new: %s', obj)
+            print('Created new', obj)
+        else:
+            logger.debug('Updated: %s', obj)
+            print('Updated', obj)
+    except Exception as exc:
+        logger.exception(exc)
+        print(exc, os.strerror)
+    return obj
+
+
+def updatePublication(title, journal, issn, issue, volume, firstPage, lastPage, year, doi, pubMedId, abstract):
+    obj = None
+    try:
+        obj, created = Publication.objects.update_or_create(
+            title=title,
+            defaults={
+                'journal_abbrev': journal,
+                'issn': issn,
+                'issue': issue,
+                'volume': volume,
+                'page_first': firstPage,
+                'page_last': lastPage,
+                'year': year,
+                'doi': doi,
+                'pubMedId': pubMedId,
+                'abstract': abstract
+            })
+        if created:
+            logger.debug('Created new: %s', obj)
+            print('Created new', obj)
+        else:
+            logger.debug('Updated: %s', obj)
+            print('Updated', obj)
+    except Exception as exc:
+        logger.exception(exc)
+        print(exc, os.strerror)
+    return obj
+
+
+def getPublications(mmCifDict):
+    objs = []
+    titleList = mmCifDict.get('_citation.title', '')
+    journalList = mmCifDict.get('_citation.journal_abbrev', '')
+    issnList = mmCifDict.get('_citation.journal_id_ISSN', '')
+    issueList = mmCifDict.get('_citation.journal_issue', '')
+    volumeList = mmCifDict.get('_citation.journal_volume', '')
+    firsPagetList = mmCifDict.get('_citation.page_first', '')
+    lastPageList = mmCifDict.get('_citation.page_last', '')
+    yearList = mmCifDict.get('_citation.year', '')
+    doiList = mmCifDict.get('_citation.pdbx_database_id_DOI', '')
+    pubMedList = mmCifDict.get('_citation.pdbx_database_id_PubMed', '')
+    abstractList = mmCifDict.get('_citation.abstract', '')
+    for idx, title in enumerate(titleList):
+        journal = journalList[idx].replace('?', '') if journalList else ''
+        issn = issnList[idx].replace('?', '') if issnList else ''
+        issue = issueList[idx].replace('?', '') if issueList else ''
+        volume = volumeList[idx].replace('?', '') if volumeList else ''
+        firstPage = firsPagetList[idx].replace(
+            '?', '') if firsPagetList else ''
+        lastPage = lastPageList[idx].replace('?', '') if lastPageList else ''
+        year = yearList[idx].replace('?', '') if yearList else ''
+        doi = doiList[idx].replace('?', '') if doiList else ''
+        pubMedId = pubMedList[idx].replace('?', '') if pubMedList else ''
+        abstract = abstractList[idx].replace('?', '') if abstractList else ''
+
+        refObj = updatePublication(
+            title, journal, issn, issue, volume, firstPage, lastPage, year, doi, pubMedId, abstract)
+        objs.append(refObj)
+
+        auths = getCitationAuthors(mmCifDict, refObj)
+        # pubs = updateCitationToPdb(refObj, entryDetails)
+
+    return objs
 
 
 def updatePdbEntrymmCifFile(mmCifDict, entryId):
@@ -1004,6 +1147,7 @@ def updateLigandEntitymmCifFile(lType, indx, entityId, mmCifDict):
                                     '/property/MolecularFormula/json', jKey='MolecularFormula')
 
     obj = None
+    #  TODO: be aware dbId is not longer the primary key
     try:
         obj, created = LigandEntity.objects.update_or_create(
             dbId=ligandId,
@@ -1248,104 +1392,348 @@ def updatePdbEntryDetails(mmCifDict, pdbObj):
     return obj
 
 
-def updatePublication(title, journal, issn, issue, volume, firstPage, lastPage, year, doi, pubMedId, abstract):
-    obj = None
-    try:
-        obj, created = Publication.objects.update_or_create(
-            title=title,
-            defaults={
-                'journal_abbrev': journal,
-                'issn': issn,
-                'issue': issue,
-                'volume': volume,
-                'page_first': firstPage,
-                'page_last': lastPage,
-                'year': year,
-                'doi': doi,
-                'pubMedId': pubMedId,
-                'abstract': abstract
-            })
-        if created:
-            logger.debug('Created new: %s', obj)
-            print('Created new', obj)
-        else:
-            logger.debug('Updated: %s', obj)
-            print('Updated', obj)
-    except Exception as exc:
-        logger.exception(exc)
-        print(exc, os.strerror)
-    return obj
+
+class ImageDataFromIDRAssayUtils(object):
+
+    
+    def _updateAssayDirsFromIDR(self, dirToLook=IDR_DIR):
+        #TODO: crear aqui unas lineas para que se saque un registo.txt con la fecha y el nombre de los directorios de assays 
+        # (idrNNNN-lastname-example) que se vayan importando para saber cuales son los dirs que quedan por hacer updateLigandEntryFromIDRAssay()
+        pass
+
+    def _updateLigandEntryFromIDRAssay(self, assayName, dirToLook=IDR_DIR):
+        print("updateLigandEntryFromIDRAssay")
+
+        '''
+         Create FeatureType entry
+        '''
+        name = 'High-Content Screening Assay'
+        description = 'High throughput sample analysis of collections of compounds that provide '\
+            'a variety of chemically diverse structures that can be used to identify structure types '\
+            'that have affinity with pharmacological targets. (Source Accession: EFO_0007553)'
+        dataSource = 'The Image Data Resource (IDR)'
+        externalLink = 'https://idr.openmicroscopy.org/'
+
+        try:
+            # update or create FeatureType entry 
+            FeatureTypeEntry, created = FeatureType.objects.update_or_create(
+                name=name,
+                description=description,
+                dataSource=dataSource,
+                externalLink=externalLink)
+            if created:
+                logger.debug('Created new entry: %s', FeatureTypeEntry)
+                print('Created new entry: ', FeatureTypeEntry)
+        except Exception as exc: #TODO: mira a ver si hay otro tipo de excepcion mas concreta que Exception
+            logger.debug(exc)
 
 
-def updatePublicationAuthor(name, orcid, ordinal, publication):
-    obj = None
-    author = updateAuthor(name, orcid)
-    try:
-        obj, created = PublicationAuthor.objects.update_or_create(
-            publication=publication,
-            author=author,
-            defaults={
-                'ordinal': ordinal,
-            })
-        if created:
-            logger.debug('Created new: %s', obj)
-            print('Created new', obj)
-        else:
-            logger.debug('Updated: %s', obj)
-            print('Updated', obj)
-    except Exception as exc:
-        logger.exception(exc)
-        print(exc, os.strerror)
-    return obj
+        '''
+         Create Organism, Author, Publication, AssayEntity and ScreenEntity entries
+        '''
+
+        # Get ID and metadata file for IDR assay
+        matchObj = re.match(REGEX_IDR_ID, assayName)
+        if matchObj:
+            assayId = matchObj.group(1)
+        metadataFileExtention = '-study.txt'
+        metadataFile = assayId + metadataFileExtention
+
+        # Parse metadata file using StudyParser
+        studypath = os.path.join(dirToLook, assayName, metadataFile)
+        studyParserObj = StudyParser(studypath)
+
+        # Create Organism entries
+        #TODO: Crear una try/except para los casos en que no exista studyParserObj.study['Study Organism'] OR ['Study Organism Term Source REF'] OR ['Study Organism Term Accession'] y por tanto no se puedan dar estas lineas?? Ten en cuenta que en study_parser.ỳ aparecen como opcionales las 3
+        REGEX_TAXON_REF = re.compile('(ncbitaxon).*')
+        organisms = [organism for organism in studyParserObj.study['Study Organism'].split("\t")]
+        organismTermSources = [termSource for termSource in studyParserObj.study['Study Organism Term Source REF'].split("\t")]
+        organismTermAccessions = [termAccession for termAccession in studyParserObj.study['Study Organism Term Accession'].split("\t")]
+        organism_entry_list = []
+
+        for organism in zip(organisms, organismTermSources, organismTermAccessions):
+            scientific_name = organism[0]
+            TaxonTermSource = organism[1]
+            ncbi_taxonomy_id = organism[2]
+            
+            # Check that the Study Organism Term Source REF is NCBI Taxonomy
+            TaxonRefMatchObj = re.match(REGEX_TAXON_REF, TaxonTermSource.lower())
+            if TaxonRefMatchObj:                
+                try:
+                    # update or create Organism entries
+                    OrganismEntry, created = Organism.objects.update_or_create(
+                        ncbi_taxonomy_id=ncbi_taxonomy_id,
+                        scientific_name=scientific_name,
+                        externalLink='https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=%s&lvl=0' % (ncbi_taxonomy_id))
+                    organism_entry_list.append(OrganismEntry)
+                    if created:
+                        logger.debug('Created new entry: %s', OrganismEntry)
+                        print('Created new entry: ', OrganismEntry)
+                except Exception as exc:
+                    logger.debug(exc)
+            else:
+                print('Study Organism Term Source REF for "%s" different from NCBI Taxonomy: '\
+                    '\n\tStudy Organism Term Source REF: %s \n\tStudy Organism Term Accession: %s' \
+                    % (scientific_name, TaxonTermSource, ncbi_taxonomy_id))
 
 
-def getCitationAuthors(mmCifDict, citation):
-    auths = []
-    # _citation_author.name
-    # _citation_author.ordinal
-    # _citation_author.identifier_ORCID
-    names = mmCifDict.get('_citation_author.name', '')
-    orcids = mmCifDict.get('_citation_author.identifier_ORCID', '')
-    ordinals = mmCifDict.get('_citation_author.ordinal', '')
-    for idx, name in enumerate(names):
-        orcid = orcids[idx].replace('?', '') if orcids else ''
-        ordinal = ordinals[idx].replace('?', '') if ordinals else ''
-        authorObj = updatePublicationAuthor(name, orcid, ordinal, citation)
-        auths.append(authorObj)
-    return auths
+        # Create Author and Publication entries
+        publication_list = studyParserObj.study['Publications'] #TODO: quitar esta linea y poner el bucle for directamente? (for publication in studyParserObj.study['Publications']:)
+        publication_entry_list = []
+
+        for publication in publication_list:
+            title = publication['Title']
+            doi = publication['DOI']
+            pubMedId = publication['PubMed ID']
+            PMCId = publication['PMC ID']
+            author_list = [author for author in publication['Author List'].split(", ")]
+            author_entry_list = []
+
+            for author in author_list: #TODO: incluir last name y first name en Author entries?? #TODO: quitar esta linea y poner el bucle for directamente? (for author in publication['Author List'].split(", "):)
+                try:
+                    # update or create Author entries
+                    AuthorEntry, created = Author.objects.update_or_create(
+                        name=author)
+                    author_entry_list.append(AuthorEntry)
+                    if created:
+                        logger.debug('Created new entry: %s', AuthorEntry)
+                        print('Created new entry: ', AuthorEntry)
+                except Exception as exc:
+                    logger.debug(exc)
+
+            try:
+                
+                # update or create Publication entries
+                PublicationEntry, created = Publication.objects.update_or_create(
+                    title=title,
+                    doi=doi,
+                    pubMedId=pubMedId,
+                    PMCId=PMCId,
+                    )
+                publication_entry_list.append(PublicationEntry)
+                # Add already updated/created Author entries to Publicacion entry
+                [PublicationEntry.authors.add(author) for author in author_entry_list]
+
+                if created:
+                    logger.debug('Created new entry: %s', PublicationEntry)
+                    print('Created new entry: ', PublicationEntry)
+            except Exception as exc:
+                logger.debug(exc)
+
+        # Update Author entries with "Study Contacts" details if exist.
+        #TODO: Crear una try/except para los casos en que no exista studyParserObj.study['Study Person Last Name'] OR ['Study Person First Name'] OR ... y por tanto no se puedan dar estas lineas?? Ten en cuenta que en study_parser.ỳ aparecen como opcionales
+        authorLastNames = [authorLastName for authorLastName in studyParserObj.study['Study Person Last Name'].split("\t")]
+        authorFirstNames = [authorFirstName for authorFirstName in studyParserObj.study['Study Person First Name'].split("\t")]
+        authorEmails = [authorEmail for authorEmail in studyParserObj.study['Study Person Email'].split("\t")]
+        authorAddresses = [authorAddress for authorAddress in studyParserObj.study['Study Person Address'].split("\t")]
+        authorORCIDs = [authorORCID for authorORCID in studyParserObj.study['Study Person ORCID'].split("\t")]
+        authorRoles = [authorRole for authorRole in studyParserObj.study['Study Person Roles'].split("\t")]
+
+        for authorEntry in zip(authorLastNames, authorFirstNames, authorEmails, authorAddresses, authorORCIDs, authorRoles):
+            nonExactName = ' '.join([authorEntry[0], authorEntry[1][0]]) # Try to mimic Author entry name from publication['Author List'] although middle names would be missing. E.g: Carpenter AE (Author entry name from publication['Author List']); Carpenter A (Author entry name from study['Study Person Last Name'] + study['Study Person First Name']) #TODO: hacer mas corta esta linea??
+            email = authorEntry[2]
+            address = authorEntry[3]
+            orcid = authorEntry[4]
+            role = authorEntry[5]
+
+            try:
+                # update or create Author entries
+                AuthorEntry, created = Author.objects.update_or_create(
+                    name__contains=nonExactName,
+                    defaults={'email': email,'address': address, 'orcid': orcid, 'role': role}
+                )
+                if created:
+                    logger.debug('Created new entry: %s', AuthorEntry)
+                    print('Created new entry: ', AuthorEntry)
+            except Exception as exc:
+                logger.debug(exc)
+
+        # Create AssayEntity entry
+        assayTitle = studyParserObj.study['Study Title']
+        assayDescription = studyParserObj.study['Study Description']
+        #assayExternalLinks = [assayExternalLink for assayExternalLink in studyParserObj.study['Study External URL'].split("\t")] #TODO: en los study.txt que no aparece la key ['Study External URL'] esto falla (como en idr0094-ellinger-sarscov2) SOLUCIONALO
+        assayDetails = studyParserObj.study['Study Key Words']
+        assayTypes = [assayType for assayType in studyParserObj.study['Study Type'].split("\t")] 
+        assayTypeTermAccessions = [assayTypeTermAccession for assayTypeTermAccession in studyParserObj.study['Study Type Term Accession'].split("\t")] 
+        screenCount = studyParserObj.study['Study Screens Number']
+        BIAId = studyParserObj.study['Study BioImage Archive Accession']
+        releaseDate = studyParserObj.study['Study Public Release Date']
+        dataDoi = studyParserObj.study['Data DOI']
+
+        try:
+            # update or create Assay entry
+            AssayEntityEntry, created = AssayEntity.objects.update_or_create(
+                name=assayTitle,
+                featureType=FeatureTypeEntry,
+                description=assayDescription,
+                #externalLink='; '.join(assayExternalLinks),
+                details=assayDetails,
+                dbId=assayId,
+                assayType='; '.join(assayTypes),
+                assayTypeTermAccession='; '.join(assayTypeTermAccessions),
+                screenCount=screenCount,
+                BIAId=BIAId,
+                releaseDate=releaseDate,
+                dataDoi=dataDoi,                
+            )
+            # Add already updated/created Author entries and Publicacion entries to AssayEntity entry
+            [AssayEntityEntry.organisms.add(orgEnt) for orgEnt in organism_entry_list]
+            [AssayEntityEntry.publications.add(pubEnt) for pubEnt in publication_entry_list]
+
+            if created:
+                logger.debug('Created new entry: %s', AssayEntityEntry)
+                print('Created new entry: ', AssayEntityEntry)
+        except Exception as exc:
+            logger.debug(exc)
+
+        
+        # Create ScreenEntity entries
+        REGEX_SCREEN_NAME = re.compile('.*\/(screen)(.*)')
+        custom_ascending_dbId=0 # Stablish a custom ascending Id for those ligands that has no PubChem ID associated to them.
+
+        for screen in studyParserObj.components:
+
+            
+            #screenId = #TODO: buscar id por el modulo request (script mio de api)
+
+            screenDir = screen['Comment\\[IDR Screen Name\\]'] #TODO: buscar otro nombre mas descriptivo
+            screenNameMatchObj = re.match(REGEX_SCREEN_NAME, screenDir)
+            screenName = ' '.join([screenNameMatchObj.group(1), screenNameMatchObj.group(2)])
+
+            #TODO: CAMBIAR!!
+            if screenName == 'screen A':
+                screenId = '2602'
+            else:
+                screenId = '2603'
+
+            screenDescription = screen['Screen Description']
+            screenType = screen['Screen Type']
+            screenTypeTermAccession = screen['Screen Type Term Accession']
+            screenTechnologyType = screen['Screen Technology Type']
+            screenTechnologyTypeTermAccession = screen['Screen Technology Type Term Accession']
+            screenImagingMethods = [screenImagingMethod for screenImagingMethod in screen['Screen Imaging Method'].split("\t")]
+            screenImagingTermAccessions = [screenImagingTermAccession for screenImagingTermAccession in screen['Screen Imaging Method Term Accession'].split("\t")]
+            screenSampleType = screen['Screen Sample Type']
+            #plateCount = 
+            screenDataDoi = screen['Screen Data DOI']
+
+            try:
+                # update or create Screen entries
+                ScreenEntityEntry, created = ScreenEntity.objects.update_or_create(
+                    #dbId=screenName[-1], #TODO: cambiar esto para añadir el id real del screen
+                    dbId=screenId,
+                    name=screenName,
+                    description=screenDescription,
+                    type=screenType,
+                    typeTermAccession=screenTypeTermAccession,
+                    technologyType=screenTechnologyType,
+                    technologyTypeTermAccession=screenTechnologyTypeTermAccession,
+                    imagingMethod='; '.join(screenImagingMethods),
+                    imagingMethodTermAccession='; '.join(screenImagingTermAccessions),
+                    sampleType=screenSampleType,
+                    #plateCount=plateCount,
+                    dataDoi=screenDataDoi,
+                    assay=AssayEntityEntry,                
+                )
+                if created:
+                    logger.debug('Created new entry: %s', ScreenEntityEntry)
+                    print('Created new entry: ', ScreenEntityEntry)
+            except Exception as exc:
+                logger.debug(exc)
 
 
-def getPublications(mmCifDict):
-    objs = []
-    titleList = mmCifDict.get('_citation.title', '')
-    journalList = mmCifDict.get('_citation.journal_abbrev', '')
-    issnList = mmCifDict.get('_citation.journal_id_ISSN', '')
-    issueList = mmCifDict.get('_citation.journal_issue', '')
-    volumeList = mmCifDict.get('_citation.journal_volume', '')
-    firsPagetList = mmCifDict.get('_citation.page_first', '')
-    lastPageList = mmCifDict.get('_citation.page_last', '')
-    yearList = mmCifDict.get('_citation.year', '')
-    doiList = mmCifDict.get('_citation.pdbx_database_id_DOI', '')
-    pubMedList = mmCifDict.get('_citation.pdbx_database_id_PubMed', '')
-    abstractList = mmCifDict.get('_citation.abstract', '')
-    for idx, title in enumerate(titleList):
-        journal = journalList[idx].replace('?', '') if journalList else ''
-        issn = issnList[idx].replace('?', '') if issnList else ''
-        issue = issueList[idx].replace('?', '') if issueList else ''
-        volume = volumeList[idx].replace('?', '') if volumeList else ''
-        firstPage = firsPagetList[idx].replace(
-            '?', '') if firsPagetList else ''
-        lastPage = lastPageList[idx].replace('?', '') if lastPageList else ''
-        year = yearList[idx].replace('?', '') if yearList else ''
-        doi = doiList[idx].replace('?', '') if doiList else ''
-        pubMedId = pubMedList[idx].replace('?', '') if pubMedList else ''
-        abstract = abstractList[idx].replace('?', '') if abstractList else ''
+            '''
+            Create PlateEntity, Ligand and WellEntity entries
+            '''
 
-        refObj = updatePublication(
-            title, journal, issn, issue, volume, firstPage, lastPage, year, doi, pubMedId, abstract)
-        objs.append(refObj)
+            #_____________ Crear Plates basado en annotation file from github ____________
+            # screenAnnotationFile = screen['Annotations'][0]['Annotation File'].split(" ")[0] #TODO: cambiar esto para el caso en el que haya mas de un elemeto en la lista screen['Annotations']
+            # annotationFilePath = os.path.join(dirToLook, screenDir, screenAnnotationFile)
+            # df = pd.read_csv(annotationFilePath)
+            
+            # print(len(df['Plate']))
+            # print(len(df['Plate'].unique()))
+            # ______________________________________________________
 
-        auths = getCitationAuthors(mmCifDict, refObj)
-        # pubs = updateCitationToPdb(refObj, entryDetails)
 
-    return objs
+            #_____________ Crear Plates basado en url from OMERO webgateway ____________
+
+            qs = {'screen_id': screenId} #TODO: cambiar esta forma de formatear a la que has usado en el resto del script
+            url = SCREEN_TABLE_URL.format(**qs)
+            
+            #TODO: uncomment
+            # # Create a dataframe from "data" key in json format output got from url
+            # jsonData = session.get(url).json()
+            # columns = jsonData['data']['columns']
+            # data = jsonData['data']['rows']
+            # screenDf = pd.DataFrame(data, columns = columns)
+            screenDf = pd.read_csv('data/%s.csv' % (screenId))
+        
+
+            # Create PlateEntity entries
+            plateDf = screenDf[['Plate', 'Plate Name']]
+            for index, row in plateDf.iterrows():
+                plateId = row['Plate']
+                plateName = row['Plate Name']
+
+                try:
+                    # update or create Plate entries
+                    PlateEntityEntry, created = PlateEntity.objects.update_or_create(
+                        dbId=plateId,
+                        name=plateName,
+                        screen=ScreenEntityEntry,
+                    )
+                    if created:
+                        logger.debug('Created new entry: %s', PlateEntityEntry)
+                        print('Created new entry: ', PlateEntityEntry)
+                except Exception as exc: 
+                    logger.debug(exc)
+
+
+            # Create LigandEntity entries
+            #TODO: ojo tienes que asegurarte que el pubchem id va a ser el id de los ligands tanto aqui como en el proyecto de JR. 
+            #TODO: no incluir las columnas que no vayas a usar como iupac name ... etc. Consulta con JR cuales si nos interesan
+            ligandDf_nan = screenDf[['Compound Name', 'Compound PubChem CID', 'Compound PubChem URL', 'Compound SMILES', 'Compound IUPAC Name', 'Compound Unichem URL', 'Compound InChIKey', 'Compound Broad Identifier']]
+            # TODO: ahora mismo solo aliminamos los NaN de 'Compound Name' porque en idr0094-ellinger-sarscov2 (unico HCS de covid hasta ahora en IDR) lo que ellos usan como unque PK para diferenciar los ligandos es el nombre. En el futuro seria intereasnte ver si lo cambian a algun ID (PubChem ID, por ejemplo) y lo podemos actualizar nosotros tb
+            ligandDf = ligandDf_nan.dropna(subset=['Compound Name']) # Drop control rows (i.e. no ligand tested).  
+            ligandDf = ligandDf.fillna({'Compound PubChem CID': 0.0}) # Fill missing values for 'Compound PubChem CID' with float 0.0
+            ligandDf['Compound PubChem CID'] = ligandDf['Compound PubChem CID'].astype(int).astype(str) # Change data type from float to str for 'Compound PubChem CID'
+            count=0
+
+            for index, row in ligandDf.iterrows():
+
+                # Stablish a custom ascending Id for those ligands that has no PubChem ID associated to them.
+                if row['Compound PubChem CID'] == '0':
+                    ligandId = 'cust' + str(custom_ascending_dbId)
+                    custom_ascending_dbId=custom_ascending_dbId+1
+                else:
+                    ligandId = row['Compound PubChem CID']
+
+                ligandName = row['Compound Name']
+                ligandSMILES = row['Compound SMILES']
+                ligandIUPACInChIkey = row['Compound InChIKey']
+
+                #TODO: solucionar!!!!!!!!!!!!!!!!!!!!!!!!! que se creen entradas de ligando a partir del Screen B (no tendria que suceder)
+                try:
+                    # update or create LigandEntity entries
+                    LigandEntityEntry, created = LigandEntity.objects.update_or_create(
+                        name=ligandName,
+                        dbId=ligandId,
+                        #SMILES=ligandSMILES,
+                        IUPACInChIkey=ligandIUPACInChIkey,
+                        # defaults={
+                        #     'dbId': ligandId, 
+                        #     'SMILES': ligandSMILES,
+                        #     'IUPACInChIkey': ligandIUPACInChIkey,
+                        #     },
+                    )
+                    if created:
+                        logger.debug('Created new entry: %s', LigandEntityEntry)
+                        print('Created new entry: ', LigandEntityEntry)
+                        count=count+1
+                        #print(count)
+                except Exception as exc:
+                    logger.debug(exc)
+
+            #print(len(ligandDf['Compound PubChem CID'].unique()))
+        

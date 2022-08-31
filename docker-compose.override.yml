@@ -19,7 +19,7 @@ services:
     entrypoint: bash -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
 
   pma:
-    image: phpmyadmin/phpmyadmin
+    image: phpmyadmin/phpmyadmin:5.1.3
     environment:
       PMA_HOST: db
       PMA_PORT: 3306
