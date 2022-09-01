@@ -31,7 +31,7 @@ REGEX_VOL_FILE = re.compile('^(emd)-\d{4,5}\.map$')
 REGEX_PDB_FILE = re.compile('^(pdb)\d\w{3}\.ent$')
 REGEX_LR_FILE = re.compile('^\d\w{3}\.(deepres|monores)\.pdb$')
 REGEX_MAP2MODELQUALITY_FILE = re.compile('^\d\w{3}\.(mapq|fscq)\.pdb$')
-REGEX_IDR_ID = re.compile('(idr\d{4})-.*-.*')
+REGEX_IDR_ID = re.compile('.*(idr\d{4})-.*-.*')
 
 SCREEN_TABLE_URL = 'https://idr.openmicroscopy.org/webgateway/table/Screen/{screen_id}/query/?query=*'
 
@@ -64,8 +64,6 @@ def findGeneric(pattern, dirToLook=THORN_DATA_DIR):
     return data
 
 
-def findIDR(dirToLook=IDR_DIR):
-    return findGeneric("*isolde/*pdb", dirToLook=dirToLook)
 
 class PdbEntryAnnFromMapsUtils(object):
 
@@ -1396,12 +1394,12 @@ def updatePdbEntryDetails(mmCifDict, pdbObj):
 class ImageDataFromIDRAssayUtils(object):
 
     
-    def _updateAssayDirsFromIDR(self, dirToLook=IDR_DIR):
+    def _updateAssayDirsFromIDR(self):
         #TODO: crear aqui unas lineas para que se saque un registo.txt con la fecha y el nombre de los directorios de assays 
         # (idrNNNN-lastname-example) que se vayan importando para saber cuales son los dirs que quedan por hacer updateLigandEntryFromIDRAssay()
         pass
 
-    def _updateLigandEntryFromIDRAssay(self, assayName, dirToLook=IDR_DIR):
+    def _updateLigandEntryFromIDRAssay(self, assayPath):
         print("updateLigandEntryFromIDRAssay")
 
         '''
@@ -1433,15 +1431,15 @@ class ImageDataFromIDRAssayUtils(object):
         '''
 
         # Get ID and metadata file for IDR assay
-        matchObj = re.match(REGEX_IDR_ID, assayName)
+        matchObj = re.match(REGEX_IDR_ID, assayPath)
         if matchObj:
             assayId = matchObj.group(1)
         metadataFileExtention = '-study.txt'
         metadataFile = assayId + metadataFileExtention
 
         # Parse metadata file using StudyParser
-        studypath = os.path.join(dirToLook, assayName, metadataFile)
-        studyParserObj = StudyParser(studypath)
+        MetadataFilePath = os.path.join(assayPath, metadataFile)
+        studyParserObj = StudyParser(MetadataFilePath)
 
         # Create Organism entries
         #TODO: Crear una try/except para los casos en que no exista studyParserObj.study['Study Organism'] OR ['Study Organism Term Source REF'] OR ['Study Organism Term Accession'] y por tanto no se puedan dar estas lineas?? Ten en cuenta que en study_parser.ỳ aparecen como opcionales las 3
@@ -1667,10 +1665,11 @@ class ImageDataFromIDRAssayUtils(object):
             # columns = jsonData['data']['columns']
             # data = jsonData['data']['rows']
             # screenDf = pd.DataFrame(data, columns = columns)
-            screenDf = pd.read_csv('data/%s.csv' % (screenId))
+            screenDf = pd.read_csv('/data/%s.csv' % (screenId))
         
 
             # Create PlateEntity entries
+            #TODO: fill in plateCount attr with the total sum plates (annotate() and Count methods could be useful)
             plateDf = screenDf[['Plate', 'Plate Name']]
             for index, row in plateDf.iterrows():
                 plateId = row['Plate']
@@ -1715,6 +1714,7 @@ class ImageDataFromIDRAssayUtils(object):
 
                 #TODO: solucionar!!!!!!!!!!!!!!!!!!!!!!!!! que se creen entradas de ligando a partir del Screen B (no tendria que suceder)
                 try:
+                    #TODO: change to get_or_create para que obtenga los ligands en funcion del ombre OR pubhcemid solo. Esto lo hacemos para que se coordine bien con los lgiandso que ya hay en la db de JR
                     # update or create LigandEntity entries
                     LigandEntityEntry, created = LigandEntity.objects.update_or_create(
                         name=ligandName,

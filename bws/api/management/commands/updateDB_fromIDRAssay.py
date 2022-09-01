@@ -11,17 +11,17 @@ class Command(BaseCommand):
     Command for updating IDR data
     """
 
-    help = "Update IDR data from <assayName>"
-    missing_args_message = "Too few arguments. Please, provide an experiment name."
+    help = "Update IDR data from <assayPath>"
+    missing_args_message = "Too few arguments. Please, provide the path to the experiment directory."
     requires_migrations_checks = True
 
     def add_arguments(self, parser):
         parser.add_argument(
-            'assayName', nargs=1, type=str,
-            help='<Required> Assay name, i.e.: idr0094-ellinger-sarscov2')
+            'assayPath', nargs=1, type=str,
+            help='<Required> Assay dir path, i.e.: /data/IDR/idr0094-ellinger-sarscov2')
 
     def handle(self, *args, **options):
-        assayName = options['assayName'][0]
-        print("Reading data for ", assayName)
-        ImageDataFromIDRAssayUtils()._updateLigandEntryFromIDRAssay(assayName=assayName)
+        assayPath = options['assayPath'][0]
+        print("Reading data for ", assayPath)
+        ImageDataFromIDRAssayUtils()._updateLigandEntryFromIDRAssay(assayPath=assayPath)
 

@@ -319,7 +319,6 @@ class LigandToImageDataViewSet(viewsets.ModelViewSet):
     """
     This viewset automatically provides list of all ligand entries and "imageData" associated to them.
     """
-    queryset = LigandEntity.objects.prefetch_related(
-        "well__plate__screen__assay")
+    queryset = LigandEntity.objects.prefetch_related("well__plate__screen__assay")
     serializer_class = LigandToImageDataSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
