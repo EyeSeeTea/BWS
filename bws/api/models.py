@@ -188,7 +188,7 @@ class ModelEntity(models.Model):
     name = models.CharField(max_length=200)
     mutation = models.CharField(max_length=200)
     details = models.CharField(max_length=200)
-    altNames = models.CharField(max_length=200)
+    altNames = models.CharField(max_length=500)
 
     @property
     def isAntibody(self):
@@ -242,7 +242,7 @@ class LigandEntity(models.Model):
     formula = models.CharField(max_length=200, null=True, blank=True)
     formula_weight = models.FloatField(null=True, blank=True)
     details = models.CharField(max_length=200, null=True, blank=True)
-    altNames = models.CharField(max_length=200, null=True, blank=True)
+    altNames = models.CharField(max_length=500, null=True, blank=True)
     imageLink = models.CharField(max_length=200, null=True, blank=True)
     externalLink = models.CharField(max_length=200, null=True, blank=True)
     pubChemCompoundId = models.CharField(max_length=200, blank=True, null=True)
