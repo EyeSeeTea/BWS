@@ -81,7 +81,7 @@ class EmdbEntry(models.Model):
     emMethod = models.CharField(
         max_length=25, choices=EM_METHOD, default=SINGLE_PARTICLE)
     resolution = models.CharField(max_length=10, blank=True, null=True)
-    status = models.CharField(max_length=5, blank=False, default=UNREL)
+    status = models.CharField(max_length=50, blank=False, default=UNREL)
     details = models.CharField(max_length=200)
     created = models.DateField(auto_now_add=True)
     modified = models.DateField(auto_now=True)
@@ -131,7 +131,7 @@ class PdbEntry(models.Model):
                                 ),
                             ])
     title = models.CharField(max_length=255, blank=False, default='')
-    status = models.CharField(max_length=25, blank=False, default='')
+    status = models.CharField(max_length=50, blank=False, default='')
     relDate = models.DateField(blank=True, null=True)
     method = models.CharField(max_length=255, blank=True, null=True)
     keywords = models.CharField(max_length=255, blank=True, null=True)
@@ -188,7 +188,7 @@ class ModelEntity(models.Model):
     name = models.CharField(max_length=200)
     mutation = models.CharField(max_length=200)
     details = models.CharField(max_length=200)
-    altNames = models.CharField(max_length=500)
+    altNames = models.CharField(max_length=1024)
 
     @property
     def isAntibody(self):
@@ -242,15 +242,15 @@ class LigandEntity(models.Model):
     formula = models.CharField(max_length=200, null=True, blank=True)
     formula_weight = models.FloatField(null=True, blank=True)
     details = models.CharField(max_length=200, null=True, blank=True)
-    altNames = models.CharField(max_length=500, null=True, blank=True)
+    altNames = models.CharField(max_length=5000, null=True, blank=True)
     imageLink = models.CharField(max_length=200, null=True, blank=True)
     externalLink = models.CharField(max_length=200, null=True, blank=True)
     pubChemCompoundId = models.CharField(max_length=200, blank=True, null=True)
     systematicNames = models.CharField(max_length=200, null=True, blank=True)
-    IUPACInChI = models.CharField(max_length=200, null=True, blank=True)
-    IUPACInChIkey = models.CharField(max_length=200, null=True, blank=True)
-    isomericSMILES = models.CharField(max_length=200, null=True, blank=True)
-    canonicalSMILES = models.CharField(max_length=200, null=True, blank=True)
+    IUPACInChI = models.CharField(max_length=500, null=True, blank=True)
+    IUPACInChIkey = models.CharField(max_length=500, null=True, blank=True)
+    isomericSMILES = models.CharField(max_length=500, null=True, blank=True)
+    canonicalSMILES = models.CharField(max_length=500, null=True, blank=True)
 
     def __str__(self):
         return '%s' % (self.dbId if self.dbId else self.pubChemCompoundId)
