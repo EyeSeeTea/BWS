@@ -261,7 +261,8 @@ class RefinedModelSource(models.Model):
     name = models.CharField(max_length=200, unique=True)
     # description of the data source
     description = models.TextField()
-    externalLink = models.CharField(max_length=200)  # link to the data source
+    # link to the data source
+    externalLink = models.CharField(max_length=200, blank=True, null=True)
 
     def __str__(self):
         return '%s' % (self.name,)
@@ -275,18 +276,10 @@ class RefinedModelMethod(models.Model):
     # description of the refinement method
     description = models.TextField()
     # link to the refinement method
-    externalLink = models.CharField(max_length=200)
+    externalLink = models.CharField(max_length=200, blank=True, null=True)
 
     def __str__(self):
         return '%s' % (self.name,)
-
-
-    def externalLink(self):
-        return "{0}{1}".format(self.URL_EXTERNAL, self.pdbId.dbId.lower())
-
-    def queryLink(self):
-        # https://3dbionotes.cnb.csic.es/pdb_redo/6lxt
-        return "{0}{1}{2}".format(self.URL_QUERYLINK, 'pdb_redo/', self.pdbId.dbId.lower())
 
 
 class RefinedModel(models.Model):
@@ -300,16 +293,15 @@ class RefinedModel(models.Model):
         RefinedModelMethod, on_delete=models.CASCADE)  # Refinement method
     # filename of the refined model
     filename = models.CharField(max_length=200)
-    externalLink = models.CharField(
-        max_length=200)  # link to the refined model
+    # link to the refined model
+    externalLink = models.CharField(max_length=200, blank=True, null=True)
     # link to the query used to display the refined model in 3DBionotes
-    queryLink = models.CharField(max_length=200)
+    queryLink = models.CharField(max_length=200, blank=True, null=True)
     # description of the refined model, notes, etc.
     details = models.TextField()
 
     def __str__(self):
         return '%s' % (self.filename,)
-
 
 
 class SampleModel(models.Model):
@@ -452,8 +444,9 @@ class FeatureModelEntity(FeatureEntity):
         Feature that is associated with the whole Model
     '''
     details = models.CharField(max_length=255, blank=True, default='')
+
     class Meta:
-            abstract = True
+        abstract = True
 
 
 class FeatureRegionEntity(FeatureEntity):
@@ -463,35 +456,44 @@ class FeatureRegionEntity(FeatureEntity):
     start = models.IntegerField()
     end = models.IntegerField()
 
+
 class AssayEntity(FeatureModelEntity):
 
-    dbId = models.CharField(max_length=50, blank=False, default='', primary_key=True)
+    dbId = models.CharField(max_length=50, blank=False,
+                            default='', primary_key=True)
     assayType = models.CharField(max_length=255, blank=True, default='')
-    assayTypeTermAccession = models.CharField(max_length=255, blank=True, default='')
+    assayTypeTermAccession = models.CharField(
+        max_length=255, blank=True, default='')
     organisms = models.ManyToManyField(Organism)
-    publications =  models.ManyToManyField(Publication)
+    publications = models.ManyToManyField(Publication)
     screenCount = models.IntegerField(blank=True, null=True, default=0)
     BIAId = models.CharField(max_length=255, blank=True, default='')
-    releaseDate = models.DateField(max_length=255, blank=True, null=True, default='')
+    releaseDate = models.DateField(
+        max_length=255, blank=True, null=True, default='')
     dataDoi = models.CharField(max_length=255, blank=True, default='')
-
 
     def __str__(self):
         return '%s (%s)' % (self.dbId, self.name)
+
+
 class ScreenEntity(models.Model):
 
     assay = models.ForeignKey(AssayEntity,
-                                 related_name='screens', default='', on_delete=models.CASCADE)
+                              related_name='screens', default='', on_delete=models.CASCADE)
 
-    dbId = models.CharField(max_length=50, blank=False, default='', primary_key=True)
+    dbId = models.CharField(max_length=50, blank=False,
+                            default='', primary_key=True)
     name = models.CharField(max_length=255, blank=False, default='')
     description = models.CharField(max_length=255, blank=True, default='')
     type = models.CharField(max_length=255, blank=False, default='')
-    typeTermAccession = models.CharField(max_length=255, null=True, blank=True, default='')
+    typeTermAccession = models.CharField(
+        max_length=255, null=True, blank=True, default='')
     technologyType = models.CharField(max_length=255, blank=False, default='')
-    technologyTypeTermAccession = models.CharField(max_length=255, null=True, blank=True, default='')
+    technologyTypeTermAccession = models.CharField(
+        max_length=255, null=True, blank=True, default='')
     imagingMethod = models.CharField(max_length=255, blank=True, default='')
-    imagingMethodTermAccession = models.CharField(max_length=255, null=True, blank=True, default='')
+    imagingMethodTermAccession = models.CharField(
+        max_length=255, null=True, blank=True, default='')
     sampleType = models.CharField(max_length=255, blank=True, default='')
     plateCount = models.IntegerField(blank=True, null=True, default=0)
     dataDoi = models.CharField(max_length=255, blank=True, default='')
@@ -499,47 +501,54 @@ class ScreenEntity(models.Model):
     def __str__(self):
         return '%s' % (self.dbId)
 
+
 class PlateEntity(models.Model):
 
     screen = models.ForeignKey(ScreenEntity,
-                                 related_name='plates', default='', on_delete=models.CASCADE)
+                               related_name='plates', default='', on_delete=models.CASCADE)
 
-    dbId = models.CharField(max_length=50, blank=False, default='', primary_key=True)
+    dbId = models.CharField(max_length=50, blank=False,
+                            default='', primary_key=True)
     name = models.CharField(max_length=255, blank=True, default='')
 
     def __str__(self):
         return '%s' % (self.dbId)
-    
 
 
 class WellEntity(models.Model):
     '''
         Well details
     '''
-    dbId = models.CharField(max_length=50, blank=False, default='', primary_key=True)
+    dbId = models.CharField(max_length=50, blank=False,
+                            default='', primary_key=True)
     name = models.CharField(max_length=255, blank=False, default='')
     ligand = models.ForeignKey(LigandEntity,
-                                 related_name='well', null=True, blank=True, default='', on_delete=models.CASCADE)
-    
+                               related_name='well', null=True, blank=True, default='', on_delete=models.CASCADE)
+
     plate = models.ForeignKey(PlateEntity,
-                                 related_name='wells', default='', on_delete=models.CASCADE)
+                              related_name='wells', default='', on_delete=models.CASCADE)
 
     externalLink = models.URLField(max_length=200, blank=True)
     imageThumbailLink = models.URLField(max_length=200, blank=True)
     imagesIds = models.CharField(max_length=255, blank=True, default='')
     cellLine = models.CharField(max_length=255, blank=True, default='')
-    cellLineTermAccession = models.CharField(max_length=255, blank=True, default='')
+    cellLineTermAccession = models.CharField(
+        max_length=255, blank=True, default='')
     controlType = models.CharField(max_length=255, blank=True, default='')
     qualityControl = models.CharField(max_length=255, blank=True, default='')
-    micromolarConcentration = models.FloatField(null=True, blank=True, default='')
+    micromolarConcentration = models.FloatField(
+        null=True, blank=True, default='')
     percentageInhibition = models.FloatField(null=True, blank=True, default='')
-    hitOver75Activity = models.CharField(max_length=255, blank=True, default='')
+    hitOver75Activity = models.CharField(
+        max_length=255, blank=True, default='')
     numberCells = models.IntegerField(null=True, blank=True, default=0)
-    phenotypeAnnotationLevel = models.CharField(max_length=255, blank=True, default='')
+    phenotypeAnnotationLevel = models.CharField(
+        max_length=255, blank=True, default='')
     channels = models.CharField(max_length=255, blank=True, default='')
 
     def __str__(self):
         return '%s' % (self.dbId)
+
 
 class Topic(models.Model):
     '''
