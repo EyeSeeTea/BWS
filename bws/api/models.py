@@ -253,7 +253,7 @@ class LigandEntity(models.Model):
     canonicalSMILES = models.CharField(max_length=200, null=True, blank=True)
 
     def __str__(self):
-        return '%s' % (self.chebiId if self.chebiId else self.pubChemCompoundId)
+        return '%s' % (self.dbId if self.dbId else self.pubChemCompoundId)
 
 
 class RefinedModelSource(models.Model):
@@ -432,11 +432,10 @@ class FeatureEntity(models.Model):
                                     related_name='%(class)s_features', null=True, on_delete=models.CASCADE)
     description = models.TextField(blank=True, default='')
     pdbentry = models.ForeignKey(PdbEntry,
-                                 related_name='features', on_delete=models.CASCADE, null=True)
-    externalLink = models.CharField(max_length=200)
-
-    class meta:
-        abstract = True
+                                 related_name='%(class)s_features', null=True, blank=True, on_delete=models.CASCADE)
+    externalLink = models.URLField(max_length=200, default='', blank=True)
+    class Meta:
+            abstract = True
 
 
 class FeatureModelEntity(FeatureEntity):
