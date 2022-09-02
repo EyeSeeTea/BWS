@@ -420,7 +420,7 @@ class FeatureType(models.Model):
     externalLink = models.CharField(max_length=200)
 
     def __str__(self):
-        return '%s / %s' % (self.name, self.dataSource)
+        return '%s / %s (FeatureType)' % (self.name, self.dataSource)
 
 
 class FeatureEntity(models.Model):
@@ -465,14 +465,14 @@ class AssayEntity(FeatureModelEntity):
         max_length=255, blank=True, default='')
     organisms = models.ManyToManyField(Organism)
     publications = models.ManyToManyField(Publication)
-    screenCount = models.IntegerField(blank=True, null=True, default=0)
+    screenCount = models.IntegerField(blank=True, null=True)
     BIAId = models.CharField(max_length=255, blank=True, default='')
     releaseDate = models.DateField(
         max_length=255, blank=True, null=True, default='')
     dataDoi = models.CharField(max_length=255, blank=True, default='')
 
     def __str__(self):
-        return '%s (%s)' % (self.dbId, self.name)
+        return '%s - %s (AssayEntity)' % (self.dbId, self.name)
 
 
 class ScreenEntity(models.Model):
@@ -494,11 +494,11 @@ class ScreenEntity(models.Model):
     imagingMethodTermAccession = models.CharField(
         max_length=255, null=True, blank=True, default='')
     sampleType = models.CharField(max_length=255, blank=True, default='')
-    plateCount = models.IntegerField(blank=True, null=True, default=0)
+    plateCount = models.IntegerField(blank=True, null=True)
     dataDoi = models.CharField(max_length=255, blank=True, default='')
 
     def __str__(self):
-        return '%s' % (self.dbId)
+        return '%s (ScreenEntity)' % (self.dbId)
 
 
 class PlateEntity(models.Model):
@@ -511,7 +511,7 @@ class PlateEntity(models.Model):
     name = models.CharField(max_length=255, blank=True, default='')
 
     def __str__(self):
-        return '%s' % (self.dbId)
+        return '%s (PlateEntity)' % (self.dbId)
 
 
 class WellEntity(models.Model):
@@ -537,17 +537,17 @@ class WellEntity(models.Model):
     controlType = models.CharField(max_length=255, blank=True, default='')
     qualityControl = models.CharField(max_length=255, blank=True, default='')
     micromolarConcentration = models.FloatField(
-        null=True, blank=True, default='')
-    percentageInhibition = models.FloatField(null=True, blank=True, default='')
+        null=True, blank=True)
+    percentageInhibition = models.FloatField(null=True, blank=True)
     hitOver75Activity = models.CharField(
         max_length=255, blank=True, default='')
-    numberCells = models.IntegerField(null=True, blank=True, default=0)
+    numberCells = models.IntegerField(null=True, blank=True)
     phenotypeAnnotationLevel = models.CharField(
         max_length=255, blank=True, default='')
     channels = models.CharField(max_length=255, blank=True, default='')
 
     def __str__(self):
-        return '%s' % (self.dbId)
+        return '%s (WellEntity)' % (self.dbId)
 
 
 class Topic(models.Model):
