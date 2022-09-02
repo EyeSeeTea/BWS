@@ -33,6 +33,7 @@ REGEX_PDB_FILE = re.compile('^(pdb)\d\w{3}\.ent$')
 REGEX_LR_FILE = re.compile('^\d\w{3}\.(deepres|monores)\.pdb$')
 REGEX_MAP2MODELQUALITY_FILE = re.compile('^\d\w{3}\.(mapq|fscq)\.pdb$')
 REGEX_IDR_ID = re.compile('.*(idr\d{4})-.*-.*')
+REGEX_TAXON_REF = re.compile('(ncbitaxon).*')
 
 SCREEN_TABLE_URL = 'https://idr.openmicroscopy.org/webgateway/table/Screen/{screen_id}/query/?query=*'
 
@@ -1417,6 +1418,29 @@ def updateFeatureTypeForIDR(name, description, dataSource, externalLink):
     return obj
 
 
+def getOrganism(taxonomy_id, scientific_name='', common_name=''):
+    """
+    Get Organism entry or create in case it does not exist
+    """
+
+    obj = None
+    try:
+        obj, created = Organism.objects.get_or_create(
+            ncbi_taxonomy_id=taxonomy_id,
+            defaults={
+                'scientific_name': scientific_name,
+                'common_name': common_name.replace('?', ''),
+                'externalLink': URL_NCBI_TAXONOMY + taxonomy_id,
+            })
+        if created:
+            logger.debug('Created new: %s', obj)
+            print('Created new', obj)
+
+    except Exception as exc:
+        logger.exception(exc)
+        print(exc, os.strerror)
+    return obj
+
 
 class IDRUtils(object):
 
@@ -1447,56 +1471,40 @@ class IDRUtils(object):
         dataSource = 'The Image Data Resource (IDR)'
         externalLink = 'https://idr.openmicroscopy.org/'
 
-        updateFeatureTypeForIDR(name, description, dataSource, externalLink)
+        FeatureTypeEntry = updateFeatureTypeForIDR(name, description, dataSource, externalLink)
 
 
-#         '''
-#          Create Organism, Author, Publication, AssayEntity and ScreenEntity entries
-#         '''
+        # Get ID and metadata file for IDR assay
+        matchObj = re.match(REGEX_IDR_ID, assayPath)
+        if matchObj:
+            assayId = matchObj.group(1)
+        metadataFileExtention = '-study.txt'
+        metadataFile = assayId + metadataFileExtention
 
-#         # Get ID and metadata file for IDR assay
-#         matchObj = re.match(REGEX_IDR_ID, assayPath)
-#         if matchObj:
-#             assayId = matchObj.group(1)
-#         metadataFileExtention = '-study.txt'
-#         metadataFile = assayId + metadataFileExtention
+        # Parse metadata file using StudyParser
+        MetadataFilePath = os.path.join(assayPath, metadataFile)
+        studyParserObj = StudyParser(MetadataFilePath)
 
-#         # Parse metadata file using StudyParser
-#         MetadataFilePath = os.path.join(assayPath, metadataFile)
-#         studyParserObj = StudyParser(MetadataFilePath)
+        # Get or Create Organism entries
+        #TODO: Crear una try/except para los casos en que no exista studyParserObj.study['Study Organism'] OR ['Study Organism Term Source REF'] OR ['Study Organism Term Accession'] y por tanto no se puedan dar estas lineas?? Ten en cuenta que en study_parser.ỳ aparecen como opcionales las 3
+        organisms = [organism for organism in studyParserObj.study['Study Organism'].split("\t")]
+        organismTermSources = [termSource for termSource in studyParserObj.study['Study Organism Term Source REF'].split("\t")]
+        organismTermAccessions = [termAccession for termAccession in studyParserObj.study['Study Organism Term Accession'].split("\t")]
+        organism_entry_list = []
 
-#         # Create Organism entries
-#         #TODO: Crear una try/except para los casos en que no exista studyParserObj.study['Study Organism'] OR ['Study Organism Term Source REF'] OR ['Study Organism Term Accession'] y por tanto no se puedan dar estas lineas?? Ten en cuenta que en study_parser.ỳ aparecen como opcionales las 3
-#         REGEX_TAXON_REF = re.compile('(ncbitaxon).*')
-#         organisms = [organism for organism in studyParserObj.study['Study Organism'].split("\t")]
-#         organismTermSources = [termSource for termSource in studyParserObj.study['Study Organism Term Source REF'].split("\t")]
-#         organismTermAccessions = [termAccession for termAccession in studyParserObj.study['Study Organism Term Accession'].split("\t")]
-#         organism_entry_list = []
+        for organism in zip(organisms, organismTermSources, organismTermAccessions):
 
-#         for organism in zip(organisms, organismTermSources, organismTermAccessions):
-#             scientific_name = organism[0]
-#             TaxonTermSource = organism[1]
-#             ncbi_taxonomy_id = organism[2]
-            
-#             # Check that the Study Organism Term Source REF is NCBI Taxonomy
-#             TaxonRefMatchObj = re.match(REGEX_TAXON_REF, TaxonTermSource.lower())
-#             if TaxonRefMatchObj:                
-#                 try:#TODO: probar a usar la funcion que ya hizo JR para update Organism (lo mismo para Publication, Author, ... todos los modelos que ya estaban antes de lo de IDR)
-#                     # update or create Organism entries
-#                     OrganismEntry, created = Organism.objects.update_or_create(
-#                         ncbi_taxonomy_id=ncbi_taxonomy_id,
-#                         scientific_name=scientific_name,
-#                         externalLink='https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=%s&lvl=0' % (ncbi_taxonomy_id))
-#                     organism_entry_list.append(OrganismEntry)
-#                     if created:
-#                         logger.debug('Created new entry: %s', OrganismEntry)
-#                         print('Created new entry: ', OrganismEntry)
-#                 except Exception as exc:
-#                     logger.debug(exc)
-#             else:
-#                 print('Study Organism Term Source REF for "%s" different from NCBI Taxonomy: '\
-#                     '\n\tStudy Organism Term Source REF: %s \n\tStudy Organism Term Accession: %s' \
-#                     % (scientific_name, TaxonTermSource, ncbi_taxonomy_id))
+            # Check that the Study Organism Term Source REF is NCBI Taxonomy
+            TaxonTermSource = organism[1]
+            TaxonRefMatchObj = re.match(REGEX_TAXON_REF, TaxonTermSource.lower())
+
+            if TaxonRefMatchObj:
+                OrganismEntry = getOrganism(taxonomy_id=organism[2], scientific_name=organism[0])
+                organism_entry_list.append(OrganismEntry)
+            else:
+                print('Study Organism Term Source REF for "%s" different from NCBI Taxonomy: '\
+                    '\n\tStudy Organism Term Source REF: %s \n\tStudy Organism Term Accession: %s' \
+                    % (organism[0], TaxonTermSource, organism[2]))
 
 
 #         # Create Author and Publication entries
