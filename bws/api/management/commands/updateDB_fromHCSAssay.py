@@ -2,13 +2,13 @@
 Command for updating IDR data
 """
 from django.core.management.base import BaseCommand
-from api.utils import ImageDataFromIDRAssayUtils
+from api.utils import IDRUtils
 
 
 
 class Command(BaseCommand):
     """
-    Command for updating IDR data
+    Command for updating HCS data from IDR
     """
 
     help = "Update IDR data from <assayPath>"
@@ -22,6 +22,6 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         assayPath = options['assayPath'][0]
-        print("Reading data for ", assayPath)
-        ImageDataFromIDRAssayUtils()._updateLigandEntryFromIDRAssay(assayPath=assayPath)
+        print("Reading data for", assayPath)
+        IDRUtils()._updateDB_fromHCSAssay(assayPath=assayPath)
 

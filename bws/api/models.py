@@ -420,7 +420,7 @@ class FeatureType(models.Model):
     externalLink = models.CharField(max_length=200)
 
     def __str__(self):
-        return '%s / %s (FeatureType)' % (self.name, self.dataSource)
+        return '%s - %s (FeatureType)' % (self.name, self.dataSource)
 
 
 class FeatureEntity(models.Model):
