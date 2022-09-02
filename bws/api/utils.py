@@ -1346,7 +1346,7 @@ def getSampleDetails(mmCifDict):
     ass_method = mmCifDict.get('_pdbx_struct_assembly.method_details', '')
     ass_details = mmCifDict.get('_pdbx_struct_assembly.oligomeric_details', '')
     genes = mmCifDict.get('_entity_src_gen.pdbx_gene_src_gene', '')
-    name = ''
+    name = mmCifDict.get('_entry.id', '')
     macromolecules = ''
     uniProts = ''
     bioFunction = ''
@@ -1354,14 +1354,14 @@ def getSampleDetails(mmCifDict):
     cellComponent = ''
     domains = ''
     sampleObj = updateSampleEntity(
-        name='',
+        name=name[0].replace('?', '') if name else '',
         exprSystem=exprSystem[0].replace('?', '') if exprSystem else '',
         assembly=assembly[0].replace('?', '') if exprSystem else '',
         ass_method=ass_method[0].replace('?', '') if exprSystem else '',
         ass_details=ass_details[0].replace('?', '') if exprSystem else '',
         macromolecules='',
         uniProts='',
-        genes=''.join([str(item.replace('?', '') for item in genes)]),
+        genes=''.join(genes).replace('?', ''),
         bioFunction='',
         bioProcess='',
         cellComponent='',
