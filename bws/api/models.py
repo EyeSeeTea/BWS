@@ -358,7 +358,7 @@ class Publication(models.Model):
     doi = models.CharField(max_length=255, blank=False, default='')
     pubMedId = models.CharField(max_length=255, blank=False, default='')
     PMCId = models.CharField(max_length=255, blank=False, default='')
-    abstract = models.TextField(max_length=255, blank=True, default='')
+    abstract = models.CharField(max_length=5000, blank=True, default='')
 
     authors = models.ManyToManyField(Author)
 
@@ -430,7 +430,7 @@ class FeatureEntity(models.Model):
     name = models.CharField(max_length=255, blank=False, default='')
     featureType = models.ForeignKey(FeatureType,
                                     related_name='%(class)s_features', null=True, on_delete=models.CASCADE)
-    description = models.TextField(blank=True, default='')
+    description = models.CharField(max_length=5000, blank=True, default='')
     pdbentry = models.ForeignKey(PdbEntry,
                                  related_name='%(class)s_features', null=True, blank=True, on_delete=models.CASCADE)
     externalLink = models.URLField(max_length=200, default='', blank=True)
@@ -521,6 +521,7 @@ class WellEntity(models.Model):
     dbId = models.CharField(max_length=50, blank=False,
                             default='', primary_key=True)
     name = models.CharField(max_length=255, blank=False, default='')
+    description = models.CharField(max_length=5000, blank=True, default='')
     ligand = models.ForeignKey(LigandEntity,
                                related_name='well', null=True, blank=True, default='', on_delete=models.CASCADE)
 
