@@ -258,9 +258,9 @@ class LigandEntity(models.Model):
 
 class RefinedModelSource(models.Model):
     # name of the data source, e.g. 'PDB-REDO', 'CSTF (Coronavirus Structural TaskForce)', etc
-    name = models.CharField(max_length=200, unique=True)
+    name = models.CharField(max_length=255, unique=True)
     # description of the data source
-    description = models.TextField()
+    description = models.CharField(max_length=5000, blank=True, null=True)
     # link to the data source
     externalLink = models.CharField(max_length=200, blank=True, null=True)
 
@@ -272,11 +272,11 @@ class RefinedModelMethod(models.Model):
     source = models.ForeignKey(
         RefinedModelSource, on_delete=models.CASCADE)  # Data source
     # name of the refinement method, e.g. 'PDB-REDO', 'Isolde', etc
-    name = models.CharField(max_length=200, unique=True)
+    name = models.CharField(max_length=255, unique=True)
     # description of the refinement method
-    description = models.TextField()
+    description = models.CharField(max_length=5000, blank=True, null=True)
     # link to the refinement method
-    externalLink = models.CharField(max_length=200, blank=True, null=True)
+    externalLink = models.CharField(max_length=255, blank=True, null=True)
 
     def __str__(self):
         return '%s' % (self.name,)
@@ -292,13 +292,13 @@ class RefinedModel(models.Model):
     method = models.ForeignKey(
         RefinedModelMethod, on_delete=models.CASCADE)  # Refinement method
     # filename of the refined model
-    filename = models.CharField(max_length=200)
+    filename = models.CharField(max_length=255)
     # link to the refined model
-    externalLink = models.CharField(max_length=200, blank=True, null=True)
+    externalLink = models.CharField(max_length=255, blank=True, null=True)
     # link to the query used to display the refined model in 3DBionotes
-    queryLink = models.CharField(max_length=200, blank=True, null=True)
+    queryLink = models.CharField(max_length=255, blank=True, null=True)
     # description of the refined model, notes, etc.
-    details = models.TextField()
+    details = models.CharField(max_length=5000, blank=True, null=True)
 
     def __str__(self):
         return '%s' % (self.filename,)
@@ -358,7 +358,7 @@ class Publication(models.Model):
     doi = models.CharField(max_length=255, blank=False, default='')
     pubMedId = models.CharField(max_length=255, blank=False, default='')
     PMCId = models.CharField(max_length=255, blank=False, default='')
-    abstract = models.TextField(max_length=255, blank=True, default='')
+    abstract = models.CharField(max_length=5000, blank=True, null=True)
 
     authors = models.ManyToManyField(Author)
 
@@ -430,7 +430,7 @@ class FeatureEntity(models.Model):
     name = models.CharField(max_length=255, blank=False, default='')
     featureType = models.ForeignKey(FeatureType,
                                     related_name='%(class)s_features', null=True, on_delete=models.CASCADE)
-    description = models.TextField(blank=True, default='')
+    description = models.CharField(max_length=5000, blank=True, null=True)
     pdbentry = models.ForeignKey(PdbEntry,
                                  related_name='%(class)s_features', null=True, blank=True, on_delete=models.CASCADE)
     externalLink = models.URLField(max_length=200, default='', blank=True)
