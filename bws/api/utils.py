@@ -763,7 +763,7 @@ def updatePublicationAuthor(name, orcid, ordinal, publication):
     return obj
 
 
-def updatePublication(title, journal, issn, issue, volume, firstPage, lastPage, year, doi, pubMedId, abstract):
+def updatePublication(title, journal, issn, issue, volume, firstPage, lastPage, year, doi, pubMedId, abstract, PMCId=''):
     obj = None
     try:
         obj, created = Publication.objects.update_or_create(
@@ -778,7 +778,8 @@ def updatePublication(title, journal, issn, issue, volume, firstPage, lastPage, 
                 'year': year,
                 'doi': doi,
                 'pubMedId': pubMedId,
-                'abstract': abstract
+                'abstract': abstract,
+                'PMCId': PMCId,
             })
         if created:
             logger.debug('Created new: %s', obj)
@@ -1429,7 +1430,7 @@ def getOrganism(taxonomy_id, scientific_name='', common_name=''):
             ncbi_taxonomy_id=taxonomy_id,
             defaults={
                 'scientific_name': scientific_name,
-                'common_name': common_name.replace('?', ''),
+                'common_name': common_name,
                 'externalLink': URL_NCBI_TAXONOMY + taxonomy_id,
             })
         if created:
@@ -1441,6 +1442,77 @@ def getOrganism(taxonomy_id, scientific_name='', common_name=''):
         print(exc, os.strerror)
     return obj
 
+
+def getAuthor(name, email='', address='', orcid='', role=''):
+    """
+    Get Author entry or create in case it does not exist
+    """
+    obj = None
+
+    if orcid != '': # When orcid is specified
+        try:
+            obj, created = Author.objects.get_or_create(
+                orcid=orcid,
+                defaults={
+                    'name': name,
+                    'email': email,
+                    'address': address,
+                    'role': role
+                }
+            )
+            if created:
+                logger.debug('Created new: %s', obj)
+                print('Created new', obj)
+
+        except Exception as exc:
+            logger.exception(exc)
+            print(exc, os.strerror)
+
+    else: # When orcid is not specified
+        try:
+            obj, created = Author.objects.get_or_create(
+                name=name,
+                defaults={
+                    'orcid': orcid,
+                    'email': email,
+                    'address': address,
+                    'role': role
+                }
+            )
+            if created:
+                logger.debug('Created new: %s', obj)
+                print('Created new', obj)
+
+        except Exception as exc:
+            logger.exception(exc)
+            print(exc, os.strerror)
+
+    return obj
+
+def updateAuthorFromIDR(name, email='', address='', orcid='', role=''):
+    """
+    Update Author entry with Contact Details or create in case it does not exist
+    """
+    obj = None
+    try:
+        obj, created = Author.objects.update_or_create(
+                name__contains=name,
+                defaults={
+                    'email': email,
+                    'address': address, 
+                    'orcid': orcid, 
+                    'role': role}
+                )
+        if created:
+            logger.debug('Created new: %s', obj)
+            print('Created new', obj)
+        else:
+            logger.debug('Updated: %s', obj)
+            print('Updated', obj)
+    except Exception as exc:
+        logger.exception(exc)
+        print(exc, os.strerror)
+    return obj
 
 class IDRUtils(object):
 
@@ -1507,76 +1579,56 @@ class IDRUtils(object):
                     % (organism[0], TaxonTermSource, organism[2]))
 
 
-#         # Create Author and Publication entries
-#         publication_list = studyParserObj.study['Publications'] #TODO: quitar esta linea y poner el bucle for directamente? (for publication in studyParserObj.study['Publications']:)
-#         publication_entry_list = []
+        # Create Author and Publication entries
+        publication_entry_list = []
 
-#         for publication in publication_list:
-#             title = publication['Title']
-#             doi = publication['DOI']
-#             pubMedId = publication['PubMed ID']
-#             PMCId = publication['PMC ID']
-#             author_list = [author for author in publication['Author List'].split(", ")]
-#             author_entry_list = []
+        for publication in studyParserObj.study['Publications']:
+            author_entry_list = []
 
-#             for author in author_list: #TODO: incluir last name y first name en Author entries?? #TODO: quitar esta linea y poner el bucle for directamente? (for author in publication['Author List'].split(", "):)
-#                 try:
-#                     # update or create Author entries
-#                     AuthorEntry, created = Author.objects.update_or_create(
-#                         name=author)
-#                     author_entry_list.append(AuthorEntry)
-#                     if created:
-#                         logger.debug('Created new entry: %s', AuthorEntry)
-#                         print('Created new entry: ', AuthorEntry)
-#                 except Exception as exc:
-#                     logger.debug(exc)
+            for author in publication['Author List'].split(", "): #TODO: incluir last name y first name en Author entries??
+                AuthorEntry = getAuthor(name=author)
+                author_entry_list.append(AuthorEntry)
 
-#             try:
-                
-#                 # update or create Publication entries
-#                 PublicationEntry, created = Publication.objects.update_or_create(
-#                     title=title,
-#                     doi=doi,
-#                     pubMedId=pubMedId,
-#                     PMCId=PMCId,
-#                     )
-#                 publication_entry_list.append(PublicationEntry)
-#                 # Add already updated/created Author entries to Publicacion entry
-#                 [PublicationEntry.authors.add(author) for author in author_entry_list]
+            PublicationEntry = updatePublication(
+                title=publication['Title'], 
+                doi=publication['DOI'], 
+                pubMedId=publication['PubMed ID'], 
+                PMCId=publication['PMC ID'], 
+                journal='', issn='', issue='', volume='', 
+                firstPage='', lastPage='', year='', abstract='') 
 
-#                 if created:
-#                     logger.debug('Created new entry: %s', PublicationEntry)
-#                     print('Created new entry: ', PublicationEntry)
-#             except Exception as exc:
-#                 logger.debug(exc)
+            #TODO: poner en todos sitios igual: poner los valores default al crear la funcion (como argumentos opcionales) o al llamar a la funcion (estableciendolos con un valor "vacios" como '')
+            publication_entry_list.append(PublicationEntry)
+            # Add already updated/created Author entries to Publicacion entry
+            [PublicationEntry.authors.add(author) for author in author_entry_list]
 
-#         # Update Author entries with "Study Contacts" details if exist.
-#         #TODO: Crear una try/except para los casos en que no exista studyParserObj.study['Study Person Last Name'] OR ['Study Person First Name'] OR ... y por tanto no se puedan dar estas lineas?? Ten en cuenta que en study_parser.ỳ aparecen como opcionales
-#         authorLastNames = [authorLastName for authorLastName in studyParserObj.study['Study Person Last Name'].split("\t")]
-#         authorFirstNames = [authorFirstName for authorFirstName in studyParserObj.study['Study Person First Name'].split("\t")]
-#         authorEmails = [authorEmail for authorEmail in studyParserObj.study['Study Person Email'].split("\t")]
-#         authorAddresses = [authorAddress for authorAddress in studyParserObj.study['Study Person Address'].split("\t")]
-#         authorORCIDs = [authorORCID for authorORCID in studyParserObj.study['Study Person ORCID'].split("\t")]
-#         authorRoles = [authorRole for authorRole in studyParserObj.study['Study Person Roles'].split("\t")]
 
-#         for authorEntry in zip(authorLastNames, authorFirstNames, authorEmails, authorAddresses, authorORCIDs, authorRoles):
-#             nonExactName = ' '.join([authorEntry[0], authorEntry[1][0]]) # Try to mimic Author entry name from publication['Author List'] although middle names would be missing. E.g: Carpenter AE (Author entry name from publication['Author List']); Carpenter A (Author entry name from study['Study Person Last Name'] + study['Study Person First Name']) #TODO: hacer mas corta esta linea??
-#             email = authorEntry[2]
-#             address = authorEntry[3]
-#             orcid = authorEntry[4]
-#             role = authorEntry[5]
+        # Update Author entries with "Study Contacts" details if exist.
+        #TODO: Crear una try/except para los casos en que no exista studyParserObj.study['Study Person Last Name'] OR ['Study Person First Name'] OR ... y por tanto no se puedan dar estas lineas?? Ten en cuenta que en study_parser.ỳ aparecen como opcionales
+        authorLastNames = [authorLastName for authorLastName in studyParserObj.study['Study Person Last Name'].split("\t")]
+        authorFirstNames = [authorFirstName for authorFirstName in studyParserObj.study['Study Person First Name'].split("\t")]
+        authorEmails = [authorEmail for authorEmail in studyParserObj.study['Study Person Email'].split("\t")]
+        authorAddresses = [authorAddress for authorAddress in studyParserObj.study['Study Person Address'].split("\t")]
+        authorORCIDs = [authorORCID for authorORCID in studyParserObj.study['Study Person ORCID'].split("\t")]
+        authorRoles = [authorRole for authorRole in studyParserObj.study['Study Person Roles'].split("\t")]
 
-#             try:
-#                 # update or create Author entries
-#                 AuthorEntry, created = Author.objects.update_or_create(
-#                     name__contains=nonExactName,
-#                     defaults={'email': email,'address': address, 'orcid': orcid, 'role': role}
-#                 )
-#                 if created:
-#                     logger.debug('Created new entry: %s', AuthorEntry)
-#                     print('Created new entry: ', AuthorEntry)
-#             except Exception as exc:
-#                 logger.debug(exc)
+        for authorEntry in zip(authorLastNames, authorFirstNames, authorEmails, authorAddresses, authorORCIDs, authorRoles):
+            '''
+            NOTE: pseudoName tries to mimic Author entry name from publication['Author List'] 
+            although middle names would be missing. E.g: 
+             Carpenter AE (Author entry name from publication['Author List']); 
+             Carpenter A (Author entry name from study['Study Person Last Name'] + study['Study Person First Name'])
+
+            '''
+            pseudoName =  ' '.join([authorEntry[0], authorEntry[1][0]])
+
+            AuthorEntry = updateAuthorFromIDR(
+                name=pseudoName, 
+                email=authorEntry[2], 
+                address=authorEntry[3], 
+                orcid=authorEntry[4], 
+                role=authorEntry[5]
+                )
 
 #         # Create AssayEntity entry
 #         assayTitle = studyParserObj.study['Study Title']
