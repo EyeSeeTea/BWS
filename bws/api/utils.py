@@ -13,7 +13,8 @@ from Bio.PDB import MMCIF2Dict
 from bs4 import BeautifulSoup
 from datetime import datetime
 import pandas as pd
-
+from django.db.models import Q
+#TODO: preguntar a JR si cambiar todos los mensajes de Created a new entry para especificar el tipo de entry
 
 STATUS = {"REL": "Released",
           "UNREL": "Unreleased",
@@ -25,7 +26,7 @@ FILE_EXT_PATTERN = '*.cif'
 logger = logging.getLogger(__name__)
 
 PDB_FOLDER_PATTERN = re.compile(".*/(\d\w{3})/.*\.pdb$")
-
+#TODO: colocar todos los regex que uses aqui para identificarlos bien
 REGEX_EMDB_ID = re.compile('^emd-\d{4,5}$')
 REGEX_VOL_FILE = re.compile('^(emd)-\d{4,5}\.map$')
 REGEX_PDB_FILE = re.compile('^(pdb)\d\w{3}\.ent$')
@@ -1457,7 +1458,7 @@ class ImageDataFromIDRAssayUtils(object):
             # Check that the Study Organism Term Source REF is NCBI Taxonomy
             TaxonRefMatchObj = re.match(REGEX_TAXON_REF, TaxonTermSource.lower())
             if TaxonRefMatchObj:                
-                try:
+                try:#TODO: probar a usar la funcion que ya hizo JR para update Organism (lo mismo para Publication, Author, ... todos los modelos que ya estaban antes de lo de IDR)
                     # update or create Organism entries
                     OrganismEntry, created = Organism.objects.update_or_create(
                         ncbi_taxonomy_id=ncbi_taxonomy_id,
@@ -1641,7 +1642,7 @@ class ImageDataFromIDRAssayUtils(object):
 
 
             '''
-            Create PlateEntity, Ligand and WellEntity entries
+            Create PlateEntity, LigandEntity and WellEntity entries
             '''
 
             #_____________ Crear Plates basado en annotation file from github ____________
@@ -1665,13 +1666,22 @@ class ImageDataFromIDRAssayUtils(object):
             # columns = jsonData['data']['columns']
             # data = jsonData['data']['rows']
             # screenDf = pd.DataFrame(data, columns = columns)
-            screenDf = pd.read_csv('/data/%s.csv' % (screenId))
+            screenDf = pd.read_csv('/data/%s.csv' % (screenId),
+                                    index_col=0).convert_dtypes()
+                                    #TODO: recuerda añadir mas keys a dtype en caso de que haya otra columna que no se importe desde el csv en el type que se corresponda
+            print(screenDf.dtypes)
+            print(screenDf['Percentage Inhibition (DPC)'][3])
         
+#TODO: gestionar como trabajar con los Nan si ponerlos como null values o como deafult ('' OR 0 OR 0.0)??
 
-            # Create PlateEntity entries
-            #TODO: fill in plateCount attr with the total sum plates (annotate() and Count methods could be useful)
-            plateDf = screenDf[['Plate', 'Plate Name']]
-            for index, row in plateDf.iterrows():
+            # plateDf = screenDf[['Plate', 'Plate Name']]
+            # ligandDf = ligandDf.fillna('') # Change NaN values to default str "''"
+
+
+            for index, row in screenDf.iterrows():
+
+                # Create PlateEntity entries
+                #TODO: fill in plateCount attr with the total sum plates (annotate() and Count methods could be useful)
                 plateId = row['Plate']
                 plateName = row['Plate Name']
 
@@ -1689,51 +1699,164 @@ class ImageDataFromIDRAssayUtils(object):
                     logger.debug(exc)
 
 
-            # Create LigandEntity entries
-            #TODO: ojo tienes que asegurarte que el pubchem id va a ser el id de los ligands tanto aqui como en el proyecto de JR. 
-            #TODO: no incluir las columnas que no vayas a usar como iupac name ... etc. Consulta con JR cuales si nos interesan
-            ligandDf_nan = screenDf[['Compound Name', 'Compound PubChem CID', 'Compound PubChem URL', 'Compound SMILES', 'Compound IUPAC Name', 'Compound Unichem URL', 'Compound InChIKey', 'Compound Broad Identifier']]
-            # TODO: ahora mismo solo aliminamos los NaN de 'Compound Name' porque en idr0094-ellinger-sarscov2 (unico HCS de covid hasta ahora en IDR) lo que ellos usan como unque PK para diferenciar los ligandos es el nombre. En el futuro seria intereasnte ver si lo cambian a algun ID (PubChem ID, por ejemplo) y lo podemos actualizar nosotros tb
-            ligandDf = ligandDf_nan.dropna(subset=['Compound Name']) # Drop control rows (i.e. no ligand tested).  
-            ligandDf = ligandDf.fillna({'Compound PubChem CID': 0.0}) # Fill missing values for 'Compound PubChem CID' with float 0.0
-            ligandDf['Compound PubChem CID'] = ligandDf['Compound PubChem CID'].astype(int).astype(str) # Change data type from float to str for 'Compound PubChem CID'
-            count=0
+                # Create LigandEntity and WellEntity entries
+                wellId = row['Well']
+                wellName = row['Well Name']
+                #TODO: externalLink
+                #TODO: imageThumbailLink
+                #TODO: imagesIds
+                wellCellLine = row['Characteristics [Cell Line]'] #TODO: hacer regex para que coja cualquier nomnre de que cumpla con xxxcell linexxx
+                wellCellLineTermAccession = row['Term Source 3 Accession'] #TODO: hacer esto tb scalable y no usar tal cual 'Term Source 3 Accession'
+                wellControlType = row['Control Type'] #TODO: asignar aqui o dentro del if?
+                wellQualityControl = row['Quality Control']
+                #wellMicromolarConcentration = [row['Compound Concentration (microMolar)'] if 'Compound Concentration (microMolar)' in screenDf.columns()]
+                wellPercentageInhibition = row['Percentage Inhibition (DPC)']
+                #wellHitOver75Activity = row['Hit Compound (over 75% activity)']
+                #wellNumberCells = row['Cells - Number of Objects'] #TODO: PARA EL SCREEN 2602 ESTO CAMBIA => hazlo scalable con regex
+                wellPhenotypeAnnotationLevel = row['Phenotype Annotation Level']
+                wellChannels = row['Channels']
 
-            for index, row in ligandDf.iterrows():
 
-                # Stablish a custom ascending Id for those ligands that has no PubChem ID associated to them.
-                if row['Compound PubChem CID'] == '0':
-                    ligandId = 'cust' + str(custom_ascending_dbId)
-                    custom_ascending_dbId=custom_ascending_dbId+1
-                else:
-                    ligandId = row['Compound PubChem CID']
 
-                ligandName = row['Compound Name']
-                ligandSMILES = row['Compound SMILES']
-                ligandIUPACInChIkey = row['Compound InChIKey']
+                if pd.isna(row['Compound Name']) and pd.isna(wellControlType):  # Create WellEntity entries for unkown wells (no ligand + no control)
+                    
 
-                #TODO: solucionar!!!!!!!!!!!!!!!!!!!!!!!!! que se creen entradas de ligando a partir del Screen B (no tendria que suceder)
-                try:
-                    #TODO: change to get_or_create para que obtenga los ligands en funcion del ombre OR pubhcemid solo. Esto lo hacemos para que se coordine bien con los lgiandso que ya hay en la db de JR
-                    # update or create LigandEntity entries
-                    LigandEntityEntry, created = LigandEntity.objects.update_or_create(
-                        name=ligandName,
-                        dbId=ligandId,
-                        #SMILES=ligandSMILES,
-                        IUPACInChIkey=ligandIUPACInChIkey,
-                        # defaults={
-                        #     'dbId': ligandId, 
-                        #     'SMILES': ligandSMILES,
-                        #     'IUPACInChIkey': ligandIUPACInChIkey,
-                        #     },
-                    )
-                    if created:
-                        logger.debug('Created new entry: %s', LigandEntityEntry)
-                        print('Created new entry: ', LigandEntityEntry)
-                        count=count+1
-                        #print(count)
-                except Exception as exc:
-                    logger.debug(exc)
+                    try:
+                        WellEntityEntry, created = WellEntity.objects.update_or_create(
+                            dbId=wellId,
+                            name=wellName,
+                            description='Unkown details',
+                            plate=PlateEntityEntry,
+                            #externalLink=wellExternalLink,
+                            #imageThumbailLink=wellImageThumbailLink,
+                            #imagesIds=wellImagesIds,
+                            cellLine=wellCellLine,
+                            cellLineTermAccession=wellCellLineTermAccession,
+                            controlType=wellControlType,#TODO: chequea que se crea con '' y no con nan
+                            qualityControl=wellQualityControl,
+                            #micromolarConcentration=wellMicromolarConcentration,
+                            percentageInhibition=wellPercentageInhibition,
+                            #hitOver75Activity=wellHitOver75Activity,
+                            #numberCells=wellNumberCells,
+                            phenotypeAnnotationLevel=wellPhenotypeAnnotationLevel,
+                            channels=wellChannels
+                        )
+                        if created:
+                            logger.debug('Created new entry: %s', WellEntityEntry)
+                            print('Created new entry: ', WellEntityEntry)
+                    except Exception as exc: 
+                        logger.debug(exc)
 
-            #print(len(ligandDf['Compound PubChem CID'].unique()))
-        
+                elif pd.isna(row['Compound Name']) and wellControlType == 'positive':  # Create WellEntity entries for positive controls
+                    
+                    try:
+                        WellEntityEntry, created = WellEntity.objects.update_or_create(
+                            dbId=wellId,
+                            name=wellName,
+                            description='transfection control, or gene knock down that gives a known phenotype', #TODO: buscar uno mas especifico de HCS
+                            plate=PlateEntityEntry,
+                            #externalLink=wellExternalLink,
+                            #imageThumbailLink=wellImageThumbailLink,
+                            #imagesIds=wellImagesIds,
+                            cellLine=wellCellLine,
+                            cellLineTermAccession=wellCellLineTermAccession,
+                            controlType=wellControlType,
+                            qualityControl=wellQualityControl,
+                            #micromolarConcentration=wellMicromolarConcentration,
+                            percentageInhibition=wellPercentageInhibition,
+                            #hitOver75Activity=wellHitOver75Activity,
+                            #numberCells=wellNumberCells,
+                            phenotypeAnnotationLevel=wellPhenotypeAnnotationLevel,
+                            channels=wellChannels
+                        )
+                        if created:
+                            logger.debug('Created new entry: %s', WellEntityEntry)
+                            print('Created new entry: ', WellEntityEntry)
+                    except Exception as exc: 
+                        logger.debug(exc)
+
+                elif pd.isna(row['Compound Name']) and wellControlType == 'negative':  # Create WellEntity entries for negative controls
+                    
+                    try:
+                        WellEntityEntry, created = WellEntity.objects.update_or_create(
+                            dbId=wellId,
+                            name=wellName,
+                            description='scrambled siRNA, DMSO, cells but no treatment. Expected to have no effect on cells', #TODO: buscar uno mas especifico de HCS
+                            plate=PlateEntityEntry,
+                            #externalLink=wellExternalLink,
+                            #imageThumbailLink=wellImageThumbailLink,
+                            #imagesIds=wellImagesIds,
+                            cellLine=wellCellLine,
+                            cellLineTermAccession=wellCellLineTermAccession,
+                            controlType=wellControlType,
+                            qualityControl=wellQualityControl,
+                            #micromolarConcentration=wellMicromolarConcentration,
+                            percentageInhibition=wellPercentageInhibition,
+                            #hitOver75Activity=wellHitOver75Activity,
+                            #numberCells=wellNumberCells,
+                            phenotypeAnnotationLevel=wellPhenotypeAnnotationLevel,
+                            channels=wellChannels
+                        )
+                        if created:
+                            logger.debug('Created new entry: %s', WellEntityEntry)
+                            print('Created new entry: ', WellEntityEntry)
+                    except Exception as exc: 
+                        logger.debug(exc)
+
+                else: # Create WellEntity entries with ligand
+                #TODO: no incluir las columnas que no vayas a usar como iupac name ... etc. Consulta con JR cuales si nos interesan
+                    ligandName = row['Compound Name']
+                    ligandPubChemId = row['Compound PubChem CID']
+                    # ligandPubChemUrl = row['Compound PubChem URL']
+                    #ligandSMILES = row['Compound SMILES']
+                    #ligandIupacName = row['Compound IUPAC Name']
+                    # ligandUniChemUrl = row['Compound Unichem URL']
+                    ligandIUPACInChIkey = row['Compound InChIKey']
+                    # ligandBroadId = row['Compound Broad Identifier']
+
+                    #TODO: solucionar que se creen entradas de ligando a partir del Screen B (no tendria que suceder)
+                    try:
+                        # get or create LigandEntity entries depending on name OR pubChemCompoundId 
+                        LigandEntityEntry, created = LigandEntity.objects.filter(
+                            Q(name=ligandName) | Q(pubChemCompoundId=ligandPubChemId) # OR operator using Q() objects
+                            ).get_or_create(
+                                defaults={
+                                    'name': ligandName, 
+                                    'pubChemCompoundId': ligandPubChemId, 
+                                    'IUPACInChIkey': ligandIUPACInChIkey}
+                                )
+
+                        if created:
+                            logger.debug('Created new entry: %s', LigandEntityEntry)
+                            print('Created new entry: ', LigandEntityEntry)
+                    except Exception as exc:
+                        logger.debug(exc)
+
+                    # update or create WellEntity
+                    try:
+                        WellEntityEntry, created = WellEntity.objects.update_or_create(
+                            dbId=wellId,
+                            name=wellName,
+                            description='well treated with a compound', #TODO: buscar uno mas especifico de HCS
+                            plate=PlateEntityEntry,
+                            #externalLink=wellExternalLink,
+                            #imageThumbailLink=wellImageThumbailLink,
+                            #imagesIds=wellImagesIds,
+                            cellLine=wellCellLine,
+                            cellLineTermAccession=wellCellLineTermAccession,
+                            controlType=wellControlType,
+                            qualityControl=wellQualityControl,
+                            #micromolarConcentration=wellMicromolarConcentration,
+                            percentageInhibition=wellPercentageInhibition,
+                            #hitOver75Activity=wellHitOver75Activity,
+                            #numberCells=wellNumberCells,
+                            phenotypeAnnotationLevel=wellPhenotypeAnnotationLevel,
+                            channels=wellChannels,
+                            ligand=LigandEntityEntry,
+                        )
+                        if created:
+                            logger.debug('Created new entry: %s', WellEntityEntry)
+                            print('Created new entry: ', WellEntityEntry)
+                    except Exception as exc: 
+                        logger.debug(exc)
+
