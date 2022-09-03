@@ -34,20 +34,7 @@ REGEX_LR_FILE = re.compile('^\d\w{3}\.(deepres|monores)\.pdb$')
 REGEX_MAP2MODELQUALITY_FILE = re.compile('^\d\w{3}\.(mapq|fscq)\.pdb$')
 REGEX_IDR_ID = re.compile('.*(idr\d{4})-.*-.*')
 REGEX_TAXON_REF = re.compile('(ncbitaxon).*')
-
-SCREEN_TABLE_URL = 'https://idr.openmicroscopy.org/webgateway/table/Screen/{screen_id}/query/?query=*'
-
-
-# #TODO: en caso de que haga la creacion de plate entry por url. BORRAR SI NO ES NECESARIO
-# # Create http session
-# INDEX_PAGE = "https://idr.openmicroscopy.org/webclient/?experimenter=-1"
-
-# with requests.Session() as session:
-#     request = requests.Request('GET', INDEX_PAGE)
-#     prepped = session.prepare_request(request)
-#     response = session.send(prepped)
-#     if response.status_code != 200:
-#         response.raise_for_status()
+REGEX_SCREEN_NAME = re.compile('.*\/(screen)(.*)')
 
 
 def findGeneric(pattern, dirToLook=THORN_DATA_DIR):
@@ -1548,6 +1535,77 @@ def updateAssayEntity(dbId, name, featureType, description, externalLink, detail
         print(exc, os.strerror)
     return obj
 
+
+def updateScreenEntity(dbId, name, description, type, typeTermAccession, technologyType, technologyTypeTermAccession, imagingMethod, imagingMethodTermAccession, sampleType, plateCount, dataDoi, assay):
+    """
+    Update ScreenEntity entry or create in case it does not exist
+    """
+
+    obj = None
+    try:
+        obj, created = ScreenEntity.objects.update_or_create(
+            dbId=dbId,
+            defaults={
+                'name': name,
+                'description': description,
+                'type': type,
+                'typeTermAccession': typeTermAccession,
+                'technologyType': technologyType,
+                'technologyTypeTermAccession': technologyTypeTermAccession,
+                'imagingMethod': imagingMethod,
+                'imagingMethodTermAccession': imagingMethodTermAccession,
+                'sampleType': sampleType,
+                'plateCount': plateCount,
+                'dataDoi': dataDoi,
+                'assay': assay,
+            }
+            )
+        if created:
+            logger.debug('Created new: %s', obj)
+            print('Created new', obj)
+        else:
+            logger.debug('Updated: %s', obj)
+            print('Updated', obj)
+    except Exception as exc:
+        logger.exception(exc)
+        print(exc, os.strerror)
+    return obj
+
+
+def createHTTPSession():
+    '''
+    Create HTTP session with OMERO server for IDR queries
+    '''
+
+    with requests.Session() as session:
+        request = requests.Request('GET', URL_IDR_INDEX_PAGE)
+        prepped = session.prepare_request(request)
+        response = session.send(prepped)
+        if response.status_code != 200:
+            response.raise_for_status()
+
+    return session
+
+
+def getScreenId(key, value, screenDir):
+    '''
+    Get screen ID using IDR Web API query
+    '''
+
+    # Create http session
+    session = createHTTPSession()
+
+    # Set url variables
+    qs = {'key': key, 'value': value}
+    url = URL_SCREENS_PROJECTS.format(**qs)
+    screens_projects_json = session.get(url).json()
+
+    # Get screen ID given screen dir (e.g. idr0094-ellinger-sarscov2/screenA)
+    for s in screens_projects_json['screens']:
+        if screenDir in s['name']:
+            return s['id']
+
+
 class IDRUtils(object):
 
     
@@ -1690,59 +1748,42 @@ class IDRUtils(object):
         [AssayEntityEntry.publications.add(pubEnt) for pubEnt in publication_entry_list]
 
         
-#         # Create ScreenEntity entries
-#         REGEX_SCREEN_NAME = re.compile('.*\/(screen)(.*)')
-#         custom_ascending_dbId=0 # Stablish a custom ascending Id for those ligands that has no PubChem ID associated to them.
+        # Create ScreenEntity entries
+        for screen in studyParserObj.components:
 
-#         for screen in studyParserObj.components:
+            # Get screen name 
+            screenDir = screen['Comment\\[IDR Screen Name\\]']
+            screenNameMatchObj = re.match(REGEX_SCREEN_NAME, screenDir)
+            screenName = ' '.join([screenNameMatchObj.group(1), screenNameMatchObj.group(2)])
 
-            
-#             #screenId = #TODO: buscar id por el modulo request (script mio de api)
+            # Get screen id
+            screenId = getScreenId(
+                key='organism', 
+                value='Severe acute respiratory syndrome coronavirus 2',
+                screenDir=screenDir,
+                )
 
-#             screenDir = screen['Comment\\[IDR Screen Name\\]'] #TODO: buscar otro nombre mas descriptivo
-#             screenNameMatchObj = re.match(REGEX_SCREEN_NAME, screenDir)
-#             screenName = ' '.join([screenNameMatchObj.group(1), screenNameMatchObj.group(2)])
+            # Get screen attributes that are lists
+            screenImagingMethods = [screenImagingMethod for screenImagingMethod in screen['Screen Imaging Method'].split("\t")]
+            screenImagingTermAccessions = [screenImagingTermAccession for screenImagingTermAccession in screen['Screen Imaging Method Term Accession'].split("\t")]
+            #plateCount = 
 
-#             #TODO: CAMBIAR!!
-#             if screenName == 'screen A':
-#                 screenId = '2602'
-#             else:
-#                 screenId = '2603'
-
-#             screenDescription = screen['Screen Description']
-#             screenType = screen['Screen Type']
-#             screenTypeTermAccession = screen['Screen Type Term Accession']
-#             screenTechnologyType = screen['Screen Technology Type']
-#             screenTechnologyTypeTermAccession = screen['Screen Technology Type Term Accession']
-#             screenImagingMethods = [screenImagingMethod for screenImagingMethod in screen['Screen Imaging Method'].split("\t")]
-#             screenImagingTermAccessions = [screenImagingTermAccession for screenImagingTermAccession in screen['Screen Imaging Method Term Accession'].split("\t")]
-#             screenSampleType = screen['Screen Sample Type']
-#             #plateCount = 
-#             screenDataDoi = screen['Screen Data DOI']
-
-#             try:
-#                 # update or create Screen entries
-#                 ScreenEntityEntry, created = ScreenEntity.objects.update_or_create(
-#                     #dbId=screenName[-1], #TODO: cambiar esto para añadir el id real del screen
-#                     dbId=screenId,
-#                     name=screenName,
-#                     description=screenDescription,
-#                     type=screenType,
-#                     typeTermAccession=screenTypeTermAccession,
-#                     technologyType=screenTechnologyType,
-#                     technologyTypeTermAccession=screenTechnologyTypeTermAccession,
-#                     imagingMethod='; '.join(screenImagingMethods),
-#                     imagingMethodTermAccession='; '.join(screenImagingTermAccessions),
-#                     sampleType=screenSampleType,
-#                     #plateCount=plateCount,
-#                     dataDoi=screenDataDoi,
-#                     assay=AssayEntityEntry,                
-#                 )
-#                 if created:
-#                     logger.debug('Created new entry: %s', ScreenEntityEntry)
-#                     print('Created new entry: ', ScreenEntityEntry)
-#             except Exception as exc:
-#                 logger.debug(exc)
+            ScreenEntityEntry = updateScreenEntity(
+                dbId=screenId,
+                name=screenName,
+                description=screen['Screen Description'],
+                type=screen['Screen Type'],
+                typeTermAccession=screen['Screen Type Term Accession'],
+                technologyType=screen['Screen Technology Type'],
+                technologyTypeTermAccession=screen['Screen Technology Type Term Accession'],
+                imagingMethod='; '.join(screenImagingMethods),
+                imagingMethodTermAccession='; '.join(screenImagingTermAccessions),
+                sampleType=screen['Screen Sample Type'],
+                #plateCount=plateCount,
+                plateCount=None,
+                dataDoi=screen['Screen Data DOI'],
+                assay=AssayEntityEntry,  
+            )
 
 
 #             '''
@@ -1762,7 +1803,7 @@ class IDRUtils(object):
 #             #_____________ Crear Plates basado en url from OMERO webgateway ____________
 
 #             qs = {'screen_id': screenId} #TODO: cambiar esta forma de formatear a la que has usado en el resto del script
-#             url = SCREEN_TABLE_URL.format(**qs)
+#             url = URL_SCREEN_TABLE.format(**qs)
             
 #             #TODO: uncomment
 #             # # Create a dataframe from "data" key in json format output got from url

@@ -47,3 +47,6 @@ URL_LIGAND_EBI = "https://www.ebi.ac.uk/pdbe-srv/pdbechem/chemicalCompound/show/
 
 # IDR_BASEDIR = "IDR/"
 # IDR_DIR = os.path.join(LOCAL_DATA_DIR, IDR_BASEDIR)
+URL_SCREEN_TABLE = 'https://idr.openmicroscopy.org/webgateway/table/Screen/{screen_id}/query/?query=*'
+URL_IDR_INDEX_PAGE = "https://idr.openmicroscopy.org/webclient/?experimenter=-1"
+URL_SCREENS_PROJECTS = "https://idr.openmicroscopy.org/mapr/api/{key}/?value={value}"
