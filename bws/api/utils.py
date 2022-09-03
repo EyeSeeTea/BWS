@@ -1514,6 +1514,40 @@ def updateAuthorFromIDR(name, email='', address='', orcid='', role=''):
         print(exc, os.strerror)
     return obj
 
+def updateAssayEntity(dbId, name, featureType, description, externalLink, details, assayType, assayTypeTermAccession, screenCount, BIAId, releaseDate, dataDoi):
+    """
+    Update AssayEntity entry or create in case it does not exist
+    """
+
+    obj = None
+    try:
+        obj, created = AssayEntity.objects.update_or_create(
+            dbId=dbId,
+            defaults={
+                'name': name,
+                'featureType': featureType, 
+                'description': description,
+                'externalLink': externalLink,
+                'details': details,
+                'assayType': assayType,
+                'assayTypeTermAccession': assayTypeTermAccession,
+                'screenCount': screenCount,
+                'BIAId': BIAId,
+                'releaseDate': releaseDate,
+                'dataDoi': dataDoi
+            }
+            )
+        if created:
+            logger.debug('Created new: %s', obj)
+            print('Created new', obj)
+        else:
+            logger.debug('Updated: %s', obj)
+            print('Updated', obj)
+    except Exception as exc:
+        logger.exception(exc)
+        print(exc, os.strerror)
+    return obj
+
 class IDRUtils(object):
 
     
@@ -1630,43 +1664,30 @@ class IDRUtils(object):
                 role=authorEntry[5]
                 )
 
-#         # Create AssayEntity entry
-#         assayTitle = studyParserObj.study['Study Title']
-#         assayDescription = studyParserObj.study['Study Description']
-#         #assayExternalLinks = [assayExternalLink for assayExternalLink in studyParserObj.study['Study External URL'].split("\t")] #TODO: en los study.txt que no aparece la key ['Study External URL'] esto falla (como en idr0094-ellinger-sarscov2) SOLUCIONALO
-#         assayDetails = studyParserObj.study['Study Key Words']
-#         assayTypes = [assayType for assayType in studyParserObj.study['Study Type'].split("\t")] 
-#         assayTypeTermAccessions = [assayTypeTermAccession for assayTypeTermAccession in studyParserObj.study['Study Type Term Accession'].split("\t")] 
-#         screenCount = studyParserObj.study['Study Screens Number']
-#         BIAId = studyParserObj.study['Study BioImage Archive Accession']
-#         releaseDate = studyParserObj.study['Study Public Release Date']
-#         dataDoi = studyParserObj.study['Data DOI']
+        # Create AssayEntity entry
+        #assayExternalLinks = [(assayExternalLink for assayExternalLink in studyParserObj.study['Study External URL'].split("\t")) if ('Study External URL' in studyParserObj.study) else ''] #TODO: en los study.txt que no aparece la key ['Study External URL'] esto falla (como en idr0094-ellinger-sarscov2) SOLUCIONALO
+        assayTypes = [assayType for assayType in studyParserObj.study['Study Type'].split("\t")] 
+        assayTypeTermAccessions = [assayTypeTermAccession for assayTypeTermAccession in studyParserObj.study['Study Type Term Accession'].split("\t")] 
 
-#         try:
-#             # update or create Assay entry
-#             AssayEntityEntry, created = AssayEntity.objects.update_or_create(
-#                 name=assayTitle,
-#                 featureType=FeatureTypeEntry,
-#                 description=assayDescription,
-#                 #externalLink='; '.join(assayExternalLinks),
-#                 details=assayDetails,
-#                 dbId=assayId,
-#                 assayType='; '.join(assayTypes),
-#                 assayTypeTermAccession='; '.join(assayTypeTermAccessions),
-#                 screenCount=screenCount,
-#                 BIAId=BIAId,
-#                 releaseDate=releaseDate,
-#                 dataDoi=dataDoi,                
-#             )
-#             # Add already updated/created Author entries and Publicacion entries to AssayEntity entry
-#             [AssayEntityEntry.organisms.add(orgEnt) for orgEnt in organism_entry_list]
-#             [AssayEntityEntry.publications.add(pubEnt) for pubEnt in publication_entry_list]
+        AssayEntityEntry = updateAssayEntity(
+            name=studyParserObj.study['Study Title'],
+            featureType=FeatureTypeEntry,
+            description=studyParserObj.study['Study Description'],
+            #externalLink='; '.join(assayExternalLinks),
+            externalLink='',
+            details=studyParserObj.study['Study Key Words'],
+            dbId=assayId,
+            assayType='; '.join(assayTypes),
+            assayTypeTermAccession='; '.join(assayTypeTermAccessions),
+            screenCount=studyParserObj.study['Study Screens Number'],
+            BIAId=studyParserObj.study['Study BioImage Archive Accession'],
+            releaseDate=studyParserObj.study['Study Public Release Date'],
+            dataDoi=studyParserObj.study['Data DOI'],
+        )
 
-#             if created:
-#                 logger.debug('Created new entry: %s', AssayEntityEntry)
-#                 print('Created new entry: ', AssayEntityEntry)
-#         except Exception as exc:
-#             logger.debug(exc)
+        # Add already updated/created Author entries and Publicacion entries to AssayEntity entry
+        [AssayEntityEntry.organisms.add(orgEnt) for orgEnt in organism_entry_list]
+        [AssayEntityEntry.publications.add(pubEnt) for pubEnt in publication_entry_list]
 
         
 #         # Create ScreenEntity entries
