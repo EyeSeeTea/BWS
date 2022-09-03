@@ -1605,6 +1605,48 @@ def getScreenId(key, value, screenDir):
         if screenDir in s['name']:
             return s['id']
 
+def getScreenDataframe(screenId):
+    '''
+    Get screen dataframe with plate, ligand, and well data from OMERO webgateway
+    '''
+
+    # Create http session
+    session = createHTTPSession()
+
+    # Set url variables
+    qs = {'screen_id': screenId}
+    url = URL_SCREEN_TABLE.format(**qs)
+            
+    # Create a dataframe from "data" key in json output from url
+    jsonData = session.get(url).json()
+    columns = jsonData['data']['columns']
+    data = jsonData['data']['rows']
+
+    return pd.DataFrame(data, columns = columns).convert_dtypes()
+
+
+def updatePlateEntity(dbId, name, screen):
+    """
+    Update PlateEntity entry or create in case it does not exist
+    """
+
+    obj = None
+    try:
+        obj, created = PlateEntity.objects.update_or_create(
+            dbId=dbId,
+            defaults={
+                'name': name,
+                'screen': screen
+            }
+            )
+        if created:
+            logger.debug('Created new: %s', obj)
+            print('Created new', obj)
+    except Exception as exc:
+        logger.exception(exc)
+        print(exc, os.strerror)
+    return obj
+
 
 class IDRUtils(object):
 
@@ -1786,62 +1828,19 @@ class IDRUtils(object):
             )
 
 
-#             '''
-#             Create PlateEntity, LigandEntity and WellEntity entries
-#             '''
+            # Create PlateEntity, LigandEntity and WellEntity entries
+            screenDf = getScreenDataframe(screenId)
+            # screenDf = pd.read_csv('/data/%s.csv' % (screenId),
+            #                         index_col=0).convert_dtypes()
+            #TODO: gestionar como trabajar con los Nan si ponerlos como null values o como deafult ('' OR 0 OR 0.0)??
 
-#             #_____________ Crear Plates basado en annotation file from github ____________
-#             # screenAnnotationFile = screen['Annotations'][0]['Annotation File'].split(" ")[0] #TODO: cambiar esto para el caso en el que haya mas de un elemeto en la lista screen['Annotations']
-#             # annotationFilePath = os.path.join(dirToLook, screenDir, screenAnnotationFile)
-#             # df = pd.read_csv(annotationFilePath)
-            
-#             # print(len(df['Plate']))
-#             # print(len(df['Plate'].unique()))
-#             # ______________________________________________________
-
-
-#             #_____________ Crear Plates basado en url from OMERO webgateway ____________
-
-#             qs = {'screen_id': screenId} #TODO: cambiar esta forma de formatear a la que has usado en el resto del script
-#             url = URL_SCREEN_TABLE.format(**qs)
-            
-#             #TODO: uncomment
-#             # # Create a dataframe from "data" key in json format output got from url
-#             # jsonData = session.get(url).json()
-#             # columns = jsonData['data']['columns']
-#             # data = jsonData['data']['rows']
-#             # screenDf = pd.DataFrame(data, columns = columns)
-#             screenDf = pd.read_csv('/data/%s.csv' % (screenId),
-#                                     index_col=0).convert_dtypes()
-#                                     #TODO: recuerda añadir mas keys a dtype en caso de que haya otra columna que no se importe desde el csv en el type que se corresponda
-#             print(screenDf.dtypes)
-#             print(screenDf['Percentage Inhibition (DPC)'][3])
-        
-# #TODO: gestionar como trabajar con los Nan si ponerlos como null values o como deafult ('' OR 0 OR 0.0)??
-
-#             # plateDf = screenDf[['Plate', 'Plate Name']]
-#             # ligandDf = ligandDf.fillna('') # Change NaN values to default str "''"
-
-
-#             for index, row in screenDf.iterrows():
-
-#                 # Create PlateEntity entries
-#                 #TODO: fill in plateCount attr with the total sum plates (annotate() and Count methods could be useful)
-#                 plateId = row['Plate']
-#                 plateName = row['Plate Name']
-
-#                 try:
-#                     # update or create Plate entries
-#                     PlateEntityEntry, created = PlateEntity.objects.update_or_create(
-#                         dbId=plateId,
-#                         name=plateName,
-#                         screen=ScreenEntityEntry,
-#                     )
-#                     if created:
-#                         logger.debug('Created new entry: %s', PlateEntityEntry)
-#                         print('Created new entry: ', PlateEntityEntry)
-#                 except Exception as exc: 
-#                     logger.debug(exc)
+            for index, row in screenDf.iterrows():
+                #TODO: fill in plateCount attr with the total sum plates (annotate() and Count methods could be useful)
+                PlateEntityEntry = updatePlateEntity(
+                    dbId=row['Plate'],
+                    name=row['Plate Name'],
+                    screen=ScreenEntityEntry,
+                )
 
 
 #                 # Create LigandEntity and WellEntity entries
