@@ -1,3 +1,4 @@
+from cmath import nan
 import json
 import logging
 import os
@@ -14,6 +15,7 @@ from bs4 import BeautifulSoup
 from datetime import datetime
 import pandas as pd
 from django.db.models import Q
+import numpy as np
 #TODO: preguntar a JR si cambiar todos los mensajes de Created a new entry para especificar el tipo de entry
 
 STATUS = {"REL": "Released",
@@ -1587,13 +1589,10 @@ def createHTTPSession():
     return session
 
 
-def getScreenId(key, value, screenDir):
+def getScreenId(session, key, value, screenDir):
     '''
     Get screen ID using IDR Web API query
     '''
-
-    # Create http session
-    session = createHTTPSession()
 
     # Set url variables
     qs = {'key': key, 'value': value}
@@ -1605,24 +1604,32 @@ def getScreenId(key, value, screenDir):
         if screenDir in s['name']:
             return s['id']
 
-def getScreenDataframe(screenId):
+def getScreenDataframe(session, screenId):
     '''
-    Get screen dataframe with plate, ligand, and well data from OMERO webgateway
+    Get screen dataframe including plate, ligand, and well data from OMERO webgateway
     '''
-
-    # Create http session
-    session = createHTTPSession()
-
+    
     # Set url variables
-    qs = {'screen_id': screenId}
+    qs = {'screenId': screenId}
     url = URL_SCREEN_TABLE.format(**qs)
             
     # Create a dataframe from "data" key in json output from url
     jsonData = session.get(url).json()
     columns = jsonData['data']['columns']
     data = jsonData['data']['rows']
+    df  = pd.DataFrame(data, columns = columns).convert_dtypes()
 
-    return pd.DataFrame(data, columns = columns).convert_dtypes()
+    # Get column names that could harbor float values (i.e. micromolecular concentration and percentage of inhibition)
+    mc_colName = getColNameByKW(df.columns, 'micromolar', 'concentration')
+    pi_colName = getColNameByKW(df.columns, 'percentage', 'inhibition')
+
+    # Replace commans ',' with dots '.' to avoid string to float conversion issues 
+    df[pi_colName] = df[pi_colName].str.replace(',', '.')
+    
+    if mc_colName != None:
+        df[mc_colName] = df[mc_colName].str.replace(',', '.')
+    
+    return df
 
 
 def updatePlateEntity(dbId, name, screen):
@@ -1648,6 +1655,187 @@ def updatePlateEntity(dbId, name, screen):
     return obj
 
 
+def updateWellEntity(dbId, name, description, ligand, plate, externalLink, imageThumbailLink, imagesIds, cellLine, cellLineTermAccession, controlType, qualityControl, micromolarConcentration, percentageInhibition, hitOver75Activity, numberCells, phenotypeAnnotationLevel, channels):
+    """
+    Update WellEntity entry or create in case it does not exist
+    """
+
+    obj = None
+    try:
+        obj, created = WellEntity.objects.update_or_create(
+            dbId=dbId,
+            defaults={
+                'name': name,
+                'description': description,
+                'ligand': ligand,
+                'plate': plate,
+                'externalLink': externalLink,
+                'imageThumbailLink': imageThumbailLink,
+                'imagesIds': imagesIds,
+                'cellLine': cellLine,
+                'cellLineTermAccession': cellLineTermAccession,
+                'controlType': controlType,
+                'qualityControl': qualityControl,
+                'micromolarConcentration': micromolarConcentration,
+                'percentageInhibition': percentageInhibition, 
+                'hitOver75Activity': hitOver75Activity, 
+                'numberCells': numberCells,
+                'phenotypeAnnotationLevel': phenotypeAnnotationLevel,
+                'channels': channels
+            }
+            )
+        if created:
+            logger.debug('Created new: %s', obj)
+            print('Created new', obj)
+        else:
+            logger.debug('Updated: %s', obj)
+            print('Updated', obj)
+    except Exception as exc:
+        logger.exception(exc)
+        print(exc, os.strerror)
+    return obj
+
+
+def getImageIdsFromWellId(session, wellId):
+    '''
+    Get image IDs associated to a specific well using well ID through IDR Web API
+    '''
+
+    # Set url variables
+    qs = {'key': 'well', 'keyId': wellId}
+    url = URL_ATTR_KEY.format(**qs)
+    well_attr_json = session.get(url).json()
+
+    # Get screen ID given screen dir (e.g. idr0094-ellinger-sarscov2/screenA)
+    imageIds = []
+    for wellSample in well_attr_json['data']['WellSamples']:
+        imageIds.append(wellSample['Image']['@id'])
+
+    return imageIds
+        
+
+def getColNameByKW(colNames, keyword1, keyword2):
+    '''
+    Get the column name from a list of column names that match with 2 given keywords
+    '''
+
+    REGEX_KEYWORD = '(?=.*{keyword1})(?=.*{keyword2}).*$'.format(**{'keyword1': keyword1, 'keyword2': keyword2})
+
+    for colName in colNames:
+        if re.match(REGEX_KEYWORD, colName.lower()):
+            return colName
+
+
+
+def getLigandEntity(dbId, ligandType, name, formula, formula_weight, details, altNames, imageLink, externalLink, pubChemCompoundId, systematicNames, IUPACInChI, IUPACInChIkey, isomericSMILES, canonicalSMILES):
+    """
+    Get LigandEntity entry given name OR pubChemCompoundId. Create it in case it does not exist
+    """
+
+    obj = None
+
+    # Get LigandEntity using pubChemCompoundId (for those cases in which name is an empty value)
+    if name == '':
+        try:
+            obj, created = LigandEntity.objects.get_or_create(
+                    pubChemCompoundId=pubChemCompoundId,
+                    defaults={
+                        'name': name, 
+                        'dbId': dbId,
+                        'ligandType': ligandType,
+                        'formula': formula,
+                        'formula_weight': formula_weight,
+                        'details': details,
+                        'altNames': altNames,
+                        'imageLink': imageLink,
+                        'externalLink': externalLink,
+                        'systematicNames': systematicNames,
+                        'IUPACInChI': IUPACInChI,
+                        'IUPACInChIkey': IUPACInChIkey,
+                        'isomericSMILES':isomericSMILES,
+                        'canonicalSMILES': canonicalSMILES,
+                        }
+                    )
+            if created:
+                logger.debug('Created new: %s', obj)
+                print('Created new', obj)
+            else:
+                logger.debug('Updated: %s', obj)
+                print('Updated', obj)
+        except Exception as exc:
+            logger.exception(exc)
+            print(exc, os.strerror)
+        return obj
+
+    # Get LigandEntity using name (for those cases in which pubChemCompoundId is an empty value)
+    elif pubChemCompoundId == '':
+        try:
+            obj, created = LigandEntity.objects.get_or_create(
+                    name=name,
+                    defaults={
+                        'pubChemCompoundId': pubChemCompoundId, 
+                        'dbId': dbId,
+                        'ligandType': ligandType,
+                        'formula': formula,
+                        'formula_weight': formula_weight,
+                        'details': details,
+                        'altNames': altNames,
+                        'imageLink': imageLink,
+                        'externalLink': externalLink,
+                        'systematicNames': systematicNames,
+                        'IUPACInChI': IUPACInChI,
+                        'IUPACInChIkey': IUPACInChIkey,
+                        'isomericSMILES':isomericSMILES,
+                        'canonicalSMILES': canonicalSMILES,
+                        }
+                    )
+            if created:
+                logger.debug('Created new: %s', obj)
+                print('Created new', obj)
+            else:
+                logger.debug('Updated: %s', obj)
+                print('Updated', obj)
+        except Exception as exc:
+            logger.exception(exc)
+            print(exc, os.strerror)
+        return obj
+
+    # Get LigandEntity using name or pubChemCompoundId (for those cases in which name and pubChemCompoundId are not empty values)
+    else:
+        try:
+            obj, created = LigandEntity.objects.filter(
+                Q(name=name) | Q(pubChemCompoundId=pubChemCompoundId) # OR operator using Q() objects
+                ).get_or_create(
+                    defaults={
+                        'name': name, 
+                        'pubChemCompoundId': pubChemCompoundId, 
+                        'dbId': dbId,
+                        'ligandType': ligandType,
+                        'formula': formula,
+                        'formula_weight': formula_weight,
+                        'details': details,
+                        'altNames': altNames,
+                        'imageLink': imageLink,
+                        'externalLink': externalLink,
+                        'systematicNames': systematicNames,
+                        'IUPACInChI': IUPACInChI,
+                        'IUPACInChIkey': IUPACInChIkey,
+                        'isomericSMILES':isomericSMILES,
+                        'canonicalSMILES': canonicalSMILES,
+                        }
+                    )
+            if created:
+                logger.debug('Created new: %s', obj)
+                print('Created new', obj)
+            else:
+                logger.debug('Updated: %s', obj)
+                print('Updated', obj)
+        except Exception as exc:
+            logger.exception(exc)
+            print(exc, os.strerror)
+        return obj
+
+
 class IDRUtils(object):
 
     
@@ -1668,6 +1856,9 @@ class IDRUtils(object):
          Create FeatureType, Organism, Author, Publication, AssayEntity, ScreenEntity, 
          PlateEntityentry, LigandEntity and WellEntity for HCS Assays in IDR
         '''
+
+        # Create http session
+        session = createHTTPSession()
 
         # Create FeatureType for HCS Assays in IDR
         name = 'High-Content Screening Assay'
@@ -1800,6 +1991,7 @@ class IDRUtils(object):
 
             # Get screen id
             screenId = getScreenId(
+                session,
                 key='organism', 
                 value='Severe acute respiratory syndrome coronavirus 2',
                 screenDir=screenDir,
@@ -1829,10 +2021,7 @@ class IDRUtils(object):
 
 
             # Create PlateEntity, LigandEntity and WellEntity entries
-            screenDf = getScreenDataframe(screenId)
-            # screenDf = pd.read_csv('/data/%s.csv' % (screenId),
-            #                         index_col=0).convert_dtypes()
-            #TODO: gestionar como trabajar con los Nan si ponerlos como null values o como deafult ('' OR 0 OR 0.0)??
+            screenDf = getScreenDataframe(session, screenId)
 
             for index, row in screenDf.iterrows():
                 #TODO: fill in plateCount attr with the total sum plates (annotate() and Count methods could be useful)
@@ -1843,164 +2032,184 @@ class IDRUtils(object):
                 )
 
 
-#                 # Create LigandEntity and WellEntity entries
-#                 wellId = row['Well']
-#                 wellName = row['Well Name']
-#                 #TODO: externalLink
-#                 #TODO: imageThumbailLink
-#                 #TODO: imagesIds
-#                 wellCellLine = row['Characteristics [Cell Line]'] #TODO: hacer regex para que coja cualquier nomnre de que cumpla con xxxcell linexxx
-#                 wellCellLineTermAccession = row['Term Source 3 Accession'] #TODO: hacer esto tb scalable y no usar tal cual 'Term Source 3 Accession'
-#                 wellControlType = row['Control Type'] #TODO: asignar aqui o dentro del if?
-#                 wellQualityControl = row['Quality Control']
-#                 #wellMicromolarConcentration = [row['Compound Concentration (microMolar)'] if 'Compound Concentration (microMolar)' in screenDf.columns()]
-#                 wellPercentageInhibition = row['Percentage Inhibition (DPC)']
-#                 #wellHitOver75Activity = row['Hit Compound (over 75% activity)']
-#                 #wellNumberCells = row['Cells - Number of Objects'] #TODO: PARA EL SCREEN 2602 ESTO CAMBIA => hazlo scalable con regex
-#                 wellPhenotypeAnnotationLevel = row['Phenotype Annotation Level']
-#                 wellChannels = row['Channels']
+                # Get well ID and image ID associated to it
+                wellId = row['Well']
+                #wellImageIds = getImageIdsFromWellId(session, wellId)
+                #TODO descomenta la linea de wellImageIds cuando hayas depurado (comentada porque tarda mucho)
 
+                # Get column names in screen DF that harbor key well attributes
+                cl_colName = getColNameByKW(screenDf.columns, 'cell', 'line')
+                clta_colName = getColNameByKW(screenDf.columns, 'accession', '3')
+                ct_colName = getColNameByKW(screenDf.columns, 'control', 'type')
+                qc_colName = getColNameByKW(screenDf.columns, 'control', 'quality')
+                mc_colName = getColNameByKW(screenDf.columns, 'micromolar', 'concentration')
+                pi_colName = getColNameByKW(screenDf.columns, 'percentage', 'inhibition')
+                ho75a_colName = getColNameByKW(screenDf.columns, 'hit', 'activity')
+                nc_colName = getColNameByKW(screenDf.columns, 'number', 'cell')
+                pal_colName = getColNameByKW(screenDf.columns, 'phenotype', 'level')
+                c_colName = getColNameByKW(screenDf.columns, 'channel', '')
 
+                # Create WellEntity entries for unkown wells (no ligand tested and no control)
+                if row['Compound Name'] == '' and row['Control Type'] == '':  
+        
+                    WellEntityEntry = updateWellEntity(
+                        dbId=wellId,
+                        name=row['Well Name'],
+                        description='Unkown details',
+                        ligand=None,
+                        plate=PlateEntityEntry,
+                        externalLink=URL_SHOW_KEY.format(**{'key': 'well', 'keyId': wellId}),
+                        #imageThumbailLink=URL_THUMBNAIL.format(**{'imageId': wellImageIds[0]}),
+                        #imagesIds=wellImageIds,
+                        imageThumbailLink='', #TODO eliminar estas dos lineas y descomenta las originales
+                        imagesIds='', #TODO eliminar estas dos lineas y descomenta las originales
+                        cellLine=row[cl_colName],
+                        cellLineTermAccession=row[clta_colName],
+                        controlType=row[ct_colName],
+                        qualityControl=row[qc_colName],
+                        micromolarConcentration=None, #TODO: OJO, estamos seguros de que aqui esto es none? Quiza si tiene valor. pondrias aqiu un if de este tipo: row[nc_colName] if row[nc_colName] != '' else None??
+                        percentageInhibition=row[pi_colName],
+                        hitOver75Activity=row[ho75a_colName],
+                        numberCells=row[nc_colName],
+                        phenotypeAnnotationLevel=row[pal_colName],
+                        channels=row[c_colName]
+                    )
+                    print('unknown!')
+                
+                # Create WellEntity entries for positive controls
+                elif row['Compound Name'] == '' and row['Control Type'] == 'positive':  
 
-#                 if pd.isna(row['Compound Name']) and pd.isna(wellControlType):  # Create WellEntity entries for unkown wells (no ligand + no control)
+                    WellEntityEntry = updateWellEntity(
+                        dbId=wellId,
+                        name=row['Well Name'],
+                        description='transfection control, or gene knock down that gives a known phenotype', #TODO: buscar uno mas especifico de HCS
+                        ligand=None,
+                        plate=PlateEntityEntry,
+                        externalLink=URL_SHOW_KEY.format(**{'key': 'well', 'keyId': wellId}),
+                        # imageThumbailLink=URL_THUMBNAIL.format(**{'imageId': wellImageIds[0]}),
+                        # imagesIds=wellImageIds,
+                        imageThumbailLink='', #TODO eliminar estas dos lineas y descomenta las originales
+                        imagesIds='', #TODO eliminar estas dos lineas y descomenta las originales
+                        cellLine=row[cl_colName],
+                        cellLineTermAccession=row[clta_colName],
+                        controlType=row[ct_colName],
+                        qualityControl=row[qc_colName],
+                        micromolarConcentration=None,
+                        percentageInhibition=float(row[pi_colName]),
+                        hitOver75Activity=row[ho75a_colName],
+                        numberCells=row[nc_colName],
+                        phenotypeAnnotationLevel=row[pal_colName],
+                        channels=row[c_colName]
+                    )
+                    print('positive!')
                     
 
-#                     try:
-#                         WellEntityEntry, created = WellEntity.objects.update_or_create(
-#                             dbId=wellId,
-#                             name=wellName,
-#                             description='Unkown details',
-#                             plate=PlateEntityEntry,
-#                             #externalLink=wellExternalLink,
-#                             #imageThumbailLink=wellImageThumbailLink,
-#                             #imagesIds=wellImagesIds,
-#                             cellLine=wellCellLine,
-#                             cellLineTermAccession=wellCellLineTermAccession,
-#                             controlType=wellControlType,#TODO: chequea que se crea con '' y no con nan
-#                             qualityControl=wellQualityControl,
-#                             #micromolarConcentration=wellMicromolarConcentration,
-#                             percentageInhibition=wellPercentageInhibition,
-#                             #hitOver75Activity=wellHitOver75Activity,
-#                             #numberCells=wellNumberCells,
-#                             phenotypeAnnotationLevel=wellPhenotypeAnnotationLevel,
-#                             channels=wellChannels
-#                         )
-#                         if created:
-#                             logger.debug('Created new entry: %s', WellEntityEntry)
-#                             print('Created new entry: ', WellEntityEntry)
-#                     except Exception as exc: 
-#                         logger.debug(exc)
+                # Create WellEntity entries for negative controls
+                elif row['Compound Name'] == '' and row['Control Type'] == 'negative':  
 
-#                 elif pd.isna(row['Compound Name']) and wellControlType == 'positive':  # Create WellEntity entries for positive controls
+                    WellEntityEntry = updateWellEntity(
+                        dbId=wellId,
+                        name=row['Well Name'],
+                        description='scrambled siRNA, DMSO, cells but no treatment. Expected to have no effect on cells', #TODO: buscar uno mas especifico de HCS
+                        ligand=None,
+                        plate=PlateEntityEntry,
+                        externalLink=URL_SHOW_KEY.format(**{'key': 'well', 'keyId': wellId}),
+                        # imageThumbailLink=URL_THUMBNAIL.format(**{'imageId': wellImageIds[0]}),
+                        # imagesIds=wellImageIds,
+                        imageThumbailLink='', #TODO eliminar estas dos lineas y descomenta las originales
+                        imagesIds='', #TODO eliminar estas dos lineas y descomenta las originales
+                        cellLine=row[cl_colName],
+                        cellLineTermAccession=row[clta_colName],
+                        controlType=row[ct_colName],
+                        qualityControl=row[qc_colName],
+                        micromolarConcentration=None,
+                        percentageInhibition=float(row[pi_colName]),
+                        hitOver75Activity=row[ho75a_colName],
+                        numberCells=row[nc_colName],
+                        phenotypeAnnotationLevel=row[pal_colName],
+                        channels=row[c_colName]
+                    )
+                    print('negative!')
                     
-#                     try:
-#                         WellEntityEntry, created = WellEntity.objects.update_or_create(
-#                             dbId=wellId,
-#                             name=wellName,
-#                             description='transfection control, or gene knock down that gives a known phenotype', #TODO: buscar uno mas especifico de HCS
-#                             plate=PlateEntityEntry,
-#                             #externalLink=wellExternalLink,
-#                             #imageThumbailLink=wellImageThumbailLink,
-#                             #imagesIds=wellImagesIds,
-#                             cellLine=wellCellLine,
-#                             cellLineTermAccession=wellCellLineTermAccession,
-#                             controlType=wellControlType,
-#                             qualityControl=wellQualityControl,
-#                             #micromolarConcentration=wellMicromolarConcentration,
-#                             percentageInhibition=wellPercentageInhibition,
-#                             #hitOver75Activity=wellHitOver75Activity,
-#                             #numberCells=wellNumberCells,
-#                             phenotypeAnnotationLevel=wellPhenotypeAnnotationLevel,
-#                             channels=wellChannels
-#                         )
-#                         if created:
-#                             logger.debug('Created new entry: %s', WellEntityEntry)
-#                             print('Created new entry: ', WellEntityEntry)
-#                     except Exception as exc: 
-#                         logger.debug(exc)
+                # Create WellEntity entries with ligand
+                else: 
+                    # Get column names in screen DF that harbor key ligand attributes
+                    ln_colName = getColNameByKW(screenDf.columns, 'compound', 'name')
+                    pci_colName = getColNameByKW(screenDf.columns, 'pubchem', 'id')
+                    icik_colName = getColNameByKW(screenDf.columns, 'inchikey', '')
 
-#                 elif pd.isna(row['Compound Name']) and wellControlType == 'negative':  # Create WellEntity entries for negative controls
-                    
-#                     try:
-#                         WellEntityEntry, created = WellEntity.objects.update_or_create(
-#                             dbId=wellId,
-#                             name=wellName,
-#                             description='scrambled siRNA, DMSO, cells but no treatment. Expected to have no effect on cells', #TODO: buscar uno mas especifico de HCS
-#                             plate=PlateEntityEntry,
-#                             #externalLink=wellExternalLink,
-#                             #imageThumbailLink=wellImageThumbailLink,
-#                             #imagesIds=wellImagesIds,
-#                             cellLine=wellCellLine,
-#                             cellLineTermAccession=wellCellLineTermAccession,
-#                             controlType=wellControlType,
-#                             qualityControl=wellQualityControl,
-#                             #micromolarConcentration=wellMicromolarConcentration,
-#                             percentageInhibition=wellPercentageInhibition,
-#                             #hitOver75Activity=wellHitOver75Activity,
-#                             #numberCells=wellNumberCells,
-#                             phenotypeAnnotationLevel=wellPhenotypeAnnotationLevel,
-#                             channels=wellChannels
-#                         )
-#                         if created:
-#                             logger.debug('Created new entry: %s', WellEntityEntry)
-#                             print('Created new entry: ', WellEntityEntry)
-#                     except Exception as exc: 
-#                         logger.debug(exc)
+                    #TODO: solucionar que se creen entradas de ligando a partir del Screen B (no tendria que suceder)
+                    # Create LigandEntity entry
+                    LigandEntityEntry = getLigandEntity(
+                        name=row[ln_colName],
+                        pubChemCompoundId=row[pci_colName],
+                        dbId=None,
+                        ligandType=None,
+                        formula=None,
+                        formula_weight=None,
+                        details=None,
+                        altNames=None,
+                        imageLink=None,
+                        externalLink=None,
+                        systematicNames=None,
+                        IUPACInChI=None,
+                        IUPACInChIkey=row[icik_colName],
+                        isomericSMILES=None,
+                        canonicalSMILES=None,                        
+                    )
+                    print('ligand!')
 
-#                 else: # Create WellEntity entries with ligand
-#                 #TODO: no incluir las columnas que no vayas a usar como iupac name ... etc. Consulta con JR cuales si nos interesan
-#                     ligandName = row['Compound Name']
-#                     ligandPubChemId = row['Compound PubChem CID']
-#                     # ligandPubChemUrl = row['Compound PubChem URL']
-#                     #ligandSMILES = row['Compound SMILES']
-#                     #ligandIupacName = row['Compound IUPAC Name']
-#                     # ligandUniChemUrl = row['Compound Unichem URL']
-#                     ligandIUPACInChIkey = row['Compound InChIKey']
-#                     # ligandBroadId = row['Compound Broad Identifier']
+                   # Update or create WellEntity
+                    WellEntityEntry = updateWellEntity(
+                        dbId=wellId,
+                        name=row['Well Name'],
+                        description='well treated with a compound', #TODO: buscar uno mas especifico de HCS
+                        ligand=LigandEntityEntry,
+                        plate=PlateEntityEntry,
+                        externalLink=URL_SHOW_KEY.format(**{'key': 'well', 'keyId': wellId}),
+                        # imageThumbailLink=URL_THUMBNAIL.format(**{'imageId': wellImageIds[0]}),
+                        # imagesIds=wellImageIds,
+                        imageThumbailLink='', #TODO eliminar estas dos lineas y descomenta las originales
+                        imagesIds='', #TODO eliminar estas dos lineas y descomenta las originales
+                        cellLine=row[cl_colName],
+                        cellLineTermAccession=row[clta_colName],
+                        controlType=row[ct_colName],
+                        qualityControl=row[qc_colName],
+                        micromolarConcentration=row[mc_colName] if mc_colName  else None, #TODO: prueba a poner este if en los otros wellEntity a ver si funcionabien
+                        percentageInhibition=float(row[pi_colName]) if row[pi_colName] != '' else None, #TODO: prueba a poner este if en los otros wellEntity a ver si funcionabien
+                        hitOver75Activity=row[ho75a_colName],
+                        numberCells=row[nc_colName] if row[nc_colName] != '' else None, #TODO: prueba a poner este if en los otros wellEntity a ver si funcionabien
+                        phenotypeAnnotationLevel=row[pal_colName],
+                        channels=row[c_colName]
+                    )
+                    print('treated!')
 
-#                     #TODO: solucionar que se creen entradas de ligando a partir del Screen B (no tendria que suceder)
-#                     try:
-#                         # get or create LigandEntity entries depending on name OR pubChemCompoundId 
-#                         LigandEntityEntry, created = LigandEntity.objects.filter(
-#                             Q(name=ligandName) | Q(pubChemCompoundId=ligandPubChemId) # OR operator using Q() objects
-#                             ).get_or_create(
-#                                 defaults={
-#                                     'name': ligandName, 
-#                                     'pubChemCompoundId': ligandPubChemId, 
-#                                     'IUPACInChIkey': ligandIUPACInChIkey}
-#                                 )
 
-#                         if created:
-#                             logger.debug('Created new entry: %s', LigandEntityEntry)
-#                             print('Created new entry: ', LigandEntityEntry)
-#                     except Exception as exc:
-#                         logger.debug(exc)
 
-#                     # update or create WellEntity
-#                     try:
-#                         WellEntityEntry, created = WellEntity.objects.update_or_create(
-#                             dbId=wellId,
-#                             name=wellName,
-#                             description='well treated with a compound', #TODO: buscar uno mas especifico de HCS
-#                             plate=PlateEntityEntry,
-#                             #externalLink=wellExternalLink,
-#                             #imageThumbailLink=wellImageThumbailLink,
-#                             #imagesIds=wellImagesIds,
-#                             cellLine=wellCellLine,
-#                             cellLineTermAccession=wellCellLineTermAccession,
-#                             controlType=wellControlType,
-#                             qualityControl=wellQualityControl,
-#                             #micromolarConcentration=wellMicromolarConcentration,
-#                             percentageInhibition=wellPercentageInhibition,
-#                             #hitOver75Activity=wellHitOver75Activity,
-#                             #numberCells=wellNumberCells,
-#                             phenotypeAnnotationLevel=wellPhenotypeAnnotationLevel,
-#                             channels=wellChannels,
-#                             ligand=LigandEntityEntry,
-#                         )
-#                         if created:
-#                             logger.debug('Created new entry: %s', WellEntityEntry)
-#                             print('Created new entry: ', WellEntityEntry)
-#                     except Exception as exc: 
-#                         logger.debug(exc)
+                    # try:
+                    #     WellEntityEntry, created = WellEntity.objects.update_or_create(
+                    #         dbId=wellId,
+                    #         name=wellName,
+                    #         description='well treated with a compound', #TODO: buscar uno mas especifico de HCS
+                    #         plate=PlateEntityEntry,
+                    #         #externalLink=wellExternalLink,
+                    #         #imageThumbailLink=wellImageThumbailLink,
+                    #         #imagesIds=wellImagesIds,
+                    #         cellLine=wellCellLine,
+                    #         cellLineTermAccession=wellCellLineTermAccession,
+                    #         controlType=wellControlType,
+                    #         qualityControl=wellQualityControl,
+                    #         #micromolarConcentration=wellMicromolarConcentration,
+                    #         percentageInhibition=wellPercentageInhibition,
+                    #         #hitOver75Activity=wellHitOver75Activity,
+                    #         #numberCells=wellNumberCells,
+                    #         phenotypeAnnotationLevel=wellPhenotypeAnnotationLevel,
+                    #         channels=wellChannels,
+                    #         ligand=LigandEntityEntry,
+                    #     )
+                    #     if created:
+                    #         logger.debug('Created new entry: %s', WellEntityEntry)
+                    #         print('Created new entry: ', WellEntityEntry)
+                    # except Exception as exc: 
+                    #     logger.debug(exc)
 
