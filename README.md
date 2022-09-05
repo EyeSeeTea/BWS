@@ -14,8 +14,7 @@ DEV
 
 Run custom command. E.g: updateDB_fromIDRAssay for assay idr0094-ellinger-sarscov2
 - docker exec -it bws_web_1 /bin/bash
-- python manage.py updateDB_fromIDRAssay idr0094-ellinger-sarscov2
-#TODO: parece ser que hay que irse para atras 'cd ..' despues de hacer el docker exec e irse a la raiz para poder ejecutar el python app/manage.py updateDB_fromIDRAssay idr0094-ellinger-sarscov2. SOLUCIONAR!!
+- python manage.py updateDB_fromIDRAssay /data/IDR/idr0094-ellinger-sarscov2
 
 Or alternativelly, run commands directly using the docker container command line:
 - docker exec -it bws_web_1 python manage.py flush

@@ -45,5 +45,11 @@ URL_PHENIX_CERES_QUERY = ''
 URL_LIGAND_IMAGE_EBI = "https://www.ebi.ac.uk/pdbe/static/files/pdbechem_v2/"
 URL_LIGAND_EBI = "https://www.ebi.ac.uk/pdbe-srv/pdbechem/chemicalCompound/show/"
 
-IDR_BASEDIR = "IDR/"
-IDR_DIR = os.path.join(LOCAL_DATA_DIR, IDR_BASEDIR)
+# IDR_BASEDIR = "IDR/"
+# IDR_DIR = os.path.join(LOCAL_DATA_DIR, IDR_BASEDIR)
+URL_SCREEN_TABLE = 'https://idr.openmicroscopy.org/webgateway/table/Screen/{screenId}/query/?query=*'
+URL_IDR_INDEX_PAGE = "https://idr.openmicroscopy.org/webclient/?experimenter=-1"
+URL_SCREENS_PROJECTS = "https://idr.openmicroscopy.org/mapr/api/{key}/?value={value}"
+URL_SHOW_KEY = 'https://idr.openmicroscopy.org/webclient/?show={key}-{keyId}'
+URL_ATTR_KEY = 'https://idr.openmicroscopy.org/api/v0/m/{key}s/{keyId}/'
+URL_THUMBNAIL = 'https://idr.openmicroscopy.org/webclient/render_thumbnail/{imageId}'

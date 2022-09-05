@@ -1,3 +1,4 @@
+from cmath import nan
 import json
 import logging
 import os
@@ -13,7 +14,8 @@ from Bio.PDB import MMCIF2Dict
 from bs4 import BeautifulSoup
 from datetime import datetime
 import pandas as pd
-
+from django.db.models import Q
+import numpy as np
 
 STATUS = {"REL": "Released",
           "UNREL": "Unreleased",
@@ -25,27 +27,14 @@ FILE_EXT_PATTERN = '*.cif'
 logger = logging.getLogger(__name__)
 
 PDB_FOLDER_PATTERN = re.compile(".*/(\d\w{3})/.*\.pdb$")
-
 REGEX_EMDB_ID = re.compile('^emd-\d{4,5}$')
 REGEX_VOL_FILE = re.compile('^(emd)-\d{4,5}\.map$')
 REGEX_PDB_FILE = re.compile('^(pdb)\d\w{3}\.ent$')
 REGEX_LR_FILE = re.compile('^\d\w{3}\.(deepres|monores)\.pdb$')
 REGEX_MAP2MODELQUALITY_FILE = re.compile('^\d\w{3}\.(mapq|fscq)\.pdb$')
-REGEX_IDR_ID = re.compile('(idr\d{4})-.*-.*')
-
-SCREEN_TABLE_URL = 'https://idr.openmicroscopy.org/webgateway/table/Screen/{screen_id}/query/?query=*'
-
-
-# #TODO: en caso de que haga la creacion de plate entry por url. BORRAR SI NO ES NECESARIO
-# # Create http session
-# INDEX_PAGE = "https://idr.openmicroscopy.org/webclient/?experimenter=-1"
-
-# with requests.Session() as session:
-#     request = requests.Request('GET', INDEX_PAGE)
-#     prepped = session.prepare_request(request)
-#     response = session.send(prepped)
-#     if response.status_code != 200:
-#         response.raise_for_status()
+REGEX_IDR_ID = re.compile('.*(idr\d{4})-.*-.*')
+REGEX_TAXON_REF = re.compile('(ncbitaxon).*')
+REGEX_SCREEN_NAME = re.compile('.*\/(screen)(.*)')
 
 
 def findGeneric(pattern, dirToLook=THORN_DATA_DIR):
@@ -64,8 +53,6 @@ def findGeneric(pattern, dirToLook=THORN_DATA_DIR):
     return data
 
 
-def findIDR(dirToLook=IDR_DIR):
-    return findGeneric("*isolde/*pdb", dirToLook=dirToLook)
 
 class PdbEntryAnnFromMapsUtils(object):
 
@@ -763,7 +750,7 @@ def updatePublicationAuthor(name, orcid, ordinal, publication):
     return obj
 
 
-def updatePublication(title, journal, issn, issue, volume, firstPage, lastPage, year, doi, pubMedId, abstract):
+def updatePublication(title, journal, issn, issue, volume, firstPage, lastPage, year, doi, pubMedId, abstract, PMCId=''):
     obj = None
     try:
         obj, created = Publication.objects.update_or_create(
@@ -778,7 +765,8 @@ def updatePublication(title, journal, issn, issue, volume, firstPage, lastPage, 
                 'year': year,
                 'doi': doi,
                 'pubMedId': pubMedId,
-                'abstract': abstract
+                'abstract': abstract,
+                'PMCId': PMCId,
             })
         if created:
             logger.debug('Created new: %s', obj)
@@ -1392,21 +1380,485 @@ def updatePdbEntryDetails(mmCifDict, pdbObj):
     return obj
 
 
+# ========== ========== ========== ========== ========== ========== ==========
 
-class ImageDataFromIDRAssayUtils(object):
+
+def updateFeatureTypeForIDR(name, description, dataSource, externalLink):
+    """
+    Update FeatureType entry
+    """
+    obj = None
+    try:
+        obj, created = FeatureType.objects.update_or_create(
+                name=name,
+                description=description,
+                dataSource=dataSource,
+                externalLink=externalLink)
+        if created:
+            logger.debug('Created new: %s', obj)
+            print('Created new', obj)
+        else:
+            logger.debug('Updated: %s', obj)
+            print('Updated', obj)
+    except Exception as exc:
+        logger.exception(exc)
+        print(exc, os.strerror)
+    return obj
+
+
+def getOrganism(taxonomy_id, scientific_name='', common_name=''):
+    """
+    Get Organism entry or create in case it does not exist
+    """
+
+    obj = None
+    try:
+        obj, created = Organism.objects.get_or_create(
+            ncbi_taxonomy_id=taxonomy_id,
+            defaults={
+                'scientific_name': scientific_name,
+                'common_name': common_name,
+                'externalLink': URL_NCBI_TAXONOMY + taxonomy_id,
+            })
+        if created:
+            logger.debug('Created new: %s', obj)
+            print('Created new', obj)
+
+    except Exception as exc:
+        logger.exception(exc)
+        print(exc, os.strerror)
+    return obj
+
+
+def getAuthor(name, email='', address='', orcid='', role=''):
+    """
+    Get Author entry or create in case it does not exist
+    """
+    obj = None
+
+    if orcid != '': # When orcid is specified
+        try:
+            obj, created = Author.objects.get_or_create(
+                orcid=orcid,
+                defaults={
+                    'name': name,
+                    'email': email,
+                    'address': address,
+                    'role': role
+                }
+            )
+            if created:
+                logger.debug('Created new: %s', obj)
+                print('Created new', obj)
+
+        except Exception as exc:
+            logger.exception(exc)
+            print(exc, os.strerror)
+
+    else: # When orcid is not specified
+        try:
+            obj, created = Author.objects.get_or_create(
+                name=name,
+                defaults={
+                    'orcid': orcid,
+                    'email': email,
+                    'address': address,
+                    'role': role
+                }
+            )
+            if created:
+                logger.debug('Created new: %s', obj)
+                print('Created new', obj)
+
+        except Exception as exc:
+            logger.exception(exc)
+            print(exc, os.strerror)
+
+    return obj
+
+def updateAuthorFromIDR(name, email='', address='', orcid='', role=''):
+    """
+    Update Author entry with Contact Details or create in case it does not exist
+    """
+    obj = None
+    try:
+        obj, created = Author.objects.update_or_create(
+                name__contains=name,
+                defaults={
+                    'email': email,
+                    'address': address, 
+                    'orcid': orcid, 
+                    'role': role}
+                )
+        if created:
+            logger.debug('Created new: %s', obj)
+            print('Created new', obj)
+        else:
+            logger.debug('Updated: %s', obj)
+            print('Updated', obj)
+    except Exception as exc:
+        logger.exception(exc)
+        print(exc, os.strerror)
+    return obj
+
+def updateAssayEntity(dbId, name, featureType, description, externalLink, details, assayType, assayTypeTermAccession, screenCount, BIAId, releaseDate, dataDoi):
+    """
+    Update AssayEntity entry or create in case it does not exist
+    """
+
+    obj = None
+    try:
+        obj, created = AssayEntity.objects.update_or_create(
+            dbId=dbId,
+            defaults={
+                'name': name,
+                'featureType': featureType, 
+                'description': description,
+                'externalLink': externalLink,
+                'details': details,
+                'assayType': assayType,
+                'assayTypeTermAccession': assayTypeTermAccession,
+                'screenCount': screenCount,
+                'BIAId': BIAId,
+                'releaseDate': releaseDate,
+                'dataDoi': dataDoi
+            }
+            )
+        if created:
+            logger.debug('Created new: %s', obj)
+            print('Created new', obj)
+        else:
+            logger.debug('Updated: %s', obj)
+            print('Updated', obj)
+    except Exception as exc:
+        logger.exception(exc)
+        print(exc, os.strerror)
+    return obj
+
+
+def updateScreenEntity(dbId, name, description, type, typeTermAccession, technologyType, technologyTypeTermAccession, imagingMethod, imagingMethodTermAccession, sampleType, plateCount, dataDoi, assay):
+    """
+    Update ScreenEntity entry or create in case it does not exist
+    """
+
+    obj = None
+    try:
+        obj, created = ScreenEntity.objects.update_or_create(
+            dbId=dbId,
+            defaults={
+                'name': name,
+                'description': description,
+                'type': type,
+                'typeTermAccession': typeTermAccession,
+                'technologyType': technologyType,
+                'technologyTypeTermAccession': technologyTypeTermAccession,
+                'imagingMethod': imagingMethod,
+                'imagingMethodTermAccession': imagingMethodTermAccession,
+                'sampleType': sampleType,
+                'plateCount': plateCount,
+                'dataDoi': dataDoi,
+                'assay': assay,
+            }
+            )
+        if created:
+            logger.debug('Created new: %s', obj)
+            print('Created new', obj)
+        else:
+            logger.debug('Updated: %s', obj)
+            print('Updated', obj)
+    except Exception as exc:
+        logger.exception(exc)
+        print(exc, os.strerror)
+    return obj
+
+
+def createHTTPSession():
+    '''
+    Create HTTP session with OMERO server for IDR queries
+    '''
+
+    with requests.Session() as session:
+        request = requests.Request('GET', URL_IDR_INDEX_PAGE)
+        prepped = session.prepare_request(request)
+        response = session.send(prepped)
+        if response.status_code != 200:
+            response.raise_for_status()
+
+    return session
+
+
+def getScreenId(session, key, value, screenDir):
+    '''
+    Get screen ID using IDR Web API query
+    '''
+
+    # Set url variables
+    qs = {'key': key, 'value': value}
+    url = URL_SCREENS_PROJECTS.format(**qs)
+    screens_projects_json = session.get(url).json()
+
+    # Get screen ID given screen dir (e.g. idr0094-ellinger-sarscov2/screenA)
+    for s in screens_projects_json['screens']:
+        if screenDir in s['name']:
+            return s['id']
+
+def getScreenDataframe(session, screenId):
+    '''
+    Get screen dataframe including plate, ligand, and well data from OMERO webgateway
+    '''
+    
+    # Set url variables
+    qs = {'screenId': screenId}
+    url = URL_SCREEN_TABLE.format(**qs)
+            
+    # Create a dataframe from "data" key in json output from url
+    jsonData = session.get(url).json()
+    columns = jsonData['data']['columns']
+    data = jsonData['data']['rows']
+    df  = pd.DataFrame(data, columns = columns).convert_dtypes()
+
+    # Get column names that could harbor float values (i.e. micromolecular concentration and percentage of inhibition)
+    mc_colName = getColNameByKW(df.columns, 'micromolar', 'concentration')
+    pi_colName = getColNameByKW(df.columns, 'percentage', 'inhibition')
+
+    # Replace commans ',' with dots '.' to avoid string to float conversion issues 
+    df[pi_colName] = df[pi_colName].str.replace(',', '.')
+    
+    if mc_colName != None:
+        df[mc_colName] = df[mc_colName].str.replace(',', '.')
+    
+    return df
+
+
+def updatePlateEntity(dbId, name, screen):
+    """
+    Update PlateEntity entry or create in case it does not exist
+    """
+
+    obj = None
+    try:
+        obj, created = PlateEntity.objects.update_or_create(
+            dbId=dbId,
+            defaults={
+                'name': name,
+                'screen': screen
+            }
+            )
+        if created:
+            logger.debug('Created new: %s', obj)
+            print('Created new', obj)
+    except Exception as exc:
+        logger.exception(exc)
+        print(exc, os.strerror)
+    return obj
+
+
+def updateWellEntity(dbId, name, description, ligand, plate, externalLink, imageThumbailLink, imagesIds, cellLine, cellLineTermAccession, controlType, qualityControl, micromolarConcentration, percentageInhibition, hitOver75Activity, numberCells, phenotypeAnnotationLevel, channels):
+    """
+    Update WellEntity entry or create in case it does not exist
+    """
+
+    obj = None
+    try:
+        obj, created = WellEntity.objects.update_or_create(
+            dbId=dbId,
+            defaults={
+                'name': name,
+                'description': description,
+                'ligand': ligand,
+                'plate': plate,
+                'externalLink': externalLink,
+                'imageThumbailLink': imageThumbailLink,
+                'imagesIds': imagesIds,
+                'cellLine': cellLine,
+                'cellLineTermAccession': cellLineTermAccession,
+                'controlType': controlType,
+                'qualityControl': qualityControl,
+                'micromolarConcentration': micromolarConcentration,
+                'percentageInhibition': percentageInhibition, 
+                'hitOver75Activity': hitOver75Activity, 
+                'numberCells': numberCells,
+                'phenotypeAnnotationLevel': phenotypeAnnotationLevel,
+                'channels': channels
+            }
+            )
+        if created:
+            logger.debug('Created new: %s', obj)
+            print('Created new', obj)
+        else:
+            logger.debug('Updated: %s', obj)
+            print('Updated', obj)
+    except Exception as exc:
+        logger.exception(exc)
+        print(exc, os.strerror)
+    return obj
+
+
+def getImageIdsFromWellId(session, wellId):
+    '''
+    Get image IDs associated to a specific well using well ID through IDR Web API
+    '''
+
+    # Set url variables
+    qs = {'key': 'well', 'keyId': wellId}
+    url = URL_ATTR_KEY.format(**qs)
+    well_attr_json = session.get(url).json()
+
+    # Get screen ID given screen dir (e.g. idr0094-ellinger-sarscov2/screenA)
+    imageIds = []
+    for wellSample in well_attr_json['data']['WellSamples']:
+        imageIds.append(wellSample['Image']['@id'])
+
+    return imageIds
+        
+
+def getColNameByKW(colNames, keyword1, keyword2):
+    '''
+    Get the column name from a list of column names that match with 2 given keywords
+    '''
+
+    REGEX_KEYWORD = '(?=.*{keyword1})(?=.*{keyword2}).*$'.format(**{'keyword1': keyword1, 'keyword2': keyword2})
+
+    for colName in colNames:
+        if re.match(REGEX_KEYWORD, colName.lower()):
+            return colName
+
+
+
+def getLigandEntity(dbId, ligandType, name, formula, formula_weight, details, altNames, imageLink, externalLink, pubChemCompoundId, systematicNames, IUPACInChI, IUPACInChIkey, isomericSMILES, canonicalSMILES):
+    """
+    Get LigandEntity entry given name OR pubChemCompoundId. Create it in case it does not exist
+    """
+
+    obj = None
+
+    # Get LigandEntity using pubChemCompoundId (for those cases in which name is an empty value)
+    if name == '':
+        try:
+            obj, created = LigandEntity.objects.get_or_create(
+                    pubChemCompoundId=pubChemCompoundId,
+                    defaults={
+                        'name': name, 
+                        'dbId': dbId,
+                        'ligandType': ligandType,
+                        'formula': formula,
+                        'formula_weight': formula_weight,
+                        'details': details,
+                        'altNames': altNames,
+                        'imageLink': imageLink,
+                        'externalLink': externalLink,
+                        'systematicNames': systematicNames,
+                        'IUPACInChI': IUPACInChI,
+                        'IUPACInChIkey': IUPACInChIkey,
+                        'isomericSMILES':isomericSMILES,
+                        'canonicalSMILES': canonicalSMILES,
+                        }
+                    )
+            if created:
+                logger.debug('Created new: %s', obj)
+                print('Created new', obj)
+            else:
+                logger.debug('Updated: %s', obj)
+                print('Updated', obj)
+        except Exception as exc:
+            logger.exception(exc)
+            print(exc, os.strerror)
+        return obj
+
+    # Get LigandEntity using name (for those cases in which pubChemCompoundId is an empty value)
+    elif pubChemCompoundId == '':
+        try:
+            obj, created = LigandEntity.objects.get_or_create(
+                    name=name,
+                    defaults={
+                        'pubChemCompoundId': pubChemCompoundId, 
+                        'dbId': dbId,
+                        'ligandType': ligandType,
+                        'formula': formula,
+                        'formula_weight': formula_weight,
+                        'details': details,
+                        'altNames': altNames,
+                        'imageLink': imageLink,
+                        'externalLink': externalLink,
+                        'systematicNames': systematicNames,
+                        'IUPACInChI': IUPACInChI,
+                        'IUPACInChIkey': IUPACInChIkey,
+                        'isomericSMILES':isomericSMILES,
+                        'canonicalSMILES': canonicalSMILES,
+                        }
+                    )
+            if created:
+                logger.debug('Created new: %s', obj)
+                print('Created new', obj)
+            else:
+                logger.debug('Updated: %s', obj)
+                print('Updated', obj)
+        except Exception as exc:
+            logger.exception(exc)
+            print(exc, os.strerror)
+        return obj
+
+    # Get LigandEntity using name or pubChemCompoundId (for those cases in which name and pubChemCompoundId are not empty values)
+    else:
+        try:
+            obj, created = LigandEntity.objects.filter(
+                Q(name=name) | Q(pubChemCompoundId=pubChemCompoundId) # OR operator using Q() objects
+                ).get_or_create(
+                    defaults={
+                        'name': name, 
+                        'pubChemCompoundId': pubChemCompoundId, 
+                        'dbId': dbId,
+                        'ligandType': ligandType,
+                        'formula': formula,
+                        'formula_weight': formula_weight,
+                        'details': details,
+                        'altNames': altNames,
+                        'imageLink': imageLink,
+                        'externalLink': externalLink,
+                        'systematicNames': systematicNames,
+                        'IUPACInChI': IUPACInChI,
+                        'IUPACInChIkey': IUPACInChIkey,
+                        'isomericSMILES':isomericSMILES,
+                        'canonicalSMILES': canonicalSMILES,
+                        }
+                    )
+            if created:
+                logger.debug('Created new: %s', obj)
+                print('Created new', obj)
+            else:
+                logger.debug('Updated: %s', obj)
+                print('Updated', obj)
+        except Exception as exc:
+            logger.exception(exc)
+            print(exc, os.strerror)
+        return obj
+
+
+class IDRUtils(object):
 
     
-    def _updateAssayDirsFromIDR(self, dirToLook=IDR_DIR):
+    def _updateAssayDirs_fromGitHub(self):
+        """
+        Update Assay directories in IDR from GitHub repository
+        """
+
         #TODO: crear aqui unas lineas para que se saque un registo.txt con la fecha y el nombre de los directorios de assays 
         # (idrNNNN-lastname-example) que se vayan importando para saber cuales son los dirs que quedan por hacer updateLigandEntryFromIDRAssay()
         pass
 
-    def _updateLigandEntryFromIDRAssay(self, assayName, dirToLook=IDR_DIR):
-        print("updateLigandEntryFromIDRAssay")
+    def _updateDB_fromNonHCSAssay(self, assayPath):
+        pass
 
+    def _updateDB_fromHCSAssay(self, assayPath):
         '''
-         Create FeatureType entry
+         Create FeatureType, Organism, Author, Publication, AssayEntity, ScreenEntity, 
+         PlateEntityentry, LigandEntity and WellEntity for HCS Assays in IDR
         '''
+
+        # Create http session
+        session = createHTTPSession()
+
+        # Create FeatureType for HCS Assays in IDR
         name = 'High-Content Screening Assay'
         description = 'High throughput sample analysis of collections of compounds that provide '\
             'a variety of chemically diverse structures that can be used to identify structure types '\
@@ -1414,114 +1866,65 @@ class ImageDataFromIDRAssayUtils(object):
         dataSource = 'The Image Data Resource (IDR)'
         externalLink = 'https://idr.openmicroscopy.org/'
 
-        try:
-            # update or create FeatureType entry 
-            FeatureTypeEntry, created = FeatureType.objects.update_or_create(
-                name=name,
-                description=description,
-                dataSource=dataSource,
-                externalLink=externalLink)
-            if created:
-                logger.debug('Created new entry: %s', FeatureTypeEntry)
-                print('Created new entry: ', FeatureTypeEntry)
-        except Exception as exc: #TODO: mira a ver si hay otro tipo de excepcion mas concreta que Exception
-            logger.debug(exc)
+        FeatureTypeEntry = updateFeatureTypeForIDR(name, description, dataSource, externalLink)
 
-
-        '''
-         Create Organism, Author, Publication, AssayEntity and ScreenEntity entries
-        '''
 
         # Get ID and metadata file for IDR assay
-        matchObj = re.match(REGEX_IDR_ID, assayName)
+        matchObj = re.match(REGEX_IDR_ID, assayPath)
         if matchObj:
             assayId = matchObj.group(1)
         metadataFileExtention = '-study.txt'
         metadataFile = assayId + metadataFileExtention
 
         # Parse metadata file using StudyParser
-        studypath = os.path.join(dirToLook, assayName, metadataFile)
-        studyParserObj = StudyParser(studypath)
+        MetadataFilePath = os.path.join(assayPath, metadataFile)
+        studyParserObj = StudyParser(MetadataFilePath)
 
-        # Create Organism entries
-        #TODO: Crear una try/except para los casos en que no exista studyParserObj.study['Study Organism'] OR ['Study Organism Term Source REF'] OR ['Study Organism Term Accession'] y por tanto no se puedan dar estas lineas?? Ten en cuenta que en study_parser.ỳ aparecen como opcionales las 3
-        REGEX_TAXON_REF = re.compile('(ncbitaxon).*')
+        # Get or Create Organism entries
         organisms = [organism for organism in studyParserObj.study['Study Organism'].split("\t")]
         organismTermSources = [termSource for termSource in studyParserObj.study['Study Organism Term Source REF'].split("\t")]
         organismTermAccessions = [termAccession for termAccession in studyParserObj.study['Study Organism Term Accession'].split("\t")]
         organism_entry_list = []
 
         for organism in zip(organisms, organismTermSources, organismTermAccessions):
-            scientific_name = organism[0]
-            TaxonTermSource = organism[1]
-            ncbi_taxonomy_id = organism[2]
-            
+
             # Check that the Study Organism Term Source REF is NCBI Taxonomy
+            TaxonTermSource = organism[1]
             TaxonRefMatchObj = re.match(REGEX_TAXON_REF, TaxonTermSource.lower())
-            if TaxonRefMatchObj:                
-                try:
-                    # update or create Organism entries
-                    OrganismEntry, created = Organism.objects.update_or_create(
-                        ncbi_taxonomy_id=ncbi_taxonomy_id,
-                        scientific_name=scientific_name,
-                        externalLink='https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=%s&lvl=0' % (ncbi_taxonomy_id))
-                    organism_entry_list.append(OrganismEntry)
-                    if created:
-                        logger.debug('Created new entry: %s', OrganismEntry)
-                        print('Created new entry: ', OrganismEntry)
-                except Exception as exc:
-                    logger.debug(exc)
+
+            if TaxonRefMatchObj:
+                OrganismEntry = getOrganism(taxonomy_id=organism[2], scientific_name=organism[0])
+                organism_entry_list.append(OrganismEntry)
             else:
                 print('Study Organism Term Source REF for "%s" different from NCBI Taxonomy: '\
                     '\n\tStudy Organism Term Source REF: %s \n\tStudy Organism Term Accession: %s' \
-                    % (scientific_name, TaxonTermSource, ncbi_taxonomy_id))
+                    % (organism[0], TaxonTermSource, organism[2]))
 
 
         # Create Author and Publication entries
-        publication_list = studyParserObj.study['Publications'] #TODO: quitar esta linea y poner el bucle for directamente? (for publication in studyParserObj.study['Publications']:)
         publication_entry_list = []
 
-        for publication in publication_list:
-            title = publication['Title']
-            doi = publication['DOI']
-            pubMedId = publication['PubMed ID']
-            PMCId = publication['PMC ID']
-            author_list = [author for author in publication['Author List'].split(", ")]
+        for publication in studyParserObj.study['Publications']:
             author_entry_list = []
 
-            for author in author_list: #TODO: incluir last name y first name en Author entries?? #TODO: quitar esta linea y poner el bucle for directamente? (for author in publication['Author List'].split(", "):)
-                try:
-                    # update or create Author entries
-                    AuthorEntry, created = Author.objects.update_or_create(
-                        name=author)
-                    author_entry_list.append(AuthorEntry)
-                    if created:
-                        logger.debug('Created new entry: %s', AuthorEntry)
-                        print('Created new entry: ', AuthorEntry)
-                except Exception as exc:
-                    logger.debug(exc)
+            for author in publication['Author List'].split(", "):
+                AuthorEntry = getAuthor(name=author)
+                author_entry_list.append(AuthorEntry)
 
-            try:
-                
-                # update or create Publication entries
-                PublicationEntry, created = Publication.objects.update_or_create(
-                    title=title,
-                    doi=doi,
-                    pubMedId=pubMedId,
-                    PMCId=PMCId,
-                    )
-                publication_entry_list.append(PublicationEntry)
-                # Add already updated/created Author entries to Publicacion entry
-                [PublicationEntry.authors.add(author) for author in author_entry_list]
+            PublicationEntry = updatePublication(
+                title=publication['Title'], 
+                doi=publication['DOI'], 
+                pubMedId=publication['PubMed ID'], 
+                PMCId=publication['PMC ID'], 
+                journal='', issn='', issue='', volume='', 
+                firstPage='', lastPage='', year='', abstract='') 
 
-                if created:
-                    logger.debug('Created new entry: %s', PublicationEntry)
-                    print('Created new entry: ', PublicationEntry)
-            except Exception as exc:
-                logger.debug(exc)
+            publication_entry_list.append(PublicationEntry)
+            # Add already updated/created Author entries to Publicacion entry
+            [PublicationEntry.authors.add(author) for author in author_entry_list]
+
 
         # Update Author entries with "Study Contacts" details if exist.
-        #TODO: Crear una try/except para los casos en que no exista studyParserObj.study['Study Person Last Name'] OR ['Study Person First Name'] OR ... y por tanto no se puedan dar estas lineas?? Ten en cuenta que en study_parser.ỳ aparecen como opcionales
         authorLastNames = [authorLastName for authorLastName in studyParserObj.study['Study Person Last Name'].split("\t")]
         authorFirstNames = [authorFirstName for authorFirstName in studyParserObj.study['Study Person First Name'].split("\t")]
         authorEmails = [authorEmail for authorEmail in studyParserObj.study['Study Person Email'].split("\t")]
@@ -1530,210 +1933,232 @@ class ImageDataFromIDRAssayUtils(object):
         authorRoles = [authorRole for authorRole in studyParserObj.study['Study Person Roles'].split("\t")]
 
         for authorEntry in zip(authorLastNames, authorFirstNames, authorEmails, authorAddresses, authorORCIDs, authorRoles):
-            nonExactName = ' '.join([authorEntry[0], authorEntry[1][0]]) # Try to mimic Author entry name from publication['Author List'] although middle names would be missing. E.g: Carpenter AE (Author entry name from publication['Author List']); Carpenter A (Author entry name from study['Study Person Last Name'] + study['Study Person First Name']) #TODO: hacer mas corta esta linea??
-            email = authorEntry[2]
-            address = authorEntry[3]
-            orcid = authorEntry[4]
-            role = authorEntry[5]
+            '''
+            NOTE: pseudoName tries to mimic Author entry name from publication['Author List'] 
+            although middle names would be missing. E.g: 
+             Carpenter AE (Author entry name from publication['Author List']); 
+             Carpenter A (Author entry name from study['Study Person Last Name'] + study['Study Person First Name'])
 
-            try:
-                # update or create Author entries
-                AuthorEntry, created = Author.objects.update_or_create(
-                    name__contains=nonExactName,
-                    defaults={'email': email,'address': address, 'orcid': orcid, 'role': role}
+            '''
+            pseudoName =  ' '.join([authorEntry[0], authorEntry[1][0]])
+
+            AuthorEntry = updateAuthorFromIDR(
+                name=pseudoName, 
+                email=authorEntry[2], 
+                address=authorEntry[3], 
+                orcid=authorEntry[4], 
+                role=authorEntry[5]
                 )
-                if created:
-                    logger.debug('Created new entry: %s', AuthorEntry)
-                    print('Created new entry: ', AuthorEntry)
-            except Exception as exc:
-                logger.debug(exc)
 
         # Create AssayEntity entry
-        assayTitle = studyParserObj.study['Study Title']
-        assayDescription = studyParserObj.study['Study Description']
-        #assayExternalLinks = [assayExternalLink for assayExternalLink in studyParserObj.study['Study External URL'].split("\t")] #TODO: en los study.txt que no aparece la key ['Study External URL'] esto falla (como en idr0094-ellinger-sarscov2) SOLUCIONALO
-        assayDetails = studyParserObj.study['Study Key Words']
+        #assayExternalLinks = [(assayExternalLink for assayExternalLink in studyParserObj.study['Study External URL'].split("\t")) if ('Study External URL' in studyParserObj.study) else '']
         assayTypes = [assayType for assayType in studyParserObj.study['Study Type'].split("\t")] 
         assayTypeTermAccessions = [assayTypeTermAccession for assayTypeTermAccession in studyParserObj.study['Study Type Term Accession'].split("\t")] 
-        screenCount = studyParserObj.study['Study Screens Number']
-        BIAId = studyParserObj.study['Study BioImage Archive Accession']
-        releaseDate = studyParserObj.study['Study Public Release Date']
-        dataDoi = studyParserObj.study['Data DOI']
 
-        try:
-            # update or create Assay entry
-            AssayEntityEntry, created = AssayEntity.objects.update_or_create(
-                name=assayTitle,
-                featureType=FeatureTypeEntry,
-                description=assayDescription,
-                #externalLink='; '.join(assayExternalLinks),
-                details=assayDetails,
-                dbId=assayId,
-                assayType='; '.join(assayTypes),
-                assayTypeTermAccession='; '.join(assayTypeTermAccessions),
-                screenCount=screenCount,
-                BIAId=BIAId,
-                releaseDate=releaseDate,
-                dataDoi=dataDoi,                
-            )
-            # Add already updated/created Author entries and Publicacion entries to AssayEntity entry
-            [AssayEntityEntry.organisms.add(orgEnt) for orgEnt in organism_entry_list]
-            [AssayEntityEntry.publications.add(pubEnt) for pubEnt in publication_entry_list]
+        AssayEntityEntry = updateAssayEntity(
+            name=studyParserObj.study['Study Title'],
+            featureType=FeatureTypeEntry,
+            description=studyParserObj.study['Study Description'],
+            #externalLink='; '.join(assayExternalLinks),
+            externalLink='',
+            details=studyParserObj.study['Study Key Words'],
+            dbId=assayId,
+            assayType='; '.join(assayTypes),
+            assayTypeTermAccession='; '.join(assayTypeTermAccessions),
+            screenCount=studyParserObj.study['Study Screens Number'],
+            BIAId=studyParserObj.study['Study BioImage Archive Accession'],
+            releaseDate=studyParserObj.study['Study Public Release Date'],
+            dataDoi=studyParserObj.study['Data DOI'],
+        )
 
-            if created:
-                logger.debug('Created new entry: %s', AssayEntityEntry)
-                print('Created new entry: ', AssayEntityEntry)
-        except Exception as exc:
-            logger.debug(exc)
+        # Add already updated/created Author entries and Publicacion entries to AssayEntity entry
+        [AssayEntityEntry.organisms.add(orgEnt) for orgEnt in organism_entry_list]
+        [AssayEntityEntry.publications.add(pubEnt) for pubEnt in publication_entry_list]
 
         
         # Create ScreenEntity entries
-        REGEX_SCREEN_NAME = re.compile('.*\/(screen)(.*)')
-        custom_ascending_dbId=0 # Stablish a custom ascending Id for those ligands that has no PubChem ID associated to them.
-
         for screen in studyParserObj.components:
 
-            
-            #screenId = #TODO: buscar id por el modulo request (script mio de api)
-
-            screenDir = screen['Comment\\[IDR Screen Name\\]'] #TODO: buscar otro nombre mas descriptivo
+            # Get screen name 
+            screenDir = screen['Comment\\[IDR Screen Name\\]']
             screenNameMatchObj = re.match(REGEX_SCREEN_NAME, screenDir)
             screenName = ' '.join([screenNameMatchObj.group(1), screenNameMatchObj.group(2)])
 
-            #TODO: CAMBIAR!!
-            if screenName == 'screen A':
-                screenId = '2602'
-            else:
-                screenId = '2603'
+            # Get screen id
+            screenId = getScreenId(
+                session,
+                key='organism', 
+                value='Severe acute respiratory syndrome coronavirus 2',
+                screenDir=screenDir,
+                )
 
-            screenDescription = screen['Screen Description']
-            screenType = screen['Screen Type']
-            screenTypeTermAccession = screen['Screen Type Term Accession']
-            screenTechnologyType = screen['Screen Technology Type']
-            screenTechnologyTypeTermAccession = screen['Screen Technology Type Term Accession']
+            # Get screen attributes that are lists
             screenImagingMethods = [screenImagingMethod for screenImagingMethod in screen['Screen Imaging Method'].split("\t")]
             screenImagingTermAccessions = [screenImagingTermAccession for screenImagingTermAccession in screen['Screen Imaging Method Term Accession'].split("\t")]
-            screenSampleType = screen['Screen Sample Type']
             #plateCount = 
-            screenDataDoi = screen['Screen Data DOI']
 
-            try:
-                # update or create Screen entries
-                ScreenEntityEntry, created = ScreenEntity.objects.update_or_create(
-                    #dbId=screenName[-1], #TODO: cambiar esto para añadir el id real del screen
-                    dbId=screenId,
-                    name=screenName,
-                    description=screenDescription,
-                    type=screenType,
-                    typeTermAccession=screenTypeTermAccession,
-                    technologyType=screenTechnologyType,
-                    technologyTypeTermAccession=screenTechnologyTypeTermAccession,
-                    imagingMethod='; '.join(screenImagingMethods),
-                    imagingMethodTermAccession='; '.join(screenImagingTermAccessions),
-                    sampleType=screenSampleType,
-                    #plateCount=plateCount,
-                    dataDoi=screenDataDoi,
-                    assay=AssayEntityEntry,                
+            ScreenEntityEntry = updateScreenEntity(
+                dbId=screenId,
+                name=screenName,
+                description=screen['Screen Description'],
+                type=screen['Screen Type'],
+                typeTermAccession=screen['Screen Type Term Accession'],
+                technologyType=screen['Screen Technology Type'],
+                technologyTypeTermAccession=screen['Screen Technology Type Term Accession'],
+                imagingMethod='; '.join(screenImagingMethods),
+                imagingMethodTermAccession='; '.join(screenImagingTermAccessions),
+                sampleType=screen['Screen Sample Type'],
+                #plateCount=plateCount,
+                plateCount=None,
+                dataDoi=screen['Screen Data DOI'],
+                assay=AssayEntityEntry,  
+            )
+
+
+            # Create PlateEntity, LigandEntity and WellEntity entries
+            screenDf = getScreenDataframe(session, screenId)
+
+            for index, row in screenDf.iterrows():
+                PlateEntityEntry = updatePlateEntity(
+                    dbId=row['Plate'],
+                    name=row['Plate Name'],
+                    screen=ScreenEntityEntry,
                 )
-                if created:
-                    logger.debug('Created new entry: %s', ScreenEntityEntry)
-                    print('Created new entry: ', ScreenEntityEntry)
-            except Exception as exc:
-                logger.debug(exc)
 
 
-            '''
-            Create PlateEntity, Ligand and WellEntity entries
-            '''
+                # Get well ID and image ID associated to it
+                wellId = row['Well']
+                wellImageIds = getImageIdsFromWellId(session, wellId)
 
-            #_____________ Crear Plates basado en annotation file from github ____________
-            # screenAnnotationFile = screen['Annotations'][0]['Annotation File'].split(" ")[0] #TODO: cambiar esto para el caso en el que haya mas de un elemeto en la lista screen['Annotations']
-            # annotationFilePath = os.path.join(dirToLook, screenDir, screenAnnotationFile)
-            # df = pd.read_csv(annotationFilePath)
-            
-            # print(len(df['Plate']))
-            # print(len(df['Plate'].unique()))
-            # ______________________________________________________
+                # Get column names in screen DF that harbor key well attributes
+                cl_colName = getColNameByKW(screenDf.columns, 'cell', 'line')
+                clta_colName = getColNameByKW(screenDf.columns, 'accession', '3')
+                ct_colName = getColNameByKW(screenDf.columns, 'control', 'type')
+                qc_colName = getColNameByKW(screenDf.columns, 'control', 'quality')
+                mc_colName = getColNameByKW(screenDf.columns, 'micromolar', 'concentration')
+                pi_colName = getColNameByKW(screenDf.columns, 'percentage', 'inhibition')
+                ho75a_colName = getColNameByKW(screenDf.columns, 'hit', 'activity')
+                nc_colName = getColNameByKW(screenDf.columns, 'number', 'cell')
+                pal_colName = getColNameByKW(screenDf.columns, 'phenotype', 'level')
+                c_colName = getColNameByKW(screenDf.columns, 'channel', '')
 
-
-            #_____________ Crear Plates basado en url from OMERO webgateway ____________
-
-            qs = {'screen_id': screenId} #TODO: cambiar esta forma de formatear a la que has usado en el resto del script
-            url = SCREEN_TABLE_URL.format(**qs)
-            
-            #TODO: uncomment
-            # # Create a dataframe from "data" key in json format output got from url
-            # jsonData = session.get(url).json()
-            # columns = jsonData['data']['columns']
-            # data = jsonData['data']['rows']
-            # screenDf = pd.DataFrame(data, columns = columns)
-            screenDf = pd.read_csv('data/%s.csv' % (screenId))
+                # Create WellEntity entries for unkown wells (no ligand tested and no control)
+                if row['Compound Name'] == '' and row['Control Type'] == '':  
         
-
-            # Create PlateEntity entries
-            plateDf = screenDf[['Plate', 'Plate Name']]
-            for index, row in plateDf.iterrows():
-                plateId = row['Plate']
-                plateName = row['Plate Name']
-
-                try:
-                    # update or create Plate entries
-                    PlateEntityEntry, created = PlateEntity.objects.update_or_create(
-                        dbId=plateId,
-                        name=plateName,
-                        screen=ScreenEntityEntry,
+                    WellEntityEntry = updateWellEntity(
+                        dbId=wellId,
+                        name=row['Well Name'],
+                        description='Unkown details',
+                        ligand=None,
+                        plate=PlateEntityEntry,
+                        externalLink=URL_SHOW_KEY.format(**{'key': 'well', 'keyId': wellId}),
+                        imageThumbailLink=URL_THUMBNAIL.format(**{'imageId': wellImageIds[0]}),
+                        imagesIds=wellImageIds,
+                        cellLine=row[cl_colName],
+                        cellLineTermAccession=row[clta_colName],
+                        controlType=row[ct_colName],
+                        qualityControl=row[qc_colName],
+                        micromolarConcentration=None,
+                        percentageInhibition=float(row[pi_colName]) if row[pi_colName] != '' else None,
+                        hitOver75Activity=row[ho75a_colName],
+                        numberCells=row[nc_colName] if row[nc_colName] != '' else None,
+                        phenotypeAnnotationLevel=row[pal_colName],
+                        channels=row[c_colName]
                     )
-                    if created:
-                        logger.debug('Created new entry: %s', PlateEntityEntry)
-                        print('Created new entry: ', PlateEntityEntry)
-                except Exception as exc: 
-                    logger.debug(exc)
+                
+                # Create WellEntity entries for positive controls
+                elif row['Compound Name'] == '' and row['Control Type'] == 'positive':  
 
-
-            # Create LigandEntity entries
-            #TODO: ojo tienes que asegurarte que el pubchem id va a ser el id de los ligands tanto aqui como en el proyecto de JR. 
-            #TODO: no incluir las columnas que no vayas a usar como iupac name ... etc. Consulta con JR cuales si nos interesan
-            ligandDf_nan = screenDf[['Compound Name', 'Compound PubChem CID', 'Compound PubChem URL', 'Compound SMILES', 'Compound IUPAC Name', 'Compound Unichem URL', 'Compound InChIKey', 'Compound Broad Identifier']]
-            # TODO: ahora mismo solo aliminamos los NaN de 'Compound Name' porque en idr0094-ellinger-sarscov2 (unico HCS de covid hasta ahora en IDR) lo que ellos usan como unque PK para diferenciar los ligandos es el nombre. En el futuro seria intereasnte ver si lo cambian a algun ID (PubChem ID, por ejemplo) y lo podemos actualizar nosotros tb
-            ligandDf = ligandDf_nan.dropna(subset=['Compound Name']) # Drop control rows (i.e. no ligand tested).  
-            ligandDf = ligandDf.fillna({'Compound PubChem CID': 0.0}) # Fill missing values for 'Compound PubChem CID' with float 0.0
-            ligandDf['Compound PubChem CID'] = ligandDf['Compound PubChem CID'].astype(int).astype(str) # Change data type from float to str for 'Compound PubChem CID'
-            count=0
-
-            for index, row in ligandDf.iterrows():
-
-                # Stablish a custom ascending Id for those ligands that has no PubChem ID associated to them.
-                if row['Compound PubChem CID'] == '0':
-                    ligandId = 'cust' + str(custom_ascending_dbId)
-                    custom_ascending_dbId=custom_ascending_dbId+1
-                else:
-                    ligandId = row['Compound PubChem CID']
-
-                ligandName = row['Compound Name']
-                ligandSMILES = row['Compound SMILES']
-                ligandIUPACInChIkey = row['Compound InChIKey']
-
-                #TODO: solucionar!!!!!!!!!!!!!!!!!!!!!!!!! que se creen entradas de ligando a partir del Screen B (no tendria que suceder)
-                try:
-                    # update or create LigandEntity entries
-                    LigandEntityEntry, created = LigandEntity.objects.update_or_create(
-                        name=ligandName,
-                        dbId=ligandId,
-                        #SMILES=ligandSMILES,
-                        IUPACInChIkey=ligandIUPACInChIkey,
-                        # defaults={
-                        #     'dbId': ligandId, 
-                        #     'SMILES': ligandSMILES,
-                        #     'IUPACInChIkey': ligandIUPACInChIkey,
-                        #     },
+                    WellEntityEntry = updateWellEntity(
+                        dbId=wellId,
+                        name=row['Well Name'],
+                        description='virus-treated well (no compounds)', 
+                        ligand=None,
+                        plate=PlateEntityEntry,
+                        externalLink=URL_SHOW_KEY.format(**{'key': 'well', 'keyId': wellId}),
+                        imageThumbailLink=URL_THUMBNAIL.format(**{'imageId': wellImageIds[0]}),
+                        imagesIds=wellImageIds,
+                        cellLine=row[cl_colName],
+                        cellLineTermAccession=row[clta_colName],
+                        controlType=row[ct_colName],
+                        qualityControl=row[qc_colName],
+                        micromolarConcentration=None,
+                        percentageInhibition=float(row[pi_colName]) if row[pi_colName] != '' else None,
+                        hitOver75Activity=row[ho75a_colName],
+                        numberCells=row[nc_colName] if row[nc_colName] != '' else None,
+                        phenotypeAnnotationLevel=row[pal_colName],
+                        channels=row[c_colName]
                     )
-                    if created:
-                        logger.debug('Created new entry: %s', LigandEntityEntry)
-                        print('Created new entry: ', LigandEntityEntry)
-                        count=count+1
-                        #print(count)
-                except Exception as exc:
-                    logger.debug(exc)
+                    
 
-            #print(len(ligandDf['Compound PubChem CID'].unique()))
-        
+                # Create WellEntity entries for negative controls
+                elif row['Compound Name'] == '' and row['Control Type'] == 'negative':  
+
+                    WellEntityEntry = updateWellEntity(
+                        dbId=wellId,
+                        name=row['Well Name'],
+                        description='no-virus- and no-compounds-treated well (cells but no treatment). Expected to have no effect on cells', 
+                        ligand=None,
+                        plate=PlateEntityEntry,
+                        externalLink=URL_SHOW_KEY.format(**{'key': 'well', 'keyId': wellId}),
+                        imageThumbailLink=URL_THUMBNAIL.format(**{'imageId': wellImageIds[0]}),
+                        imagesIds=wellImageIds,
+                        cellLine=row[cl_colName],
+                        cellLineTermAccession=row[clta_colName],
+                        controlType=row[ct_colName],
+                        qualityControl=row[qc_colName],
+                        micromolarConcentration=None,
+                        percentageInhibition=float(row[pi_colName]) if row[pi_colName] != '' else None,
+                        hitOver75Activity=row[ho75a_colName],
+                        numberCells=row[nc_colName] if row[nc_colName] != '' else None,
+                        phenotypeAnnotationLevel=row[pal_colName],
+                        channels=row[c_colName]
+                    )
+                    
+                # Create WellEntity entries with ligand
+                else: 
+                    # Get column names in screen DF that harbor key ligand attributes
+                    ln_colName = getColNameByKW(screenDf.columns, 'compound', 'name')
+                    pci_colName = getColNameByKW(screenDf.columns, 'pubchem', 'id')
+                    icik_colName = getColNameByKW(screenDf.columns, 'inchikey', '')
+
+                    # Create LigandEntity entry
+                    LigandEntityEntry = getLigandEntity(
+                        name=row[ln_colName],
+                        pubChemCompoundId=row[pci_colName],
+                        dbId=None,
+                        ligandType=None,
+                        formula=None,
+                        formula_weight=None,
+                        details=None,
+                        altNames=None,
+                        imageLink=None,
+                        externalLink=None,
+                        systematicNames=None,
+                        IUPACInChI=None,
+                        IUPACInChIkey=row[icik_colName],
+                        isomericSMILES=None,
+                        canonicalSMILES=None,                        
+                    )
+
+                   # Update or create WellEntity
+                    WellEntityEntry = updateWellEntity(
+                        dbId=wellId,
+                        name=row['Well Name'],
+                        description='well treated with virus and compound',
+                        ligand=LigandEntityEntry,
+                        plate=PlateEntityEntry,
+                        externalLink=URL_SHOW_KEY.format(**{'key': 'well', 'keyId': wellId}),
+                        imageThumbailLink=URL_THUMBNAIL.format(**{'imageId': wellImageIds[0]}),
+                        imagesIds=wellImageIds,
+                        cellLine=row[cl_colName],
+                        cellLineTermAccession=row[clta_colName],
+                        controlType=row[ct_colName],
+                        qualityControl=row[qc_colName],
+                        micromolarConcentration=row[mc_colName] if mc_colName  else (10.0 if assayId == 'idr0094' else None), 
+                        percentageInhibition=float(row[pi_colName]) if row[pi_colName] != '' else None, 
+                        hitOver75Activity=row[ho75a_colName],
+                        numberCells=row[nc_colName] if row[nc_colName] != '' else None, 
+                        phenotypeAnnotationLevel=row[pal_colName],
+                        channels=row[c_colName]
+                    )

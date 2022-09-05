@@ -3,7 +3,6 @@
 '''
 Adapted from https://github.com/IDR/idr-utils/blob/1ba5e3810751b6df04ae0d0472a7a09c852d7e7a/pyidr/study_parser.py
 '''
-#TODO: mejorar la cita a el archivo study_parser.py de IDR
 
 from builtins import str
 from builtins import zip
@@ -18,13 +17,6 @@ import re
 import sys
 
 from getpass import getpass
-# from omero.cli import CLI
-# from omero.gateway import BlitzGateway
-# import omero.constants
-# from omero.gateway import MapAnnotationWrapper
-# from omero.rtypes import rstring
-
-
 
 TYPES = ["Experiment", "Screen"]
 
@@ -332,7 +324,7 @@ class StudyParser(object):
         key = '%s Organism' % component['Type']
         if 'Study Organism' in component and key in component:
             raise Exception("Organism defined both at the study and %s level"
-                            % component['Type']) #TODO: quiza modificar esto para que, en lugar de que mande un excepcion, guarde el organismo a nivel de study y el organismo a nivel de screen/experiment
+                            % component['Type']) #TODO: Change this to save organism at study level and organism at screen/experiment level instead of raising an exception 
         elif 'Study Organism' not in component and key not in component:
             raise Exception("Missing organism field")
         elif 'Study Organism' in component:
@@ -620,29 +612,17 @@ class Formatter(object):
                 obj, components_map, COMPONENTS_NS, update=update)
 
     def check(self, update=False):
-        # Changes addapted from https://github.com/IDR/idr0094-ellinger-sarscov2/blob/4c18295e3db9c4318b234887799211792c656509/scripts/add_notebook_links.py
-
-
-        # cli = CLI()
-        # cli.loadplugins()
-        # cli.onecmd('login -q')
-
         try:
             # Collect parameters
             host = input("Host [localhost]: ") or 'localhost'  # noqa
             username = input("Username [demo]: ") or 'demo'
             password = getpass("Password: ")
-            # pattern = input("Pattern [idr0094]: ") or 'idr0094'
-            # delete_annotation = input("Delete annotation [False]: ") or 'False'
 
             # Connect to the server
             gateway = connect(host, username, password)
             
-            #gateway = BlitzGateway(client_obj=cli.get_client())
             self.check_study(gateway, update=update)
         finally:
-            # if cli:
-            #     cli.close()
             gateway.close()
 
 

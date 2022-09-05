@@ -79,12 +79,8 @@ class PlateEntitySerializer(serializers.ModelSerializer):
                     wellid_list.append(w.dbId)
 
             # Given the unique list of Well IDs, get queryset including all WellEntity models and pass it to WellEntitySerializer
-                # TODO: Optimize to avoid querying the database. Instead, try to get the same info from the obj (Plate queryset)
             well_qs = WellEntity.objects.filter(dbId__in=wellid_list)
             return WellEntitySerializer(many=True,  context=context).to_representation(well_qs)
-
-        # NOTE: is this line useful? (adapted from https://stackoverflow.com/questions/35878235/django-rest-framework-filter-related-data-based-on-parent-object)
-        # return WellEntitySerializer(many=True).to_representation(obj.wells.all())
 
 
 class ScreenEntitySerializer(serializers.ModelSerializer):
@@ -113,13 +109,8 @@ class ScreenEntitySerializer(serializers.ModelSerializer):
             unique_plateid_list = list(set(plateid_list))
 
             # Given the unique list of Plate IDs, get queryset including all PlateEntity models and pass it to PlateEntitySerializer
-            # TODO: Optimize to avoid querying the database. Instead, try to get the same info from the obj (Screen queryset)
             plate_qs = PlateEntity.objects.filter(dbId__in=unique_plateid_list)
             return PlateEntitySerializer(many=True,  context=context).to_representation(plate_qs)
-
-        # NOTE: is this line useful? (adapted from https://stackoverflow.com/questions/35878235/django-rest-framework-filter-related-data-based-on-parent-object)
-        # return PlateEntitySerializer(many=True).to_representation(obj.files.all())
-
 
 class AssayEntitySerializer(serializers.ModelSerializer):
     screens = serializers.SerializerMethodField()
@@ -150,13 +141,10 @@ class AssayEntitySerializer(serializers.ModelSerializer):
             unique_screenid_list = list(set(screenid_list))
 
             # Given the unique list of Screen IDs, get queryset including all ScreenEntity models and pass it to ScreenEntitySerializer
-            # TODO: Optimize to avoid querying the database. Instead, try to get the same info from the obj (Assay queryset)
             screen_qs = ScreenEntity.objects.filter(dbId__in=unique_screenid_list)
             return ScreenEntitySerializer(many=True,  context=context).to_representation(screen_qs)
 
-        # NOTE: is this line useful? (adapted from https://stackoverflow.com/questions/35878235/django-rest-framework-filter-related-data-based-on-parent-object)
-        # return ScreenEntitySerializer(many=True).to_representation(obj.files.all())
-
+ 
 
 class FeatureTypeSerializer(serializers.ModelSerializer):
     assays = serializers.SerializerMethodField()
@@ -186,7 +174,6 @@ class FeatureTypeSerializer(serializers.ModelSerializer):
             unique_assayid_list = list(set(assayid_list))
 
             # Given the unique list of Assay IDs, get queryset including all AssayEntity models and pass it to AssayEntitySerializer
-            # TODO: Optimize to avoid querying the database. Instead, try to get the same info from the obj (FeatureType queryset)
             assay_qs = AssayEntity.objects.filter(dbId__in=unique_assayid_list)
             return AssayEntitySerializer(many=True,  context=context).to_representation(assay_qs)
 
@@ -214,7 +201,6 @@ class LigandToImageDataSerializer(serializers.ModelSerializer):
         unique_featureTypeId_list = list(set(featureTypeId_list))
 
         # Given the unique list of FeatureType IDs, get queryset including all FeatureType models and pass it to FeatureTypeSerializer
-        # TODO: Optimize to avoid querying the database. Instead, try to get the same info from the obj (Ligand queryset)
         featureType_qs = FeatureType.objects.filter(pk__in=unique_featureTypeId_list)
         return FeatureTypeSerializer(many=True, context=context).to_representation(featureType_qs)
 
