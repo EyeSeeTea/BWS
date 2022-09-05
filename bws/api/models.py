@@ -253,8 +253,8 @@ class LigandEntity(models.Model):
     canonicalSMILES = models.CharField(max_length=500, null=True, blank=True)
 
     def __str__(self):
+        #return '%s' % (self.dbId if self.dbId else (self.pubChemCompoundId if self.pubChemCompoundId else self.name))
         return '%s' % (self.dbId if self.dbId else self.pubChemCompoundId)
-
 
 class RefinedModelSource(models.Model):
     # name of the data source, e.g. 'PDB-REDO', 'CSTF (Coronavirus Structural TaskForce)', etc
