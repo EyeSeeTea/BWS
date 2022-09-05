@@ -16,7 +16,6 @@ from datetime import datetime
 import pandas as pd
 from django.db.models import Q
 import numpy as np
-#TODO: preguntar a JR si cambiar todos los mensajes de Created a new entry para especificar el tipo de entry
 
 STATUS = {"REL": "Released",
           "UNREL": "Unreleased",
@@ -28,7 +27,6 @@ FILE_EXT_PATTERN = '*.cif'
 logger = logging.getLogger(__name__)
 
 PDB_FOLDER_PATTERN = re.compile(".*/(\d\w{3})/.*\.pdb$")
-#TODO: colocar todos los regex que uses aqui para identificarlos bien
 REGEX_EMDB_ID = re.compile('^emd-\d{4,5}$')
 REGEX_VOL_FILE = re.compile('^(emd)-\d{4,5}\.map$')
 REGEX_PDB_FILE = re.compile('^(pdb)\d\w{3}\.ent$')
@@ -1883,7 +1881,6 @@ class IDRUtils(object):
         studyParserObj = StudyParser(MetadataFilePath)
 
         # Get or Create Organism entries
-        #TODO: Crear una try/except para los casos en que no exista studyParserObj.study['Study Organism'] OR ['Study Organism Term Source REF'] OR ['Study Organism Term Accession'] y por tanto no se puedan dar estas lineas?? Ten en cuenta que en study_parser.ỳ aparecen como opcionales las 3
         organisms = [organism for organism in studyParserObj.study['Study Organism'].split("\t")]
         organismTermSources = [termSource for termSource in studyParserObj.study['Study Organism Term Source REF'].split("\t")]
         organismTermAccessions = [termAccession for termAccession in studyParserObj.study['Study Organism Term Accession'].split("\t")]
@@ -1910,7 +1907,7 @@ class IDRUtils(object):
         for publication in studyParserObj.study['Publications']:
             author_entry_list = []
 
-            for author in publication['Author List'].split(", "): #TODO: incluir last name y first name en Author entries??
+            for author in publication['Author List'].split(", "):
                 AuthorEntry = getAuthor(name=author)
                 author_entry_list.append(AuthorEntry)
 
@@ -1922,14 +1919,12 @@ class IDRUtils(object):
                 journal='', issn='', issue='', volume='', 
                 firstPage='', lastPage='', year='', abstract='') 
 
-            #TODO: poner en todos sitios igual: poner los valores default al crear la funcion (como argumentos opcionales) o al llamar a la funcion (estableciendolos con un valor "vacios" como '')
             publication_entry_list.append(PublicationEntry)
             # Add already updated/created Author entries to Publicacion entry
             [PublicationEntry.authors.add(author) for author in author_entry_list]
 
 
         # Update Author entries with "Study Contacts" details if exist.
-        #TODO: Crear una try/except para los casos en que no exista studyParserObj.study['Study Person Last Name'] OR ['Study Person First Name'] OR ... y por tanto no se puedan dar estas lineas?? Ten en cuenta que en study_parser.ỳ aparecen como opcionales
         authorLastNames = [authorLastName for authorLastName in studyParserObj.study['Study Person Last Name'].split("\t")]
         authorFirstNames = [authorFirstName for authorFirstName in studyParserObj.study['Study Person First Name'].split("\t")]
         authorEmails = [authorEmail for authorEmail in studyParserObj.study['Study Person Email'].split("\t")]
@@ -1956,7 +1951,7 @@ class IDRUtils(object):
                 )
 
         # Create AssayEntity entry
-        #assayExternalLinks = [(assayExternalLink for assayExternalLink in studyParserObj.study['Study External URL'].split("\t")) if ('Study External URL' in studyParserObj.study) else ''] #TODO: en los study.txt que no aparece la key ['Study External URL'] esto falla (como en idr0094-ellinger-sarscov2) SOLUCIONALO
+        #assayExternalLinks = [(assayExternalLink for assayExternalLink in studyParserObj.study['Study External URL'].split("\t")) if ('Study External URL' in studyParserObj.study) else '']
         assayTypes = [assayType for assayType in studyParserObj.study['Study Type'].split("\t")] 
         assayTypeTermAccessions = [assayTypeTermAccession for assayTypeTermAccession in studyParserObj.study['Study Type Term Accession'].split("\t")] 
 
@@ -2024,7 +2019,6 @@ class IDRUtils(object):
             screenDf = getScreenDataframe(session, screenId)
 
             for index, row in screenDf.iterrows():
-                #TODO: fill in plateCount attr with the total sum plates (annotate() and Count methods could be useful)
                 PlateEntityEntry = updatePlateEntity(
                     dbId=row['Plate'],
                     name=row['Plate Name'],
@@ -2034,8 +2028,7 @@ class IDRUtils(object):
 
                 # Get well ID and image ID associated to it
                 wellId = row['Well']
-                #wellImageIds = getImageIdsFromWellId(session, wellId)
-                #TODO descomenta la linea de wellImageIds cuando hayas depurado (comentada porque tarda mucho)
+                wellImageIds = getImageIdsFromWellId(session, wellId)
 
                 # Get column names in screen DF that harbor key well attributes
                 cl_colName = getColNameByKW(screenDf.columns, 'cell', 'line')
@@ -2059,22 +2052,19 @@ class IDRUtils(object):
                         ligand=None,
                         plate=PlateEntityEntry,
                         externalLink=URL_SHOW_KEY.format(**{'key': 'well', 'keyId': wellId}),
-                        #imageThumbailLink=URL_THUMBNAIL.format(**{'imageId': wellImageIds[0]}),
-                        #imagesIds=wellImageIds,
-                        imageThumbailLink='', #TODO eliminar estas dos lineas y descomenta las originales
-                        imagesIds='', #TODO eliminar estas dos lineas y descomenta las originales
+                        imageThumbailLink=URL_THUMBNAIL.format(**{'imageId': wellImageIds[0]}),
+                        imagesIds=wellImageIds,
                         cellLine=row[cl_colName],
                         cellLineTermAccession=row[clta_colName],
                         controlType=row[ct_colName],
                         qualityControl=row[qc_colName],
-                        micromolarConcentration=None, #TODO: OJO, estamos seguros de que aqui esto es none? Quiza si tiene valor. pondrias aqiu un if de este tipo: row[nc_colName] if row[nc_colName] != '' else None??
-                        percentageInhibition=row[pi_colName],
+                        micromolarConcentration=None,
+                        percentageInhibition=float(row[pi_colName]) if row[pi_colName] != '' else None,
                         hitOver75Activity=row[ho75a_colName],
-                        numberCells=row[nc_colName],
+                        numberCells=row[nc_colName] if row[nc_colName] != '' else None,
                         phenotypeAnnotationLevel=row[pal_colName],
                         channels=row[c_colName]
                     )
-                    print('unknown!')
                 
                 # Create WellEntity entries for positive controls
                 elif row['Compound Name'] == '' and row['Control Type'] == 'positive':  
@@ -2082,26 +2072,23 @@ class IDRUtils(object):
                     WellEntityEntry = updateWellEntity(
                         dbId=wellId,
                         name=row['Well Name'],
-                        description='transfection control, or gene knock down that gives a known phenotype', #TODO: buscar uno mas especifico de HCS
+                        description='virus-treated well (no compounds)', 
                         ligand=None,
                         plate=PlateEntityEntry,
                         externalLink=URL_SHOW_KEY.format(**{'key': 'well', 'keyId': wellId}),
-                        # imageThumbailLink=URL_THUMBNAIL.format(**{'imageId': wellImageIds[0]}),
-                        # imagesIds=wellImageIds,
-                        imageThumbailLink='', #TODO eliminar estas dos lineas y descomenta las originales
-                        imagesIds='', #TODO eliminar estas dos lineas y descomenta las originales
+                        imageThumbailLink=URL_THUMBNAIL.format(**{'imageId': wellImageIds[0]}),
+                        imagesIds=wellImageIds,
                         cellLine=row[cl_colName],
                         cellLineTermAccession=row[clta_colName],
                         controlType=row[ct_colName],
                         qualityControl=row[qc_colName],
                         micromolarConcentration=None,
-                        percentageInhibition=float(row[pi_colName]),
+                        percentageInhibition=float(row[pi_colName]) if row[pi_colName] != '' else None,
                         hitOver75Activity=row[ho75a_colName],
-                        numberCells=row[nc_colName],
+                        numberCells=row[nc_colName] if row[nc_colName] != '' else None,
                         phenotypeAnnotationLevel=row[pal_colName],
                         channels=row[c_colName]
                     )
-                    print('positive!')
                     
 
                 # Create WellEntity entries for negative controls
@@ -2110,26 +2097,23 @@ class IDRUtils(object):
                     WellEntityEntry = updateWellEntity(
                         dbId=wellId,
                         name=row['Well Name'],
-                        description='scrambled siRNA, DMSO, cells but no treatment. Expected to have no effect on cells', #TODO: buscar uno mas especifico de HCS
+                        description='no-virus- and no-compounds-treated well (cells but no treatment). Expected to have no effect on cells', 
                         ligand=None,
                         plate=PlateEntityEntry,
                         externalLink=URL_SHOW_KEY.format(**{'key': 'well', 'keyId': wellId}),
-                        # imageThumbailLink=URL_THUMBNAIL.format(**{'imageId': wellImageIds[0]}),
-                        # imagesIds=wellImageIds,
-                        imageThumbailLink='', #TODO eliminar estas dos lineas y descomenta las originales
-                        imagesIds='', #TODO eliminar estas dos lineas y descomenta las originales
+                        imageThumbailLink=URL_THUMBNAIL.format(**{'imageId': wellImageIds[0]}),
+                        imagesIds=wellImageIds,
                         cellLine=row[cl_colName],
                         cellLineTermAccession=row[clta_colName],
                         controlType=row[ct_colName],
                         qualityControl=row[qc_colName],
                         micromolarConcentration=None,
-                        percentageInhibition=float(row[pi_colName]),
+                        percentageInhibition=float(row[pi_colName]) if row[pi_colName] != '' else None,
                         hitOver75Activity=row[ho75a_colName],
-                        numberCells=row[nc_colName],
+                        numberCells=row[nc_colName] if row[nc_colName] != '' else None,
                         phenotypeAnnotationLevel=row[pal_colName],
                         channels=row[c_colName]
                     )
-                    print('negative!')
                     
                 # Create WellEntity entries with ligand
                 else: 
@@ -2138,7 +2122,6 @@ class IDRUtils(object):
                     pci_colName = getColNameByKW(screenDf.columns, 'pubchem', 'id')
                     icik_colName = getColNameByKW(screenDf.columns, 'inchikey', '')
 
-                    #TODO: solucionar que se creen entradas de ligando a partir del Screen B (no tendria que suceder)
                     # Create LigandEntity entry
                     LigandEntityEntry = getLigandEntity(
                         name=row[ln_colName],
@@ -2157,59 +2140,25 @@ class IDRUtils(object):
                         isomericSMILES=None,
                         canonicalSMILES=None,                        
                     )
-                    print('ligand!')
 
                    # Update or create WellEntity
                     WellEntityEntry = updateWellEntity(
                         dbId=wellId,
                         name=row['Well Name'],
-                        description='well treated with a compound', #TODO: buscar uno mas especifico de HCS
+                        description='well treated with virus and compound',
                         ligand=LigandEntityEntry,
                         plate=PlateEntityEntry,
                         externalLink=URL_SHOW_KEY.format(**{'key': 'well', 'keyId': wellId}),
-                        # imageThumbailLink=URL_THUMBNAIL.format(**{'imageId': wellImageIds[0]}),
-                        # imagesIds=wellImageIds,
-                        imageThumbailLink='', #TODO eliminar estas dos lineas y descomenta las originales
-                        imagesIds='', #TODO eliminar estas dos lineas y descomenta las originales
+                        imageThumbailLink=URL_THUMBNAIL.format(**{'imageId': wellImageIds[0]}),
+                        imagesIds=wellImageIds,
                         cellLine=row[cl_colName],
                         cellLineTermAccession=row[clta_colName],
                         controlType=row[ct_colName],
                         qualityControl=row[qc_colName],
-                        micromolarConcentration=row[mc_colName] if mc_colName  else None, #TODO: prueba a poner este if en los otros wellEntity a ver si funcionabien
-                        percentageInhibition=float(row[pi_colName]) if row[pi_colName] != '' else None, #TODO: prueba a poner este if en los otros wellEntity a ver si funcionabien
+                        micromolarConcentration=row[mc_colName] if mc_colName  else (10.0 if assayId == 'idr0094' else None), 
+                        percentageInhibition=float(row[pi_colName]) if row[pi_colName] != '' else None, 
                         hitOver75Activity=row[ho75a_colName],
-                        numberCells=row[nc_colName] if row[nc_colName] != '' else None, #TODO: prueba a poner este if en los otros wellEntity a ver si funcionabien
+                        numberCells=row[nc_colName] if row[nc_colName] != '' else None, 
                         phenotypeAnnotationLevel=row[pal_colName],
                         channels=row[c_colName]
                     )
-                    print('treated!')
-
-
-
-                    # try:
-                    #     WellEntityEntry, created = WellEntity.objects.update_or_create(
-                    #         dbId=wellId,
-                    #         name=wellName,
-                    #         description='well treated with a compound', #TODO: buscar uno mas especifico de HCS
-                    #         plate=PlateEntityEntry,
-                    #         #externalLink=wellExternalLink,
-                    #         #imageThumbailLink=wellImageThumbailLink,
-                    #         #imagesIds=wellImagesIds,
-                    #         cellLine=wellCellLine,
-                    #         cellLineTermAccession=wellCellLineTermAccession,
-                    #         controlType=wellControlType,
-                    #         qualityControl=wellQualityControl,
-                    #         #micromolarConcentration=wellMicromolarConcentration,
-                    #         percentageInhibition=wellPercentageInhibition,
-                    #         #hitOver75Activity=wellHitOver75Activity,
-                    #         #numberCells=wellNumberCells,
-                    #         phenotypeAnnotationLevel=wellPhenotypeAnnotationLevel,
-                    #         channels=wellChannels,
-                    #         ligand=LigandEntityEntry,
-                    #     )
-                    #     if created:
-                    #         logger.debug('Created new entry: %s', WellEntityEntry)
-                    #         print('Created new entry: ', WellEntityEntry)
-                    # except Exception as exc: 
-                    #     logger.debug(exc)
-
