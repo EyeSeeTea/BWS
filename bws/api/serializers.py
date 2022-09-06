@@ -38,23 +38,23 @@ class PublicationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Publication
-        fields = ['title', 'journal_abbrev', 'issn', 'issue', 'volume', 'page_first', 
-        'page_last', 'year', 'doi', 'pubMedId', 'PMCId', 'abstract', 'authors']
+        fields = ['title', 'journal_abbrev', 'issn', 'issue', 'volume', 'page_first',
+                  'page_last', 'year', 'doi', 'pubMedId', 'PMCId', 'abstract', 'authors']
 
 
 class OrganismSerializer(serializers.ModelSerializer):
     class Meta:
         model = Organism
-        fields = ['ncbi_taxonomy_id', 'scientific_name', 
-        'common_name', 'externalLink']
+        fields = ['ncbi_taxonomy_id', 'scientific_name',
+                  'common_name', 'externalLink']
 
 
 class WellEntitySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = WellEntity
-        fields = ['dbId', 'name', 'externalLink', 'imagesIds', 'imageThumbailLink', 'cellLine', 'cellLineTermAccession', 'controlType', 'qualityControl', 
-        'micromolarConcentration', 'percentageInhibition', 'hitOver75Activity', 'numberCells', 'phenotypeAnnotationLevel', 'channels']
+        fields = ['dbId', 'name', 'externalLink', 'imagesIds', 'imageThumbailLink', 'cellLine', 'cellLineTermAccession', 'controlType', 'qualityControl',
+                  'micromolarConcentration', 'percentageInhibition', 'hitOver75Activity', 'numberCells', 'phenotypeAnnotationLevel', 'channels']
 
 
 class PlateEntitySerializer(serializers.ModelSerializer):
@@ -88,8 +88,8 @@ class ScreenEntitySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ScreenEntity
-        fields = ['dbId', 'name', 'type', 'typeTermAccession', 'technologyType', 'technologyTypeTermAccession', 
-        'imagingMethod', 'imagingMethodTermAccession', 'sampleType', 'dataDoi', 'plateCount', 'plates']
+        fields = ['dbId', 'name', 'type', 'typeTermAccession', 'technologyType', 'technologyTypeTermAccession',
+                  'imagingMethod', 'imagingMethodTermAccession', 'sampleType', 'dataDoi', 'plateCount', 'plates']
 
     def get_plates(self, obj):
 
@@ -119,8 +119,8 @@ class AssayEntitySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = AssayEntity
-        fields = ['dbId', 'name', 'description', 'assayType', 'assayTypeTermAccession', 'organisms', 
-        'externalLink', 'releaseDate', 'publications', 'dataDoi', 'BIAId', 'screenCount', 'screens']
+        fields = ['dbId', 'name', 'description', 'assayType', 'assayTypeTermAccession', 'organisms',
+                  'externalLink', 'releaseDate', 'publications', 'dataDoi', 'BIAId', 'screenCount', 'screens']
 
     def get_screens(self, obj):
 
@@ -141,7 +141,12 @@ class AssayEntitySerializer(serializers.ModelSerializer):
             unique_screenid_list = list(set(screenid_list))
 
             # Given the unique list of Screen IDs, get queryset including all ScreenEntity models and pass it to ScreenEntitySerializer
+
             screen_qs = ScreenEntity.objects.filter(dbId__in=unique_screenid_list)
+
+            # TODO: Optimize to avoid querying the database. Instead, try to get the same info from the obj (Assay queryset)
+            screen_qs = ScreenEntity.objects.filter(
+                dbId__in=unique_screenid_list)
             return ScreenEntitySerializer(many=True,  context=context).to_representation(screen_qs)
 
  
@@ -151,8 +156,8 @@ class FeatureTypeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = FeatureType
-        fields = ['dataSource', 'name', 
-        'description', 'externalLink', 'assays']
+        fields = ['dataSource', 'name',
+                  'description', 'externalLink', 'assays']
 
     def get_assays(self, obj):
         # Get ligand ID from queryset context to pass it to AssayEntitySerializer
@@ -163,7 +168,7 @@ class FeatureTypeSerializer(serializers.ModelSerializer):
         if ligand_entity:
 
             assayid_list = []
-            
+
             for st in obj.assayentity_features.all():
                 for s in st.screens.all():
                     for p in s.plates.all():
@@ -184,8 +189,8 @@ class LigandToImageDataSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = LigandEntity
-        fields = ['dbId', 'name', 'ligandType', 'formula', 'formula_weight', 'details', 'altNames', 
-        'IUPACInChIkey', 'pubChemCompoundId', 'imageLink', 'externalLink', 'imageData']
+        fields = ['dbId', 'name', 'ligandType', 'formula', 'formula_weight', 'details', 'altNames',
+                  'IUPACInChIkey', 'pubChemCompoundId', 'imageLink', 'externalLink', 'imageData']
         depth = 6
 
     def get_imageData(self, obj):
@@ -202,11 +207,15 @@ class LigandToImageDataSerializer(serializers.ModelSerializer):
 
         # Given the unique list of FeatureType IDs, get queryset including all FeatureType models and pass it to FeatureTypeSerializer
         featureType_qs = FeatureType.objects.filter(pk__in=unique_featureTypeId_list)
+        # TODO: Optimize to avoid querying the database. Instead, try to get the same info from the obj (Ligand queryset)
+        featureType_qs = FeatureType.objects.filter(
+            pk__in=unique_featureTypeId_list)
         return FeatureTypeSerializer(many=True, context=context).to_representation(featureType_qs)
 
     # To avoid showing imageData field in final JSON file when there is no info associated to it (avoid "imgaData []")
     def to_representation(self, value):
-        repr_dict = super(serializers.ModelSerializer, self).to_representation(value)
+        repr_dict = super(serializers.ModelSerializer,
+                          self).to_representation(value)
         return OrderedDict((k, v) for k, v in repr_dict.items()
                            if v not in [None, [], '', {}])
 
@@ -277,3 +286,10 @@ class StructureTopicSerializer(serializers.ModelSerializer):
     class Meta:
         model = StructureTopic
         fields = ['topic', 'Structure']
+
+
+class SampleEntitySerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = SampleEntity
+        fields = '__all__'
