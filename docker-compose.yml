@@ -14,8 +14,7 @@ services:
         - "csic.cnb.bcu.app.description=3DBionotes-WS API"
     env_file: .env
     depends_on:
-      db:
-        condition: service_healthy
+      - db
     deploy:
       restart_policy:
         condition: on-failure
@@ -31,20 +30,6 @@ services:
       MYSQL_DATABASE: ${DB_NAME}
       MYSQL_USER: ${DB_USER_NAME}
       MYSQL_PASSWORD: ${DB_USER_PASSWD}
-    healthcheck:
-      test:
-        [
-          "CMD",
-          'mysqladmin',
-          'ping',
-          '-h',
-          'localhost',
-          '-u',
-          'root',
-          '-p$$MYSQL_ROOT_PASSWORD'
-        ]
-      timeout: 20s
-      retries: 10
     volumes:
       - dbdata:/var/lib/mysql
     expose:
