@@ -174,7 +174,7 @@ LOGGING = {
 }
 
 REST_FRAMEWORK = {
-    'DEFAULT_VERSION': '0.1.0',
+    'DEFAULT_VERSION': '0.1.2',
     
     'DEFAULT_RENDERER_CLASSES': ['rest_framework.renderers.JSONRenderer', ],
     'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
