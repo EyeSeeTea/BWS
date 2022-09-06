@@ -1,4 +1,4 @@
-version: '3'
+version: "3"
 # 
 # DEVELOPMENT ONLY SETTINGS
 # Override common settings
@@ -28,8 +28,7 @@ services:
     ports:
       - "${PMA_EXT_PORT}:80"
     depends_on:
-      db:
-        condition: service_healthy
+      - db
     deploy:
       restart_policy:
         condition: on-failure

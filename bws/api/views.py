@@ -322,3 +322,12 @@ class LigandToImageDataViewSet(viewsets.ModelViewSet):
     queryset = LigandEntity.objects.prefetch_related("well__plate__screen__assay")
     serializer_class = LigandToImageDataSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+
+class SampleEntitySet(viewsets.ModelViewSet):
+    """
+    This viewset automatically provides `list` and `detail` actions.
+    """
+    queryset = SampleEntity.objects.all()
+    serializer_class = SampleEntitySerializer
+    
