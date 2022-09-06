@@ -571,3 +571,18 @@ class StructureTopic(models.Model):
 
     def __str__(self):
         return '%s: %s(%s)' % (self.topic.name, self.structure.pdbId if self.structure.pdbId else '', self.structure.emdbId if self.structure.emdbId else '')
+
+class Analyses(models.Model):
+    '''
+    Additional Analyses on HCS Assay results to describe a ligand effects.
+    '''
+    name = models.CharField(max_length=255, blank=False, default='')
+    value = models.FloatField(null=True, blank=True)
+
+    ligand = models.ForeignKey(LigandEntity,
+                              related_name='%(class)s_analyses', on_delete=models.CASCADE)
+    assay = models.ForeignKey(AssayEntity,
+                              related_name='%(class)s_analyses', on_delete=models.CASCADE)
+
+    def __str__(self):
+        return '%s (%s)' % (self.name, self.ligand)
