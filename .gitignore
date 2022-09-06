@@ -83,3 +83,6 @@ env.bak/
 venv.bak/
 
 */logs/*
+*.log.*
+data/
+migrations/

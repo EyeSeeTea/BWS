@@ -1,0 +1,1 @@
+# Crear comando para que actualice los estudios que hay en idr y son de covid

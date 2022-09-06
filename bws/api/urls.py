@@ -1,0 +1,36 @@
+from django.urls import include, path, re_path
+from rest_framework.routers import DefaultRouter
+from api import views, models
+from django.conf import settings
+import debug_toolbar
+
+router = DefaultRouter()
+# router.register(r'datafiles', views.EntryViewSet)
+router.register(r'LigandToImageData',
+                views.LigandToImageDataViewSet, basename=models.LigandEntity)
+router.register(r'topics', views.TopicViewSet)
+router.register(r'topicStructures', views.StructureToTopicViewSet)
+router.register(r'refinedModelSources', views.RefinedModelSourceViewSet)
+router.register(r'refinedModelMethods', views.RefinedModelMethodViewSet)
+router.register(r'refinedModels', views.RefinedModelViewSet)
+
+
+urlpatterns = [
+    path('', include(router.urls)),
+
+    # EM Validation annotations for 3DBionotes - Protvista
+    re_path(r'^pdbAnnotFromMap/all/(?P<pdb_id>\d\w{3})/(?P<chain_id>\w{1})/?(?P<modified_model>(pdb-redo|isolde))?/$',
+            views.PdbEntryAllAnnFromMapView.as_view()),
+
+    # Validation annotations for FunPDBe
+    re_path(r'^funpdbe/$', views.FunPDBeEntryListView.as_view()),
+    re_path(
+        r'^funpdbe/(?P<pdb_id>\d[a-zA-Z]\w{2})/$', views.FunPDBeEntryByPDBView.as_view()),
+    re_path(r'^funpdbe/(?P<pdb_id>\d[a-zA-Z]\w{2})/(?P<method>(deepres|monores|blocres|mapq|fscq))/$',
+            views.FunPDBeEntryByPDBMethodView.as_view()),
+]
+
+
+if settings.DEBUG:
+    urlpatterns += path('__debug__/', include(debug_toolbar.urls)),
+    SHOW_TOOLBAR_CALLBACK = True

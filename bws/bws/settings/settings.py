@@ -28,7 +28,7 @@ load_dotenv(os.path.join(BASE_DIR, '.env'))
 # See https://docs.djangoproject.com/en/3.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ['SECRET_KEY']
+SECRET_KEY = 'SECRET_KEY'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'drf_yasg',  # enable Yet another Swagger generator https://github.com/axnsan12/drf-yasg
     'api',
+    'debug_toolbar',
 ]
 
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
@@ -65,6 +66,8 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'corsheaders.middleware.CorsMiddleware',
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
+    'debug_toolbar_force.middleware.ForceDebugToolbarMiddleware', # debug_toolbar_force enable to show debug_toolbar in non- or partial-HTML views (APIs) 
 ]
 
 CORS_ORIGIN_ALLOW_ALL = True
@@ -130,16 +133,26 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, "static/")
 
+LOGS_PATH = os.path.join(BASE_DIR, 'logs')
+if not os.path.exists(LOGS_PATH):
+    os.mkdir(LOGS_PATH)
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
+    'formatters': {
+        'simple': {
+            'format': '{asctime} {levelname} {message}',
+            'style': '{',
+        },
+    },
     'handlers': {
         'file': {
             'level': 'DEBUG',
             'class': 'logging.handlers.RotatingFileHandler',
-            'filename': os.path.join(BASE_DIR, '', 'logs', 'bws.log'),
+            'filename': os.path.join(LOGS_PATH, 'bws.log'),
             'maxBytes': 1024*1024*50,  # 50MB
             'backupCount': 7,
+            'formatter': 'simple'
         },
     },
     'loggers': {
@@ -162,11 +175,11 @@ LOGGING = {
 
 REST_FRAMEWORK = {
     'DEFAULT_VERSION': '0.1.0',
+    
     'DEFAULT_RENDERER_CLASSES': ['rest_framework.renderers.JSONRenderer', ],
     'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
     'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.coreapi.AutoSchema',
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 10
 }
 
 SWAGGER_SETTINGS = {
@@ -181,3 +194,20 @@ SWAGGER_SETTINGS = {
 # See https://docs.djangoproject.com/en/1.8/ref/settings/#use-x-forwarded-host
 USE_X_FORWARDED_HOST = True
 USE_X_FORWARDED_PORT = True
+
+# To fix bug: Django’s Debug Toolbar not Showing Inside Docker
+INTERNAL_IPS = [
+    '127.0.0.1',
+    'localhost',
+    '0.0.0.0',
+]
+
+import socket
+hostname, _, ips = socket.gethostbyname_ex(socket.gethostname())
+INTERNAL_IPS += [".".join(ip.split(".")[:-1] + ["1"]) for ip in ips]
+
+DEBUG_TOOLBAR_CONFIG = {
+    "SHOW_TOOLBAR_CALLBACK": lambda request: True,
+}
+
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 6000 # higher than the count of fields
