@@ -31,8 +31,8 @@ In the browser, append "?debug-toolbar" at the end of url.
  e.g.: http://localhost:8003/api/LigandToImageData/?debug-toolbar
 
 PROD
-- docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
-- docker-compose -f docker-compose.yml -f docker-compose.prod.yml down
+- docker-compose -f docker-compose.yml up -d
+- docker-compose -f docker-compose.yml down -v
 
 # Troubleshooting
  
