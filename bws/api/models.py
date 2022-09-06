@@ -77,7 +77,7 @@ class EmdbEntry(models.Model):
                                     message='dbID doesnt comply',
                                 ),
                             ])
-    title = models.CharField(max_length=255, blank=False, default='')
+    title = models.CharField(max_length=500, blank=False, default='')
     emMethod = models.CharField(
         max_length=25, choices=EM_METHOD, default=SINGLE_PARTICLE)
     resolution = models.CharField(max_length=10, blank=True, null=True)
@@ -130,11 +130,11 @@ class PdbEntry(models.Model):
                                     message='dbID doesnt comply',
                                 ),
                             ])
-    title = models.CharField(max_length=255, blank=False, default='')
+    title = models.CharField(max_length=500, blank=False, default='')
     status = models.CharField(max_length=50, blank=False, default='')
     relDate = models.DateField(blank=True, null=True)
     method = models.CharField(max_length=255, blank=True, null=True)
-    keywords = models.CharField(max_length=255, blank=True, null=True)
+    keywords = models.CharField(max_length=5000, blank=True, null=True)
     created = models.DateField(auto_now_add=True)
     modified = models.DateField(auto_now=True)
     entities = models.ManyToManyField('ModelEntity', through='PdbToEntity')
@@ -346,7 +346,7 @@ class Publication(models.Model):
     '''
         Publication
     '''
-    title = models.CharField(max_length=255, blank=False, default='')
+    title = models.CharField(max_length=500, blank=False, default='')
     journal_abbrev = models.CharField(max_length=255, blank=True, default='')
     issn = models.CharField(max_length=255, blank=True, default='')
     issue = models.CharField(max_length=255, blank=True, default='')

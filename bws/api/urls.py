@@ -13,6 +13,7 @@ router.register(r'topicStructures', views.StructureToTopicViewSet)
 router.register(r'refinedModelSources', views.RefinedModelSourceViewSet)
 router.register(r'refinedModelMethods', views.RefinedModelMethodViewSet)
 router.register(r'refinedModels', views.RefinedModelViewSet)
+router.register(r'sampleEntities', views.SampleEntitySet)
 
 
 urlpatterns = [
