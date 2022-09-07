@@ -6,7 +6,7 @@ import debug_toolbar
 
 router = DefaultRouter()
 # router.register(r'datafiles', views.EntryViewSet)
-router.register(r'LigandToImageData',
+router.register(r'ligandToImageData',
                 views.LigandToImageDataViewSet, basename=models.LigandEntity)
 router.register(r'topics', views.TopicViewSet)
 router.register(r'topicStructures', views.StructureToTopicViewSet)
