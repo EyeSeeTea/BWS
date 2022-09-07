@@ -13,6 +13,7 @@ from .dataPaths import *
 from django_filters import FilterSet, ModelChoiceFilter
 from rest_framework.filters import OrderingFilter, SearchFilter
 from django_filters import rest_framework as filters
+from rest_framework.renderers import JSONRenderer
 
 
 logger = logging.getLogger(__name__)
@@ -145,6 +146,7 @@ class RefinedModelViewSet(viewsets.ModelViewSet):
     """
     This viewset automatically provides `list` and `detail` actions.
     """
+    renderer_classes = [JSONRenderer]
     queryset = RefinedModel.objects.all()
     serializer_class = RefinedModelSerializer
     filter_backends = (filters.DjangoFilterBackend,
@@ -328,6 +330,7 @@ class SampleEntitySet(viewsets.ModelViewSet):
     """
     This viewset automatically provides `list` and `detail` actions.
     """
+    renderer_classes = [JSONRenderer]
     queryset = SampleEntity.objects.all()
     serializer_class = SampleEntitySerializer
     
