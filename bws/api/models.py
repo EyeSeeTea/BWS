@@ -576,8 +576,13 @@ class Analyses(models.Model):
     '''
     Additional Analyses on HCS Assay results to describe a ligand effects.
     '''
-    name = models.CharField(max_length=255, blank=False, default='')
-    value = models.FloatField(null=True, blank=True)
+    name = models.CharField(max_length=255, blank=False, null=False, default='')
+    value = models.FloatField(blank=True, null=True)#TODO: cambiar a null=False, blank=False
+    description = models.CharField(max_length=255, blank=True, null=True, default='')
+    units =  models.CharField(max_length=255, blank=True, null=True, default='')
+    unitsTermAccession = models.CharField(max_length=255, blank=False, null=True, default='')
+    pvalue = models.FloatField(null=True, blank=True)
+    dataComment = models.CharField(max_length=255, blank=True, null=True, default='')
 
     ligand = models.ForeignKey(LigandEntity,
                               related_name='%(class)s_analyses', on_delete=models.CASCADE)
