@@ -1647,6 +1647,10 @@ def updatePlateEntity(dbId, name, screen):
         if created:
             logger.debug('Created new: %s', obj)
             print('Created new', obj)
+        else:
+            logger.debug('Updated: %s', obj)
+            print('Updated', obj)
+
     except Exception as exc:
         logger.exception(exc)
         print(exc, os.strerror)
@@ -1832,6 +1836,36 @@ def getLigandEntity(dbId, ligandType, name, formula, formula_weight, details, al
             logger.exception(exc)
             print(exc, os.strerror)
         return obj
+
+
+
+def getAnalyses(name, value, description, units, unitsAccessionTerm, pvalue, dataComment, ligand, assay):
+    """
+    Get Analyses entry or create in case it does not exist
+    """
+
+    obj = None
+    try:
+        obj, created = Analyses.objects.get_or_create(
+            name=name,
+            value=value,
+            description=description,
+            units=units,
+            unitsAccessionTerm=unitsAccessionTerm,
+            pvalue=pvalue,
+            dataComment=dataComment,
+            ligand=ligand,
+            assay=assay,
+                        )
+        if created:
+            logger.debug('Created new: %s', obj)
+            print('Created new', obj)
+
+    except Exception as exc:
+        logger.exception(exc)
+        print(exc, os.strerror)
+    return obj
+
 
 
 class IDRUtils(object):
@@ -2072,7 +2106,7 @@ class IDRUtils(object):
                     WellEntityEntry = updateWellEntity(
                         dbId=wellId,
                         name=row['Well Name'],
-                        description='virus-treated well (no compounds)', 
+                        description='virus-treated well (no compounds). Assigned as 0% inhibition of virus cytopathicity', 
                         ligand=None,
                         plate=PlateEntityEntry,
                         externalLink=URL_SHOW_KEY.format(**{'key': 'well', 'keyId': wellId}),
@@ -2097,7 +2131,7 @@ class IDRUtils(object):
                     WellEntityEntry = updateWellEntity(
                         dbId=wellId,
                         name=row['Well Name'],
-                        description='no-virus- and no-compounds-treated well (cells but no treatment). Expected to have no effect on cells', 
+                        description='no-virus- and no-compounds-treated well. Assigned as 100% inhibition of virus cytopathicity', 
                         ligand=None,
                         plate=PlateEntityEntry,
                         externalLink=URL_SHOW_KEY.format(**{'key': 'well', 'keyId': wellId}),
@@ -2121,6 +2155,7 @@ class IDRUtils(object):
                     ln_colName = getColNameByKW(screenDf.columns, 'compound', 'name')
                     pci_colName = getColNameByKW(screenDf.columns, 'pubchem', 'id')
                     icik_colName = getColNameByKW(screenDf.columns, 'inchikey', '')
+                    sm_colName = getColNameByKW(screenDf.columns, 'smiles', '')
 
                     # Create LigandEntity entry
                     LigandEntityEntry = getLigandEntity(
@@ -2138,7 +2173,7 @@ class IDRUtils(object):
                         IUPACInChI=None,
                         IUPACInChIkey=row[icik_colName],
                         isomericSMILES=None,
-                        canonicalSMILES=None,                        
+                        canonicalSMILES=row[sm_colName],                        
                     )
 
                    # Update or create WellEntity
@@ -2162,3 +2197,75 @@ class IDRUtils(object):
                         phenotypeAnnotationLevel=row[pal_colName],
                         channels=row[c_colName]
                     )
+
+    def _update_AnalysesToAssay(self, analysesPath, assayId):
+
+        print(analysesPath)
+
+        analysesDf = pd.read_csv(analysesPath, sep=';')
+
+        n_colName = getColNameByKW(analysesDf.columns, 'standard', 'type')
+        v_colName = getColNameByKW(analysesDf.columns, 'standard', 'value')
+        u_colName = getColNameByKW(analysesDf.columns, 'standard', 'units')
+        uta_colName = getColNameByKW(analysesDf.columns, 'uo', 'units')
+        pv_colName = getColNameByKW(analysesDf.columns, 'pchembl', 'value')
+        dc_colName = getColNameByKW(analysesDf.columns, 'data', 'comment')
+        l_colName = getColNameByKW(analysesDf.columns, 'compound', 'key')
+
+        # analysesDf[v_colName] = analysesDf[v_colName].fillna(isnull())
+        # analysesDf[pv_colName] = analysesDf[pv_colName].fillna(None)
+        #analysesDf1 = analysesDf.where(pd.notnull(analysesDf), None)
+        analysesDf = analysesDf.replace(
+            {
+            np.nan:None,
+            'THIOGUANINE':'TIOGUANINE' #TODO: solucionar esto
+            }
+            )
+
+        print(analysesDf.isna().sum())
+
+        assay = AssayEntity.objects.get(dbId=assayId)
+
+        for index, row in analysesDf.iterrows():
+            if row[n_colName].lower() == 'inhibition':
+                description = ''
+            elif row[n_colName].lower() == 'ic50':
+                description = ''
+            elif row[n_colName].lower() == 'cc50':
+                description = ''
+            elif row[n_colName].lower() == 'selectivity index':
+                description = ''
+
+            print(row[l_colName])
+            try:
+                ligand = LigandEntity.objects.get(
+                    name__iexact=row[l_colName]
+                    )
+            except:
+                # new_name = row[l_colName].replace('?', '')
+                # new_name = new_name.replace(';', '')
+                # new_name = new_name.replace(' ', '')
+                # new_name = new_name.replace('7', '')
+                # new_name = new_name.replace('.', ' ')
+                # new_name = new_name.replace('(', '')
+                # new_name = new_name.replace('-', '')
+                # new_name = new_name.replace('/', '')
+                # new_name = new_name.replace(')', ' ')
+                ligand = LigandEntity.objects.get(
+                    #name__in=new_name
+                    #Q(name__iexact=new_name) | Q(name__icontains=new_name)
+                    name__istartswith=row[l_colName]
+                    )
+
+            getAnalyses(
+                name=row[n_colName],
+                value=row[v_colName],
+                description=description,
+                units=row[u_colName],
+                unitsAccessionTerm=row[uta_colName],
+                pvalue=row[pv_colName],
+                dataComment=row[dc_colName],
+                ligand=ligand,
+                assay=assay,
+            )
+
