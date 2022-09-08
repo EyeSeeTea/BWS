@@ -6,7 +6,7 @@ from django.http import HttpResponse, HttpResponseNotFound
 from .serializers import *
 from .models import *
 from .utils import PdbEntryAnnFromMapsUtils
-from rest_framework import status, viewsets, permissions
+from rest_framework import status, viewsets, permissions, generics
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from .dataPaths import *
@@ -321,7 +321,8 @@ class LigandToImageDataViewSet(viewsets.ModelViewSet):
     """
     This viewset automatically provides list of all ligand entries and "imageData" associated to them.
     """
-    queryset = LigandEntity.objects.prefetch_related("well__plate__screen__assay")
+    queryset = LigandEntity.objects.prefetch_related(
+        "well__plate__screen__assay")
     serializer_class = LigandToImageDataSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
@@ -333,4 +334,47 @@ class SampleEntitySet(viewsets.ModelViewSet):
     renderer_classes = [JSONRenderer]
     queryset = SampleEntity.objects.all()
     serializer_class = SampleEntitySerializer
-    
+
+
+class LigandEntityViewSet(viewsets.ModelViewSet):
+    """
+    This viewset automatically provides `list` and `detail` actions.
+    """
+    # queryset = LigandEntity.objects.all()
+    queryset = LigandEntity.objects.prefetch_related(
+        "well__plate__screen__assay")
+    serializer_class = LigandEntitySerializer
+
+
+class PdbLigandViewSet(viewsets.ModelViewSet):
+    """
+    This viewset automatically provides `list` and `detail` actions.
+    """
+    queryset = PdbToLigand.objects.all()
+    serializer_class = PdbLigandSerializer
+
+
+class PdbEntryViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    This viewset automatically provides `list` and `detail` actions.
+    """
+    queryset = PdbEntry.objects.all()
+    serializer_class = PdbEntryExportSerializer
+    filter_backends = (filters.DjangoFilterBackend,
+                       SearchFilter, OrderingFilter)
+    search_fields = ['dbId', 'title',  'keywords', 'method']
+    ordering_fields = ['dbId', 'title', 'status',
+                       'relDate', 'method', 'resolution']
+    ordering = ['-relDate']
+
+
+class LigandsByPDBEntry(APIView):
+    """
+    Retrieve all ligands for a PDB entry
+    """
+    serializer_class = LigandEntitySerializer
+
+    def get(self, request, pdb_id, section=None):
+
+        data = list(LigandEntity.objects.filter(pdbligands__pdbId = pdb_id).values())
+        return Response(data)
