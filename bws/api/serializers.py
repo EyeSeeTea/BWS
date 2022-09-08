@@ -27,6 +27,12 @@ class DataFileSerializer(serializers.ModelSerializer):
 
 # ========== ========== ========== ========== ========== ========== ==========
 
+
+class AnalysesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Analyses
+        fields = ['name', 'value', 'description', 'units', 'unitsTermAccession', 'pvalue', 'dataComment']
+
 class AuthorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Author
@@ -85,7 +91,7 @@ class PlateEntitySerializer(serializers.ModelSerializer):
     
     def get_controlWells(self, obj):
 
-        # Given the list of Well IDs, get queryset including all WellEntity models and pass it to WellEntitySerializer
+        # Given the plate id, get queryset including all control wells and pass it to WellEntitySerializer
         controls_qs = WellEntity.objects.filter(plate_id=obj.dbId).filter(
             Q(controlType='positive') | Q(controlType='negative')
             )
@@ -124,12 +130,13 @@ class AssayEntitySerializer(serializers.ModelSerializer):
     screens = serializers.SerializerMethodField()
     organisms = OrganismSerializer(read_only=True, many=True)
     publications = PublicationSerializer(read_only=True, many=True)
-    #additionalAnalyses = 
+    additionalAnalyses = serializers.SerializerMethodField()
+    
 
     class Meta:
         model = AssayEntity
         fields = ['dbId', 'name', 'description', 'assayType', 'assayTypeTermAccession', 'organisms', 
-        'externalLink', 'releaseDate', 'publications', 'dataDoi', 'BIAId', 'screenCount', 'screens']
+        'externalLink', 'releaseDate', 'publications', 'dataDoi', 'BIAId', 'screenCount', 'screens', 'additionalAnalyses']
 
     def get_screens(self, obj):
 
@@ -150,6 +157,17 @@ class AssayEntitySerializer(serializers.ModelSerializer):
             # Given the unique list of Screen IDs, get queryset including all ScreenEntity models and pass it to ScreenEntitySerializer
             screen_qs = ScreenEntity.objects.filter(dbId__in=unique_screenid_list)
             return ScreenEntitySerializer(many=True,  context=context).to_representation(screen_qs)
+
+    def get_additionalAnalyses(self, obj):
+
+        # Get ligand ID from queryset context
+        context = self.context
+        ligand_entity = self.context.get('ligand_entity')
+
+        # Given the assay and the ligand id, get queryset including all control wells and pass it to WellEntitySerializer
+        analyses_qs = Analyses.objects.filter(assay_id=obj.dbId).filter(ligand=ligand_entity)
+        return AnalysesSerializer(many=True).to_representation(analyses_qs)
+ 
 
 class FeatureTypeSerializer(serializers.ModelSerializer):
     assays = serializers.SerializerMethodField()
