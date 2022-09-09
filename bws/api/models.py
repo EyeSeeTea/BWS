@@ -250,7 +250,7 @@ class LigandEntity(models.Model):
     IUPACInChI = models.CharField(max_length=500, null=True, blank=True)
     IUPACInChIkey = models.CharField(max_length=500, null=True, blank=True)
     isomericSMILES = models.CharField(max_length=500, null=True, blank=True)
-    canonicalSMILES = models.CharField(max_length=500, null=True, blank=True)
+    canonicalSMILES = models.CharField(max_length=1000, null=True, blank=True)
 
     def __str__(self):
         return '%s' % (self.dbId if self.dbId else (self.pubChemCompoundId if self.pubChemCompoundId else self.name))
