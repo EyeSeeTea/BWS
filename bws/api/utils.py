@@ -1,4 +1,5 @@
 from cmath import nan
+import glob
 import json
 import logging
 import os
@@ -1839,7 +1840,7 @@ def getLigandEntity(dbId, ligandType, name, formula, formula_weight, details, al
 
 
 
-def getAnalyses(name, value, description, units, unitsAccessionTerm, pvalue, dataComment, ligand, assay):
+def getAnalyses(name, value, description, units, unitsTermAccession, pvalue, dataComment, ligand, assay):
     """
     Get Analyses entry or create in case it does not exist
     """
@@ -1851,7 +1852,7 @@ def getAnalyses(name, value, description, units, unitsAccessionTerm, pvalue, dat
             value=value,
             description=description,
             units=units,
-            unitsAccessionTerm=unitsAccessionTerm,
+            unitsTermAccession=unitsTermAccession,
             pvalue=pvalue,
             dataComment=dataComment,
             ligand=ligand,
@@ -1909,6 +1910,33 @@ class IDRUtils(object):
             assayId = matchObj.group(1)
         metadataFileExtention = '-study.txt'
         metadataFile = assayId + metadataFileExtention
+
+        # Get Analyses files 
+        analysesFilePattern = '*.csv'
+        analysesPattern = os.path.join(assayPath, 'Analyses', analysesFilePattern)
+
+        dfs = []
+        for file in glob.glob(analysesPattern):
+            dfs.append(pd.read_csv(file, sep=';'))
+
+        analysesDf = pd.concat(dfs)
+
+        # Fix compound name
+        analysesDf = analysesDf.replace(
+            {
+            np.nan:None,
+            'THIOGUANINE':'TIOGUANINE' #TODO: solucionar esto
+            }
+            )
+
+        # Get columns names in analyses dataframe
+        n_colName = getColNameByKW(analysesDf.columns, 'standard', 'type')
+        v_colName = getColNameByKW(analysesDf.columns, 'standard', 'value')
+        u_colName = getColNameByKW(analysesDf.columns, 'standard', 'units')
+        uta_colName = getColNameByKW(analysesDf.columns, 'uo', 'units')
+        pv_colName = getColNameByKW(analysesDf.columns, 'pchembl', 'value')
+        dc_colName = getColNameByKW(analysesDf.columns, 'data', 'comment')
+        l_colName = getColNameByKW(analysesDf.columns, 'compound', 'key')
 
         # Parse metadata file using StudyParser
         MetadataFilePath = os.path.join(assayPath, metadataFile)
@@ -2198,74 +2226,25 @@ class IDRUtils(object):
                         channels=row[c_colName]
                     )
 
-    def _update_AnalysesToAssay(self, analysesPath, assayId):
+                    indexes = [i for i, elem in enumerate(analysesDf[l_colName].tolist()) if elem.upper() == LigandEntityEntry.name.upper()]
+                    
+                    if indexes:
+                        for index, row in analysesDf.iloc[indexes].iterrows():
+                            if row[n_colName].lower() == 'ic50':
+                                description = ''
+                            elif row[n_colName].lower() == 'cc50':
+                                description = ''
+                            elif row[n_colName].lower() == 'selectivity index':
+                                description = ''
 
-        print(analysesPath)
-
-        analysesDf = pd.read_csv(analysesPath, sep=';')
-
-        n_colName = getColNameByKW(analysesDf.columns, 'standard', 'type')
-        v_colName = getColNameByKW(analysesDf.columns, 'standard', 'value')
-        u_colName = getColNameByKW(analysesDf.columns, 'standard', 'units')
-        uta_colName = getColNameByKW(analysesDf.columns, 'uo', 'units')
-        pv_colName = getColNameByKW(analysesDf.columns, 'pchembl', 'value')
-        dc_colName = getColNameByKW(analysesDf.columns, 'data', 'comment')
-        l_colName = getColNameByKW(analysesDf.columns, 'compound', 'key')
-
-        # analysesDf[v_colName] = analysesDf[v_colName].fillna(isnull())
-        # analysesDf[pv_colName] = analysesDf[pv_colName].fillna(None)
-        #analysesDf1 = analysesDf.where(pd.notnull(analysesDf), None)
-        analysesDf = analysesDf.replace(
-            {
-            np.nan:None,
-            'THIOGUANINE':'TIOGUANINE' #TODO: solucionar esto
-            }
-            )
-
-        print(analysesDf.isna().sum())
-
-        assay = AssayEntity.objects.get(dbId=assayId)
-
-        for index, row in analysesDf.iterrows():
-            if row[n_colName].lower() == 'inhibition':
-                description = ''
-            elif row[n_colName].lower() == 'ic50':
-                description = ''
-            elif row[n_colName].lower() == 'cc50':
-                description = ''
-            elif row[n_colName].lower() == 'selectivity index':
-                description = ''
-
-            print(row[l_colName])
-            try:
-                ligand = LigandEntity.objects.get(
-                    name__iexact=row[l_colName]
-                    )
-            except:
-                # new_name = row[l_colName].replace('?', '')
-                # new_name = new_name.replace(';', '')
-                # new_name = new_name.replace(' ', '')
-                # new_name = new_name.replace('7', '')
-                # new_name = new_name.replace('.', ' ')
-                # new_name = new_name.replace('(', '')
-                # new_name = new_name.replace('-', '')
-                # new_name = new_name.replace('/', '')
-                # new_name = new_name.replace(')', ' ')
-                ligand = LigandEntity.objects.get(
-                    #name__in=new_name
-                    #Q(name__iexact=new_name) | Q(name__icontains=new_name)
-                    name__istartswith=row[l_colName]
-                    )
-
-            getAnalyses(
-                name=row[n_colName],
-                value=row[v_colName],
-                description=description,
-                units=row[u_colName],
-                unitsAccessionTerm=row[uta_colName],
-                pvalue=row[pv_colName],
-                dataComment=row[dc_colName],
-                ligand=ligand,
-                assay=assay,
-            )
-
+                            getAnalyses(
+                                name=row[n_colName],
+                                value=row[v_colName],
+                                description=description,
+                                units=row[u_colName],
+                                unitsTermAccession=row[uta_colName],
+                                pvalue=row[pv_colName],
+                                dataComment=row[dc_colName],
+                                ligand=LigandEntityEntry,
+                                assay=AssayEntityEntry,
+                            )

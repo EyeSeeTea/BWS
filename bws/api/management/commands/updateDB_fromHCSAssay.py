@@ -1,5 +1,5 @@
 """
-Command for updating IDR data
+Command for updating IDR data and the associated additional analyses
 """
 from django.core.management.base import BaseCommand
 from api.utils import IDRUtils
@@ -8,10 +8,10 @@ from api.utils import IDRUtils
 
 class Command(BaseCommand):
     """
-    Command for updating HCS data from IDR
+    Command for updating HCS data from IDR and the associated additional analyses
     """
 
-    help = "Update IDR data from <assayPath>"
+    help = "Update IDR data and the additional analyses from from <assayPath>"
     missing_args_message = "Too few arguments. Please, provide the path to the experiment directory."
     requires_migrations_checks = True
 
