@@ -44,23 +44,23 @@ class PublicationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Publication
-        fields = ['title', 'journal_abbrev', 'issn', 'issue', 'volume', 'page_first', 
-        'page_last', 'year', 'doi', 'pubMedId', 'PMCId', 'abstract', 'authors']
+        fields = ['title', 'journal_abbrev', 'issn', 'issue', 'volume', 'page_first',
+                  'page_last', 'year', 'doi', 'pubMedId', 'PMCId', 'abstract', 'authors']
 
 
 class OrganismSerializer(serializers.ModelSerializer):
     class Meta:
         model = Organism
-        fields = ['ncbi_taxonomy_id', 'scientific_name', 
-        'common_name', 'externalLink']
+        fields = ['ncbi_taxonomy_id', 'scientific_name',
+                  'common_name', 'externalLink']
 
 
 class WellEntitySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = WellEntity
-        fields = ['dbId', 'name', 'externalLink', 'imagesIds', 'imageThumbailLink', 'cellLine', 'cellLineTermAccession', 'controlType', 'qualityControl', 
-        'micromolarConcentration', 'percentageInhibition', 'hitOver75Activity', 'numberCells', 'phenotypeAnnotationLevel', 'channels']
+        fields = ['dbId', 'name', 'externalLink', 'imagesIds', 'imageThumbailLink', 'cellLine', 'cellLineTermAccession', 'controlType', 'qualityControl',
+                  'micromolarConcentration', 'percentageInhibition', 'hitOver75Activity', 'numberCells', 'phenotypeAnnotationLevel', 'channels']
 
 
 class PlateEntitySerializer(serializers.ModelSerializer):
@@ -103,8 +103,8 @@ class ScreenEntitySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ScreenEntity
-        fields = ['dbId', 'name', 'type', 'typeTermAccession', 'technologyType', 'technologyTypeTermAccession', 
-        'imagingMethod', 'imagingMethodTermAccession', 'sampleType', 'dataDoi', 'plateCount', 'plates']
+        fields = ['dbId', 'name', 'type', 'typeTermAccession', 'technologyType', 'technologyTypeTermAccession',
+                  'imagingMethod', 'imagingMethodTermAccession', 'sampleType', 'dataDoi', 'plateCount', 'plates']
 
     def get_plates(self, obj):
 
@@ -126,6 +126,7 @@ class ScreenEntitySerializer(serializers.ModelSerializer):
             plate_qs = PlateEntity.objects.filter(dbId__in=unique_plateid_list)
             return PlateEntitySerializer(many=True,  context=context).to_representation(plate_qs)
 
+
 class AssayEntitySerializer(serializers.ModelSerializer):
     screens = serializers.SerializerMethodField()
     organisms = OrganismSerializer(read_only=True, many=True)
@@ -136,7 +137,7 @@ class AssayEntitySerializer(serializers.ModelSerializer):
     class Meta:
         model = AssayEntity
         fields = ['dbId', 'name', 'description', 'assayType', 'assayTypeTermAccession', 'organisms', 
-        'externalLink', 'releaseDate', 'publications', 'dataDoi', 'BIAId', 'screenCount', 'screens', 'additionalAnalyses']
+                'externalLink', 'releaseDate', 'publications', 'dataDoi', 'BIAId', 'screenCount', 'screens', 'additionalAnalyses']
 
     def get_screens(self, obj):
 
@@ -149,13 +150,14 @@ class AssayEntitySerializer(serializers.ModelSerializer):
         if ligand_entity:
             screenid_list = []
             for tupl in zip_list:
-                if tupl[1] == obj.dbId: # tupl[1] = AssayEntity id
-                    screenid_list.append(tupl[2]) # tupl[2] = ScreenEntity id               
+                if tupl[1] == obj.dbId:  # tupl[1] = AssayEntity id
+                    screenid_list.append(tupl[2])  # tupl[2] = ScreenEntity id
 
             unique_screenid_list = list(set(screenid_list))
 
             # Given the unique list of Screen IDs, get queryset including all ScreenEntity models and pass it to ScreenEntitySerializer
-            screen_qs = ScreenEntity.objects.filter(dbId__in=unique_screenid_list)
+            screen_qs = ScreenEntity.objects.filter(
+                dbId__in=unique_screenid_list)
             return ScreenEntitySerializer(many=True,  context=context).to_representation(screen_qs)
 
     def get_additionalAnalyses(self, obj):
@@ -167,15 +169,13 @@ class AssayEntitySerializer(serializers.ModelSerializer):
         # Given the assay and the ligand id, get queryset including all control wells and pass it to WellEntitySerializer
         analyses_qs = Analyses.objects.filter(assay_id=obj.dbId).filter(ligand=ligand_entity)
         return AnalysesSerializer(many=True).to_representation(analyses_qs)
- 
-
 class FeatureTypeSerializer(serializers.ModelSerializer):
     assays = serializers.SerializerMethodField()
 
     class Meta:
         model = FeatureType
-        fields = ['dataSource', 'name', 
-        'description', 'externalLink', 'assays']
+        fields = ['dataSource', 'name',
+                  'description', 'externalLink', 'assays']
 
     def get_assays(self, obj):
         # Get ligand ID and list of IDs tuples from queryset context to pass it to AssayEntitySerializer
@@ -187,8 +187,8 @@ class FeatureTypeSerializer(serializers.ModelSerializer):
         if ligand_entity:
             assayid_list1 = []
             for tupl in zip_list:
-                if tupl[0] == obj.id: # tupl[0] = FeatureType id
-                    assayid_list1.append(tupl[1]) # tupl[1] = AssayEntity id
+                if tupl[0] == obj.id:  # tupl[0] = FeatureType id
+                    assayid_list1.append(tupl[1])  # tupl[1] = AssayEntity id
 
             unique_assayid_list = list(set(assayid_list1))
 
@@ -204,8 +204,8 @@ class LigandToImageDataSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = LigandEntity
-        fields = ['dbId', 'name', 'ligandType', 'formula', 'formula_weight', 'details', 'altNames', 
-        'IUPACInChIkey', 'pubChemCompoundId', 'imageLink', 'externalLink', 'imageData']
+        fields = ['dbId', 'name', 'ligandType', 'formula', 'formula_weight', 'details', 'altNames',
+                  'IUPACInChIkey', 'pubChemCompoundId', 'imageLink', 'externalLink', 'imageData']
         depth = 6
 
     def get_imageData(self, obj):
@@ -215,7 +215,7 @@ class LigandToImageDataSerializer(serializers.ModelSerializer):
         context.update({'ligand_entity': obj})
 
         # Given the wells associated to a specific ligand, get the tuple of all ids associated to each well (FeatureType, AssayEntity, ScreenEntity and PlateEntity ids)
-        featureTypeId_list2, assayEntityId_list2, screenEntityId_list2, plateEntityId_list2, wellEntityId_list2  = [], [], [], [], []
+        featureTypeId_list2, assayEntityId_list2, screenEntityId_list2, plateEntityId_list2, wellEntityId_list2 = [], [], [], [], []
         for well in obj.well.all():
             featureTypeId_list2.append(well.plate.screen.assay.featureType_id)
             assayEntityId_list2.append(well.plate.screen.assay_id)
@@ -224,17 +224,17 @@ class LigandToImageDataSerializer(serializers.ModelSerializer):
             wellEntityId_list2.append(well.dbId)
 
         zip_list = list(zip(
-            featureTypeId_list2, 
-            assayEntityId_list2, 
-            screenEntityId_list2, 
-            plateEntityId_list2, 
+            featureTypeId_list2,
+            assayEntityId_list2,
+            screenEntityId_list2,
+            plateEntityId_list2,
             wellEntityId_list2
-            ))
+        ))
 
         # Update the queryset context with the the list of tuples including ids associated to a ligand and pass it to the rest of serializers involved (FeatureTypeSerializer, AssayEntitySerializer, ScreenEntitySerializer, PlateEntitySerializer and WellEntitySerializer)
         context.update({
             'zip_list': zip_list
-            })
+        })
 
         # Get the unique list of all FeatureType IDs associated to each LigandEntity
         featureTypeid_list = []
@@ -244,13 +244,15 @@ class LigandToImageDataSerializer(serializers.ModelSerializer):
         unique_featureTypeid_list = list(set(featureTypeid_list))
 
         # Given the unique list of FeatureType IDs, get queryset including all FeatureType models and pass it to FeatureTypeSerializer
-        featureType_qs = FeatureType.objects.filter(pk__in=unique_featureTypeid_list)
+        featureType_qs = FeatureType.objects.filter(
+            pk__in=unique_featureTypeid_list)
 
         return FeatureTypeSerializer(many=True, context=context).to_representation(featureType_qs)
 
     # To avoid showing imageData field in final JSON file when there is no info associated to it (avoid "imgaData []")
     def to_representation(self, value):
-        repr_dict = super(serializers.ModelSerializer, self).to_representation(value)
+        repr_dict = super(serializers.ModelSerializer,
+                          self).to_representation(value)
         return OrderedDict((k, v) for k, v in repr_dict.items()
                            if v not in [None, [], '', {}])
 
@@ -328,3 +330,226 @@ class SampleEntitySerializer(serializers.ModelSerializer):
     class Meta:
         model = SampleEntity
         fields = '__all__'
+
+
+class LigandEntitySerializer(serializers.ModelSerializer):
+    imageData = serializers.SerializerMethodField()
+
+    class Meta:
+        model = LigandEntity
+        fields = ['imageData',
+                  'dbId', 'ligandType', 'name', 'formula', 'formula_weight',
+                  'details', 'altNames',
+                  'imageLink', 'externalLink',
+                  'pubChemCompoundId', 'systematicNames',
+                  'IUPACInChI', 'IUPACInChIkey',
+                  'isomericSMILES', 'canonicalSMILES',
+                  ]
+        depth = 2
+
+    def get_imageData(self, obj):
+
+        # Update the queryset context with the ligand ID to pass it to the rest of serializers involved (FeatureTypeSerializer, AssayEntitySerializer, ScreenEntitySerializer, PlateEntitySerializer and WellEntitySerializer)
+        context = self.context
+        context.update({'ligand_entity': obj})
+
+        # Given the wells associated to a specific ligand, get the tuple of all ids associated to each well (FeatureType, AssayEntity, ScreenEntity and PlateEntity ids)
+        featureTypeId_list2, assayEntityId_list2, screenEntityId_list2, plateEntityId_list2, wellEntityId_list2 = [], [], [], [], []
+        for well in obj.well.all():
+            featureTypeId_list2.append(well.plate.screen.assay.featureType_id)
+            assayEntityId_list2.append(well.plate.screen.assay_id)
+            screenEntityId_list2.append(well.plate.screen_id)
+            plateEntityId_list2.append(well.plate_id)
+            wellEntityId_list2.append(well.dbId)
+
+        zip_list = list(zip(
+            featureTypeId_list2,
+            assayEntityId_list2,
+            screenEntityId_list2,
+            plateEntityId_list2,
+            wellEntityId_list2
+        ))
+
+        # Update the queryset context with the the list of tuples including ids associated to a ligand and pass it to the rest of serializers involved (FeatureTypeSerializer, AssayEntitySerializer, ScreenEntitySerializer, PlateEntitySerializer and WellEntitySerializer)
+        context.update({
+            'zip_list': zip_list
+        })
+
+        # Get the unique list of all FeatureType IDs associated to each LigandEntity
+        featureTypeid_list = []
+        for well in zip_list:
+            featureTypeid_list.append(well[0])
+
+        unique_featureTypeid_list = list(set(featureTypeid_list))
+
+        # Given the unique list of FeatureType IDs, get queryset including all FeatureType models and pass it to FeatureTypeSerializer
+        featureType_qs = FeatureType.objects.filter(
+            pk__in=unique_featureTypeid_list)
+
+        return FeatureTypeSerializer(many=True, context=context).to_representation(featureType_qs)
+
+    # To avoid showing imageData field in final JSON file when there is no info associated to it (avoid "imgaData []")
+    def to_representation(self, value):
+        repr_dict = super(serializers.ModelSerializer,
+                          self).to_representation(value)
+        return OrderedDict((k, v) for k, v in repr_dict.items()
+                           if v not in [None, [], '', {}])
+
+
+class PdbLigandSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = PdbToLigand
+        fields = '__all__'
+        depth = 1
+
+
+class EntityExportSerializer(serializers.ModelSerializer):
+    isAntibody = serializers.BooleanField
+    isNanobody = serializers.BooleanField
+    isSybody = serializers.BooleanField
+
+    class Meta:
+        model = ModelEntity
+        fields = ['uniprotAcc',
+                  'organism',
+                  'name',
+                  'details',
+                  'altNames',
+                  'organism',
+                  'isAntibody',
+                  'isNanobody',
+                  'isSybody',
+                  ]
+
+
+class PublicationResumeSerializer(serializers.ModelSerializer):
+    authors = serializers.StringRelatedField(many=True)
+    journal = serializers.SerializerMethodField()
+    doi = serializers.SerializerMethodField()
+    pubDate = serializers.SerializerMethodField()
+    pmidLink = serializers.SerializerMethodField()
+    pmID = serializers.SerializerMethodField()
+
+    def get_pubDate(self, obj):
+        return obj.year if obj.year else ''
+
+    def get_journal(self, obj):
+        # journal: "Nat Immunol 22: 1503-1514 (2021)",
+        journal = obj.journal_abbrev
+        if obj.issue:
+            journal = '{} {}'.format(journal, obj.issue)
+        if obj.volume:
+            journal = '{} {}'.format(journal, obj.volume)
+        if obj.page_first and obj.page_last:
+            journal = '{}: {}-{}'.format(journal,
+                                         obj.page_first, obj.page_last)
+        if obj.year:
+            journal = '{} ({})'.format(journal, obj.year)
+        if obj.issn:
+            journal = '{}, {}'.format(journal, obj.issn)
+        return journal
+
+    def get_pmID(self, obj):
+        return obj.pubMedId
+
+    def get_pmidLink(self, obj):
+        if obj.pubMedId:
+            if not 'https://pubmed.ncbi.nlm.nih.gov/' in obj.pubMedId:
+                return 'https://pubmed.ncbi.nlm.nih.gov/{}'.format(obj.pubMedId)
+            else:
+                return '{}'.format(obj.pubMedId)
+        else:
+            return ''
+
+    def get_doi(self, obj):
+        if obj.doi:
+            # return obj.doi
+            if not 'https://doi.org/' in obj.doi:
+                return 'https://doi.org/{}'.format(obj.doi)
+            else:
+                return '{}'.format(obj.doi)
+        else:
+            return ''
+
+    class Meta:
+        model = Publication
+        fields = ['pmID',
+                  'title',
+                  'journal',
+                  'doi',
+                  'pmidLink',
+                  'pubDate',
+                  'abstract',
+                  'authors']
+
+
+class SampleEntityExportSerializer(serializers.ModelSerializer):
+    assembly = serializers.SerializerMethodField()
+    genes = serializers.SerializerMethodField()
+
+    def get_assembly(self, obj):
+        if obj.ass_method:
+            return '{} ({}, {})'.format(obj.ass_details, obj.assembly, obj.ass_method)
+        elif obj.assembly:
+            return '{} ({})'.format(obj.ass_details, obj.assembly)
+        else:
+            return '{}'.format(obj.ass_details)
+
+    # "genes": "['S, 2', '?', '?']"
+    def get_genes(self, obj):
+        resp = []
+
+        if obj.macromolecules:
+            if isinstance(obj.macromolecules, list):
+                resp = obj.macromolecules
+            else:
+                resp.append(obj.macromolecules)
+        return resp
+
+    class Meta:
+        model = SampleEntity
+        fields = [
+            'name',
+            'exprSystem',
+            'assembly',
+            #   'macromolecules',
+            # 'uniProts',
+            'genes',
+            # 'bioFunction',
+            # 'bioProcess',
+            # 'cellComponent',
+            # 'domains',
+        ]
+
+
+class PdbEntryDetailsExportSerializer(serializers.ModelSerializer):
+    refdoc = PublicationResumeSerializer(many=True)
+    sample = SampleEntityExportSerializer()
+
+    class Meta:
+        model = PdbEntryDetails
+        # fields = '__all__'
+        fields = ['sample', 'refdoc']
+
+
+class PdbEntryExportSerializer(serializers.ModelSerializer):
+
+    entities = EntityExportSerializer(many=True)
+    ligands = serializers.StringRelatedField(many=True)
+    refModels = RefinedModelSerializer(many=True, read_only=True)
+    dbauthors = serializers.StringRelatedField(many=True)
+    details = PdbEntryDetailsExportSerializer(many=True)
+
+    class Meta:
+        model = PdbEntry
+        fields = ['dbId',
+                  'method',
+                  'keywords',
+                  'refModels',
+                  'entities',
+                  'ligands',
+                  'dbauthors',
+                  'details',
+                  'imageLink', 'externalLink', 'queryLink',
+                  ]

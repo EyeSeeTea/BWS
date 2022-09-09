@@ -14,6 +14,8 @@ router.register(r'refinedModelSources', views.RefinedModelSourceViewSet)
 router.register(r'refinedModelMethods', views.RefinedModelMethodViewSet)
 router.register(r'refinedModels', views.RefinedModelViewSet)
 router.register(r'sampleEntities', views.SampleEntitySet)
+router.register(r'ligands', views.LigandEntityViewSet)
+router.register(r'pdbligands', views.PdbLigandViewSet)
 
 
 urlpatterns = [
@@ -29,6 +31,15 @@ urlpatterns = [
         r'^funpdbe/(?P<pdb_id>\d[a-zA-Z]\w{2})/$', views.FunPDBeEntryByPDBView.as_view()),
     re_path(r'^funpdbe/(?P<pdb_id>\d[a-zA-Z]\w{2})/(?P<method>(deepres|monores|blocres|mapq|fscq))/$',
             views.FunPDBeEntryByPDBMethodView.as_view()),
+
+    # PDB Entry related end-points
+    # get a list of all PDB entries in the DB
+    re_path(r'^pdbentry/$', views.PdbEntryViewSet.as_view({'get': 'list'})),
+    # get a PDB Entry by pdb_id
+    re_path(r'^pdbentry/(?P<pdb_id>\d[a-zA-Z]\w{2})/$', views.PdbEntryViewSet.as_view({'get': 'list'})),
+    # get a part of the PDB Entry by JSON section
+    re_path(
+        r'^pdbentry/(?P<pdb_id>\d[a-zA-Z]\w{2})/(?P<section>(ligands|entities))/$', views.LigandsByPDBEntry.as_view()),
 ]
 
 
