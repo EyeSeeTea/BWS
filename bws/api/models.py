@@ -250,7 +250,7 @@ class LigandEntity(models.Model):
     IUPACInChI = models.CharField(max_length=500, null=True, blank=True)
     IUPACInChIkey = models.CharField(max_length=500, null=True, blank=True)
     isomericSMILES = models.CharField(max_length=500, null=True, blank=True)
-    canonicalSMILES = models.CharField(max_length=500, null=True, blank=True)
+    canonicalSMILES = models.CharField(max_length=1000, null=True, blank=True)
 
     def __str__(self):
         return '%s' % (self.dbId if self.dbId else (self.pubChemCompoundId if self.pubChemCompoundId else self.name))
@@ -571,3 +571,23 @@ class StructureTopic(models.Model):
 
     def __str__(self):
         return '%s: %s(%s)' % (self.topic.name, self.structure.pdbId if self.structure.pdbId else '', self.structure.emdbId if self.structure.emdbId else '')
+
+class Analyses(models.Model):
+    '''
+    Additional Analyses on HCS Assay results to describe a ligand effects.
+    '''
+    name = models.CharField(max_length=255, blank=False, null=False, default='')
+    value = models.FloatField(blank=True, null=True)#TODO: cambiar a null=False, blank=False
+    description = models.CharField(max_length=255, blank=True, null=True, default='')
+    units =  models.CharField(max_length=255, blank=True, null=True, default='')
+    unitsTermAccession = models.CharField(max_length=255, blank=False, null=True, default='')
+    pvalue = models.FloatField(null=True, blank=True)
+    dataComment = models.CharField(max_length=255, blank=True, null=True, default='')
+
+    ligand = models.ForeignKey(LigandEntity,
+                              related_name='%(class)s_analyses', on_delete=models.CASCADE)
+    assay = models.ForeignKey(AssayEntity,
+                              related_name='%(class)s_analyses', on_delete=models.CASCADE)
+
+    def __str__(self):
+        return '%s (%s)' % (self.name, self.ligand)

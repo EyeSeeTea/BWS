@@ -1,4 +1,5 @@
 from cmath import nan
+import glob
 import json
 import logging
 import os
@@ -1647,6 +1648,10 @@ def updatePlateEntity(dbId, name, screen):
         if created:
             logger.debug('Created new: %s', obj)
             print('Created new', obj)
+        else:
+            logger.debug('Updated: %s', obj)
+            print('Updated', obj)
+
     except Exception as exc:
         logger.exception(exc)
         print(exc, os.strerror)
@@ -1834,6 +1839,36 @@ def getLigandEntity(dbId, ligandType, name, formula, formula_weight, details, al
         return obj
 
 
+
+def getAnalyses(name, value, description, units, unitsTermAccession, pvalue, dataComment, ligand, assay):
+    """
+    Get Analyses entry or create in case it does not exist
+    """
+
+    obj = None
+    try:
+        obj, created = Analyses.objects.get_or_create(
+            name=name,
+            value=value,
+            description=description,
+            units=units,
+            unitsTermAccession=unitsTermAccession,
+            pvalue=pvalue,
+            dataComment=dataComment,
+            ligand=ligand,
+            assay=assay,
+                        )
+        if created:
+            logger.debug('Created new: %s', obj)
+            print('Created new', obj)
+
+    except Exception as exc:
+        logger.exception(exc)
+        print(exc, os.strerror)
+    return obj
+
+
+
 class IDRUtils(object):
 
     
@@ -1875,6 +1910,33 @@ class IDRUtils(object):
             assayId = matchObj.group(1)
         metadataFileExtention = '-study.txt'
         metadataFile = assayId + metadataFileExtention
+
+        # Get Analyses files 
+        analysesFilePattern = '*.csv'
+        analysesPattern = os.path.join(assayPath, 'Analyses', analysesFilePattern)
+
+        dfs = []
+        for file in glob.glob(analysesPattern):
+            dfs.append(pd.read_csv(file, sep=';'))
+
+        analysesDf = pd.concat(dfs)
+
+        # Fix compound name
+        analysesDf = analysesDf.replace(
+            {
+            np.nan:None,
+            'THIOGUANINE':'TIOGUANINE' #TODO: solucionar esto
+            }
+            )
+
+        # Get columns names in analyses dataframe
+        n_colName = getColNameByKW(analysesDf.columns, 'standard', 'type')
+        v_colName = getColNameByKW(analysesDf.columns, 'standard', 'value')
+        u_colName = getColNameByKW(analysesDf.columns, 'standard', 'units')
+        uta_colName = getColNameByKW(analysesDf.columns, 'uo', 'units')
+        pv_colName = getColNameByKW(analysesDf.columns, 'pchembl', 'value')
+        dc_colName = getColNameByKW(analysesDf.columns, 'data', 'comment')
+        l_colName = getColNameByKW(analysesDf.columns, 'compound', 'key')
 
         # Parse metadata file using StudyParser
         MetadataFilePath = os.path.join(assayPath, metadataFile)
@@ -2072,7 +2134,7 @@ class IDRUtils(object):
                     WellEntityEntry = updateWellEntity(
                         dbId=wellId,
                         name=row['Well Name'],
-                        description='virus-treated well (no compounds)', 
+                        description='virus-treated well (no compounds). Assigned as 0% inhibition of virus cytopathicity', 
                         ligand=None,
                         plate=PlateEntityEntry,
                         externalLink=URL_SHOW_KEY.format(**{'key': 'well', 'keyId': wellId}),
@@ -2097,7 +2159,7 @@ class IDRUtils(object):
                     WellEntityEntry = updateWellEntity(
                         dbId=wellId,
                         name=row['Well Name'],
-                        description='no-virus- and no-compounds-treated well (cells but no treatment). Expected to have no effect on cells', 
+                        description='no-virus- and no-compounds-treated well. Assigned as 100% inhibition of virus cytopathicity', 
                         ligand=None,
                         plate=PlateEntityEntry,
                         externalLink=URL_SHOW_KEY.format(**{'key': 'well', 'keyId': wellId}),
@@ -2121,6 +2183,7 @@ class IDRUtils(object):
                     ln_colName = getColNameByKW(screenDf.columns, 'compound', 'name')
                     pci_colName = getColNameByKW(screenDf.columns, 'pubchem', 'id')
                     icik_colName = getColNameByKW(screenDf.columns, 'inchikey', '')
+                    sm_colName = getColNameByKW(screenDf.columns, 'smiles', '')
 
                     # Create LigandEntity entry
                     LigandEntityEntry = getLigandEntity(
@@ -2138,7 +2201,7 @@ class IDRUtils(object):
                         IUPACInChI=None,
                         IUPACInChIkey=row[icik_colName],
                         isomericSMILES=None,
-                        canonicalSMILES=None,                        
+                        canonicalSMILES=row[sm_colName],                        
                     )
 
                    # Update or create WellEntity
@@ -2162,3 +2225,26 @@ class IDRUtils(object):
                         phenotypeAnnotationLevel=row[pal_colName],
                         channels=row[c_colName]
                     )
+
+                    indexes = [i for i, elem in enumerate(analysesDf[l_colName].tolist()) if elem.upper() == LigandEntityEntry.name.upper()]
+                    
+                    if indexes:
+                        for index, row in analysesDf.iloc[indexes].iterrows():
+                            if row[n_colName].lower() == 'ic50':
+                                description = ''
+                            elif row[n_colName].lower() == 'cc50':
+                                description = ''
+                            elif row[n_colName].lower() == 'selectivity index':
+                                description = ''
+
+                            getAnalyses(
+                                name=row[n_colName],
+                                value=row[v_colName],
+                                description=description,
+                                units=row[u_colName],
+                                unitsTermAccession=row[uta_colName],
+                                pvalue=row[pv_colName],
+                                dataComment=row[dc_colName],
+                                ligand=LigandEntityEntry,
+                                assay=AssayEntityEntry,
+                            )
