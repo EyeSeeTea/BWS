@@ -17,11 +17,13 @@ Run custom command. E.g: updateDB_fromIDRAssay for assay idr0094-ellinger-sarsco
 - python manage.py updateDB_fromIDRAssay /data/IDR/idr0094-ellinger-sarscov2
 
 Or alternativelly, run commands directly using the docker container command line:
-- docker exec -it bws_web_1 python manage.py flush
-- docker exec -it bws_web_1 python manage.py createsuperuser
-- docker exec -it bws_web_1 python manage.py makemigrations
-- docker exec -it bws_web_1 python manage.py migrate
-- docker exec -it bws_web_1 python manage.py initBaseTables
+- docker exec -it bws-web-1 python manage.py flush
+- docker exec -it bws-web-1 python manage.py createsuperuser
+- docker exec -it bws-web-1 bash -c "python manage.py makemigrations && python manage.py migrate"
+- docker exec -it bws-web-1 python manage.py initBaseTables
+- docker exec -it bws-web-1 python manage.py updateEntriesFromDir /data/covid
+- docker exec -it bws-web-1 python manage.py updateDB_fromHCSAssay /data/IDR/idr0094-ellinger-sarscov2
+
 
 Create superuser
 docker exec -it <runningdocker_id> python manage.py createsuperuser
