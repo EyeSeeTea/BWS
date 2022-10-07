@@ -3,6 +3,7 @@ from collections import OrderedDict
 from .models import *
 from django.db.models import Q
 
+
 class DataFileNestedSerializer(serializers.ModelSerializer):
     class Meta:
         model = DataFile
@@ -31,7 +32,9 @@ class DataFileSerializer(serializers.ModelSerializer):
 class AnalysesSerializer(serializers.ModelSerializer):
     class Meta:
         model = Analyses
-        fields = ['name', 'value', 'description', 'units', 'unitsTermAccession', 'pvalue', 'dataComment']
+        fields = ['name', 'value', 'description', 'units',
+                  'unitsTermAccession', 'pvalue', 'dataComment']
+
 
 class AuthorSerializer(serializers.ModelSerializer):
     class Meta:
@@ -82,21 +85,21 @@ class PlateEntitySerializer(serializers.ModelSerializer):
         if ligand_entity:
             wellid_list = []
             for well in zip_list:
-                if well[3] == obj.dbId: # tupl[3] = PlateEntity id 
-                    wellid_list.append(well[4]) # tupl[4] = WellEntity id 
+                if well[3] == obj.dbId:  # tupl[3] = PlateEntity id
+                    wellid_list.append(well[4])  # tupl[4] = WellEntity id
 
             # Given the list of Well IDs, get queryset including all WellEntity models and pass it to WellEntitySerializer
             well_qs = WellEntity.objects.filter(dbId__in=wellid_list)
             return WellEntitySerializer(many=True,  context=context).to_representation(well_qs)
-    
+
     def get_controlWells(self, obj):
 
         # Given the plate id, get queryset including all control wells and pass it to WellEntitySerializer
         controls_qs = WellEntity.objects.filter(plate_id=obj.dbId).filter(
             Q(controlType='positive') | Q(controlType='negative')
-            )
+        )
         return WellEntitySerializer(many=True).to_representation(controls_qs)
- 
+
 
 class ScreenEntitySerializer(serializers.ModelSerializer):
     plates = serializers.SerializerMethodField()
@@ -117,8 +120,8 @@ class ScreenEntitySerializer(serializers.ModelSerializer):
         if ligand_entity:
             plateid_list = []
             for tupl in zip_list:
-                if tupl[2] == obj.dbId: # tupl[2] = ScreenEntity id 
-                    plateid_list.append(tupl[3]) # tupl[3] = PlateEntity id        
+                if tupl[2] == obj.dbId:  # tupl[2] = ScreenEntity id
+                    plateid_list.append(tupl[3])  # tupl[3] = PlateEntity id
 
             unique_plateid_list = list(set(plateid_list))
 
@@ -132,12 +135,11 @@ class AssayEntitySerializer(serializers.ModelSerializer):
     organisms = OrganismSerializer(read_only=True, many=True)
     publications = PublicationSerializer(read_only=True, many=True)
     additionalAnalyses = serializers.SerializerMethodField()
-    
 
     class Meta:
         model = AssayEntity
-        fields = ['dbId', 'name', 'description', 'assayType', 'assayTypeTermAccession', 'organisms', 
-                'externalLink', 'releaseDate', 'publications', 'dataDoi', 'BIAId', 'screenCount', 'screens', 'additionalAnalyses']
+        fields = ['dbId', 'name', 'description', 'assayType', 'assayTypeTermAccession', 'organisms',
+                  'externalLink', 'releaseDate', 'publications', 'dataDoi', 'BIAId', 'screenCount', 'screens', 'additionalAnalyses']
 
     def get_screens(self, obj):
 
@@ -167,8 +169,11 @@ class AssayEntitySerializer(serializers.ModelSerializer):
         ligand_entity = self.context.get('ligand_entity')
 
         # Given the assay and the ligand id, get queryset including all control wells and pass it to WellEntitySerializer
-        analyses_qs = Analyses.objects.filter(assay_id=obj.dbId).filter(ligand=ligand_entity)
+        analyses_qs = Analyses.objects.filter(
+            assay_id=obj.dbId).filter(ligand=ligand_entity)
         return AnalysesSerializer(many=True).to_representation(analyses_qs)
+
+
 class FeatureTypeSerializer(serializers.ModelSerializer):
     assays = serializers.SerializerMethodField()
 
@@ -204,8 +209,8 @@ class LigandToImageDataSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = LigandEntity
-        fields = ['dbId', 'name', 'ligandType', 'formula', 'formula_weight', 'details', 'altNames',
-                  'IUPACInChIkey', 'pubChemCompoundId', 'imageLink', 'externalLink', 'imageData']
+        fields = ['IUPACInChIkey', 'name', 'ligandType', 'formula', 'formula_weight', 'details', 'altNames',
+                  'dbId', 'pubChemCompoundId', 'imageLink', 'externalLink', 'imageData']
         depth = 6
 
     def get_imageData(self, obj):
