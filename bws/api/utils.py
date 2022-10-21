@@ -36,6 +36,7 @@ REGEX_MAP2MODELQUALITY_FILE = re.compile('^\d\w{3}\.(mapq|fscq)\.pdb$')
 REGEX_IDR_ID = re.compile('.*(idr\d{4})-.*-.*')
 REGEX_TAXON_REF = re.compile('(ncbitaxon).*')
 REGEX_SCREEN_NAME = re.compile('.*\/(screen)(.*)')
+PUBCHEM_WS_URL = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/'
 
 
 def findGeneric(pattern, dirToLook=THORN_DATA_DIR):
@@ -1118,20 +1119,8 @@ def updateLigandEntitymmCifFile(lType, indx, entityId, mmCifDict):
                 ligandId = ligand
 
     # get data from PubChem
-    url_prefix = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/'
-    if ligandName:
-        cid = geDataFromPubChem(url=url_prefix + 'xref/RegistryID/' + ligandId + '/cids/JSON', jKey='CID')    
-        inChIKey = geDataFromPubChem(url=url_prefix +
-                                     'cid/' + cid +
-                                     '/property/InChIKey/json', jKey='InChIKey')
-        inChI = geDataFromPubChem(url=url_prefix + 'cid/' + cid +
-                                  '/property/InChI/json', jKey='InChI')
-        isomericSMILES = geDataFromPubChem(url=url_prefix + 'cid/' + cid +
-                                           '/property/isomericSMILES/json', jKey='IsomericSMILES')
-        canonicalSMILES = geDataFromPubChem(url=url_prefix + 'cid/' + cid +
-                                            '/property/CanonicalSMILES/json', jKey='CanonicalSMILES')
-        formula = geDataFromPubChem(url=url_prefix + 'cid/' + cid +
-                                    '/property/MolecularFormula/json', jKey='MolecularFormula')
+    cid, inChIKey, inChI, isomericSMILES, canonicalSMILES, formula = getPubChemData(
+        ligandId, ligandName)
 
     obj = None
     assert(inChIKey)
@@ -1160,6 +1149,51 @@ def updateLigandEntitymmCifFile(lType, indx, entityId, mmCifDict):
         logger.exception(exc)
         print(exc, os.strerror)
     return obj, quantity[indx]
+
+
+def getPubChemData(ligandId, ligandName):
+    print("---> getPubChemData", ligandId, ligandName)
+
+    # if ligandName.startswith('CID-'):
+    #     cid = ligandName.replace('CID-', '')
+    # el
+    if ligandId:
+        cid = geDataFromPubChem(
+            url=PUBCHEM_WS_URL + 'xref/RegistryID/' + ligandId + '/cids/JSON', jKey='CID')
+    elif ligandName:
+        # clean the compound name a bit
+        ligandName = ligandName.replace('(+/-)', ' ')
+        # ligandName = ligandName.replace(')', ' ')
+        # ligandName = ligandName.replace('+', ' ')
+        # ligandName = ligandName.replace('/', ' ')
+        # ligandName = ligandName.replace('-', ' ')
+        ligandName = ligandName.replace('?', ' ')
+        ligandName = ligandName.strip()
+        cid = geDataFromPubChem(
+            url=PUBCHEM_WS_URL + 'name/' + ligandName + '/cids/JSON', jKey='CID')
+    print("---> CID:", cid)
+    if isinstance(cid, list):
+        cid = cid[0]
+    print("---> CID:", cid)
+
+    # if Compound PubChem ID can not be found
+    if not cid:
+        return None, None, None, None, None, None
+
+    assert cid
+    inChIKey = geDataFromPubChem(url=PUBCHEM_WS_URL +
+                                 'cid/' + cid +
+                                 '/property/InChIKey/json', jKey='InChIKey')
+    inChI = geDataFromPubChem(url=PUBCHEM_WS_URL + 'cid/' + cid +
+                              '/property/InChI/json', jKey='InChI')
+    isomericSMILES = geDataFromPubChem(url=PUBCHEM_WS_URL + 'cid/' + cid +
+                                       '/property/isomericSMILES/json', jKey='IsomericSMILES')
+    canonicalSMILES = geDataFromPubChem(url=PUBCHEM_WS_URL + 'cid/' + cid +
+                                        '/property/CanonicalSMILES/json', jKey='CanonicalSMILES')
+    formula = geDataFromPubChem(url=PUBCHEM_WS_URL + 'cid/' + cid +
+                                '/property/MolecularFormula/json', jKey='MolecularFormula')
+
+    return cid, inChIKey, inChI, isomericSMILES, canonicalSMILES, formula
 
 
 def updatePdbToLigand(pdbObj, ligandObj, quantity=1):
@@ -1737,106 +1771,45 @@ def getLigandEntity(dbId, ligandType, name, formula, formula_weight, details, al
     obj = None
 
     # Get LigandEntity using pubChemCompoundId (for those cases in which name is an empty value)
-    if name == '':
-        try:
-            obj, created = LigandEntity.objects.get_or_create(
-                pubChemCompoundId=pubChemCompoundId,
-                defaults={
-                    'name': name,
-                    'dbId': dbId,
-                    'ligandType': ligandType,
-                    'formula': formula,
-                    'formula_weight': formula_weight,
-                    'details': details,
-                    'altNames': altNames,
-                    'imageLink': imageLink,
-                    'externalLink': externalLink,
-                    'systematicNames': systematicNames,
-                    'IUPACInChI': IUPACInChI,
-                    'IUPACInChIkey': IUPACInChIkey,
-                    'isomericSMILES': isomericSMILES,
-                    'canonicalSMILES': canonicalSMILES,
-                }
-            )
-            if created:
-                logger.debug('Created new: %s', obj)
-                print('Created new', obj)
-            else:
-                logger.debug('Updated: %s', obj)
-                print('Updated', obj)
-        except Exception as exc:
-            logger.exception(exc)
-            print(exc, os.strerror)
-        return obj
+    # TODO: Use only the 1st case: pubChemCompoundId is available
+    # if only name is available, we should look for pubChemCompoundId in WS
+    if not pubChemCompoundId:
+        pubChemCompoundId, IUPACInChIkey, IUPACInChI, isomericSMILES, canonicalSMILES, formula = getPubChemData(
+            dbId, name)
+        if not pubChemCompoundId:
+            return None
 
-    # Get LigandEntity using name (for those cases in which pubChemCompoundId is an empty value)
-    elif pubChemCompoundId == '':
-        try:
-            obj, created = LigandEntity.objects.get_or_create(
-                name=name,
-                defaults={
-                    'pubChemCompoundId': pubChemCompoundId,
-                    'dbId': dbId,
-                    'ligandType': ligandType,
-                    'formula': formula,
-                    'formula_weight': formula_weight,
-                    'details': details,
-                    'altNames': altNames,
-                    'imageLink': imageLink,
-                    'externalLink': externalLink,
-                    'systematicNames': systematicNames,
-                    'IUPACInChI': IUPACInChI,
-                    'IUPACInChIkey': IUPACInChIkey,
-                    'isomericSMILES': isomericSMILES,
-                    'canonicalSMILES': canonicalSMILES,
-                }
-            )
-            if created:
-                logger.debug('Created new: %s', obj)
-                print('Created new', obj)
-            else:
-                logger.debug('Updated: %s', obj)
-                print('Updated', obj)
-        except Exception as exc:
-            logger.exception(exc)
-            print(exc, os.strerror)
-        return obj
+    # if name == '':
+    assert(IUPACInChIkey)
+    try:
+        obj, created = LigandEntity.objects.get_or_create(
+            IUPACInChIkey=IUPACInChIkey,
+            defaults={
+                'name': name,
+                'dbId': dbId,
+                'ligandType': ligandType,
+                'formula': formula,
+                'formula_weight': formula_weight,
+                'details': details,
+                'altNames': altNames,
+                'systematicNames': systematicNames,
+                'IUPACInChI': IUPACInChI,
+                'pubChemCompoundId': pubChemCompoundId,
+                'isomericSMILES': isomericSMILES,
+                'canonicalSMILES': canonicalSMILES,
+            }
+        )
+        if created:
+            logger.debug('Created new: %s', obj)
+            print('Created new', obj)
+        else:
+            logger.debug('Updated: %s', obj)
+            print('Updated', obj)
+    except Exception as exc:
+        logger.exception(exc)
+        print(exc, os.strerror)
+    return obj
 
-    # Get LigandEntity using name or pubChemCompoundId (for those cases in which name and pubChemCompoundId are not empty values)
-    else:
-        try:
-            obj, created = LigandEntity.objects.filter(
-                # OR operator using Q() objects
-                Q(name=name) | Q(pubChemCompoundId=pubChemCompoundId)
-            ).get_or_create(
-                defaults={
-                    'name': name,
-                    'pubChemCompoundId': pubChemCompoundId,
-                    'dbId': dbId,
-                    'ligandType': ligandType,
-                    'formula': formula,
-                    'formula_weight': formula_weight,
-                    'details': details,
-                    'altNames': altNames,
-                    'imageLink': imageLink,
-                    'externalLink': externalLink,
-                    'systematicNames': systematicNames,
-                    'IUPACInChI': IUPACInChI,
-                    'IUPACInChIkey': IUPACInChIkey,
-                    'isomericSMILES': isomericSMILES,
-                    'canonicalSMILES': canonicalSMILES,
-                }
-            )
-            if created:
-                logger.debug('Created new: %s', obj)
-                print('Created new', obj)
-            else:
-                logger.debug('Updated: %s', obj)
-                print('Updated', obj)
-        except Exception as exc:
-            logger.exception(exc)
-            print(exc, os.strerror)
-        return obj
 
 
 def getAnalyses(name, value, description, units, unitsTermAccession, pvalue, dataComment, ligand, assay):
@@ -2264,8 +2237,9 @@ class IDRUtils(object):
                         channels=row[c_colName]
                     )
 
-                    indexes = [i for i, elem in enumerate(analysesDf[l_colName].tolist(
-                    )) if elem.upper() == LigandEntityEntry.name.upper()]
+                    if LigandEntityEntry:
+                        indexes = [i for i, elem in enumerate(analysesDf[l_colName].tolist(
+                        )) if elem.upper() == LigandEntityEntry.name.upper()]
 
                     if indexes:
                         for index, row in analysesDf.iloc[indexes].iterrows():

@@ -239,17 +239,17 @@ class PdbToLigand(models.Model):
 class LigandEntity(models.Model):
     IUPACInChIkey = models.CharField(max_length=27, primary_key=True)
     dbId = models.CharField(max_length=20, unique=True, null=True, blank=True)
-    pubChemCompoundId = models.CharField(max_length=200, unique=True, null=True, blank=True)
+    pubChemCompoundId = models.CharField(max_length=250,  null=True, blank=True)
     ligandType = models.CharField(max_length=25, null=True, blank=True)
-    name = models.CharField(max_length=200, unique=True, null=True, blank=True)
-    formula = models.CharField(max_length=200, null=True, blank=True)
+    name = models.CharField(max_length=200, null=True, blank=True)
+    formula = models.CharField(max_length=255, null=True, blank=True)
     formula_weight = models.FloatField(null=True, blank=True)
     details = models.CharField(max_length=200, null=True, blank=True)
     altNames = models.CharField(max_length=5000, null=True, blank=True)
-    systematicNames = models.CharField(max_length=200, null=True, blank=True)
-    IUPACInChI = models.CharField(max_length=500, null=True, blank=True)
-    isomericSMILES = models.CharField(max_length=500, null=True, blank=True)
-    canonicalSMILES = models.CharField(max_length=1000, null=True, blank=True)
+    systematicNames = models.CharField(max_length=2000, null=True, blank=True)
+    IUPACInChI = models.CharField(max_length=2000, null=True, blank=True)
+    isomericSMILES = models.CharField(max_length=2000, null=True, blank=True)
+    canonicalSMILES = models.CharField(max_length=2000, null=True, blank=True)
 
     def imageLink(self):
         # https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/inchikey/RZJQGNCSTQAWON-UHFFFAOYSA-N/PNG
