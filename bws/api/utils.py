@@ -135,6 +135,30 @@ def save_json(data,  path, filename, createIfNotExist=True):
     return f.name
 
 
+def save2file(data, path, filename, createIfNotExist=True, append=True):
+    """
+    Save data into a text file
+    if data is a list of items, will be concatenated in a single string
+    file will be created if not exists, by default
+    data will be appended, by default
+    """
+    logger.debug("- save data: %s %s", path, filename)
+    if path and createIfNotExist:
+        os.makedirs(path, exist_ok=True)
+    full_path = os.path.join(path, filename)
+    strData = ''
+    if isinstance(data, list):
+        strData = ' '.join([str(item) for item in data if item])
+        strData += '\n'
+    if append:
+        with open(full_path, 'a') as f:
+            f.write(strData)
+    else:
+        with open(full_path, 'w') as f:
+            f.write(strData)
+    return f.name
+
+
 def getGitHubFileList(url, ext=''):
     """
     Get the list of files from a GitHub repository
@@ -1787,7 +1811,11 @@ def getLigandEntity(dbId, ligandType, name, formula, formula_weight, details, al
         pubChemCompoundId, IUPACInChIkey, IUPACInChI, isomericSMILES, canonicalSMILES, formula, formula_weight = getPubChemData(
             dbId, name)
         if not IUPACInChIkey:
-            print('---> NOT COMPUOUND FOUND:', dbId, name, pubChemCompoundId, IUPACInChIkey, IUPACInChI, isomericSMILES, canonicalSMILES, formula, formula_weight)
+            print('---> NOT COMPUOUND FOUND:', dbId, name, pubChemCompoundId, IUPACInChIkey,
+                  IUPACInChI, isomericSMILES, canonicalSMILES, formula, formula_weight)
+            save2file(data=[dbId, name, pubChemCompoundId, IUPACInChIkey, IUPACInChI,
+                      isomericSMILES, canonicalSMILES, formula, formula_weight],
+                      path=os.path.join(LOCAL_DATA_DIR, 'IDR'), filename='ligands_not_found.txt')
             return None
         assert(IUPACInChIkey)
         obj = updateLigandEntity(IUPACInChIkey, dbId, ligandType, name, formula,
