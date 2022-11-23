@@ -36,10 +36,9 @@ urlpatterns = [
     # get a list of all PDB entries in the DB
     re_path(r'^pdbentry/$', views.PdbEntryViewSet.as_view({'get': 'list'})),
     # get a PDB Entry by pdb_id
-    re_path(r'^pdbentry/(?P<pdb_id>\d[a-zA-Z]\w{2})/$', views.PdbEntryViewSet.as_view({'get': 'list'})),
-    # get a part of the PDB Entry by JSON section
-    re_path(
-        r'^pdbentry/(?P<pdb_id>\d[a-zA-Z]\w{2})/(?P<section>(ligands|entities))/$', views.LigandsByPDBEntry.as_view()),
+    re_path(r'^pdbentry/(?P<pk>\d[a-zA-Z]\w{2})/$', views.PdbEntryViewSet.as_view({'get': 'retrieve'})),
+    re_path(r'^pdbentry/(?P<pdb_id>\d[a-zA-Z]\w{2})/ligands/$', views.LigandsSectionViewSet.as_view({'get': 'list'})),
+    re_path(r'^pdbentry/(?P<pdb_id>\d[a-zA-Z]\w{2})/entities/$', views.EntitiesSectionViewSet.as_view({'get': 'list'})),    
 ]
 
 

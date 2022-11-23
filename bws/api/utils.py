@@ -231,11 +231,11 @@ def updateRefinedModel(emdbObj, pdbObj, sourceObj, methodObj, filename, external
                 'details': details,
             })
         if created:
-            logger.debug('Created new: %s', obj)
-            print('Created new', obj)
+            logger.debug('Created new %s: %s', RefinedModel.__name__, obj)
+            print('Created new', RefinedModel.__name__, obj)
         else:
-            logger.debug('Updated: %s', obj)
-            print('Updated', obj)
+            logger.debug('Updated%s: %s', RefinedModel.__name__, obj)
+            print('Updated', RefinedModel.__name__, obj)
     except Exception as exc:
         logger.exception(exc)
         print(exc, os.strerror)
@@ -436,8 +436,8 @@ def update_RefinedModel(refmodel):
                 'details': details if details else '',
             })
         if created:
-            logger.debug('Created new: %s', obj)
-            print('Created new', obj)
+            logger.debug('Created new %s: %s', RefinedModel.__name__, obj)
+            print('Created new', RefinedModel.__name__, obj)
         else:
             logger.debug('Updated: %s', obj)
             print('Updated', obj)
@@ -528,11 +528,11 @@ def updateTopic(name, description=''):
             }
         )
         if created:
-            logger.debug('Created new: %s', obj)
-            print('Created new', obj)
+            logger.debug('Created new %s: %s', Topic.__name__, obj)
+            print('Created new', Topic.__name__, obj)
         else:
-            logger.debug('Updated: %s', obj)
-            print('Updated', obj)
+            logger.debug('Updated %s: %s', Topic.__name__, obj)
+            print('Updated', Topic.__name__, obj)
     except Exception as exc:
         logger.exception(exc)
         print(exc, os.strerror)
@@ -549,11 +549,11 @@ def updateStructureTopic(structure, topic):
             }
         )
         if created:
-            logger.debug('Created new: %s', obj)
-            print('Created new', obj)
+            logger.debug('Created new %s: %s', StructureTopic.__name__, obj)
+            print('Created new', StructureTopic.__name__, obj)
         else:
-            logger.debug('Updated: %s', obj)
-            print('Updated', obj)
+            logger.debug('Updated %s: %s', StructureTopic.__name__, obj)
+            print('Updated', StructureTopic.__name__, obj)
     except Exception as exc:
         logger.exception(exc)
         print(exc, os.strerror)
@@ -574,11 +574,12 @@ def updateRefinedModelSource(name, description='', url=''):
             }
         )
         if created:
-            logger.debug('Created new: %s', obj)
-            print('Created new', obj)
+            logger.debug('Created new %s: %s',
+                         RefinedModelSource.__name__, obj)
+            print('Created new', RefinedModelSource.__name__, obj)
         else:
-            logger.debug('Updated: %s', obj)
-            print('Updated', obj)
+            logger.debug('Updated %s: %s', RefinedModelSource.__name__, obj)
+            print('Updated', RefinedModelSource.__name__, obj)
     except Exception as exc:
         logger.exception(exc)
         print(exc, os.strerror)
@@ -599,11 +600,12 @@ def updateRefinedModelMethod(source, name, description='', url=''):
                 'externalLink': url,
             })
         if created:
-            logger.debug('Created new: %s', obj)
-            print('Created new', obj)
+            logger.debug('Created new %s: %s',
+                         RefinedModelMethod.__name__, obj)
+            print('Created new', RefinedModelMethod.__name__, obj)
         else:
-            logger.debug('Updated: %s', obj)
-            print('Updated', obj)
+            logger.debug('Updated %s: %s', RefinedModelMethod.__name__, obj)
+            print('Updated', RefinedModelMethod.__name__, obj)
     except Exception as exc:
         logger.exception(exc)
         print(exc, os.strerror)
@@ -726,11 +728,11 @@ def updatePdbentry(entryId, title, status, releaseDate, method, keywords):
                 'keywords': keywords,
             })
         if created:
-            logger.debug('Created new: %s', obj)
-            print('Created new', obj)
+            logger.debug('Created new %s: %s', PdbEntry.__name__, obj)
+            print('Created new', PdbEntry.__name__, obj)
         else:
-            logger.debug('Updated: %s', obj)
-            print('Updated', obj)
+            logger.debug('Updated %s: %s', PdbEntry.__name__, obj)
+            print('Updated', PdbEntry.__name__, obj)
     except Exception as exc:
         logger.exception(exc)
         print(exc, os.strerror)
@@ -764,11 +766,11 @@ def updatePublicationAuthor(name, orcid, ordinal, publication):
                 'ordinal': ordinal,
             })
         if created:
-            logger.debug('Created new: %s', obj)
-            print('Created new', obj)
+            logger.debug('Created new %s: %s', PublicationAuthor.__name__, obj)
+            print('Created new', PublicationAuthor.__name__, obj)
         else:
-            logger.debug('Updated: %s', obj)
-            print('Updated', obj)
+            logger.debug('Updated %s: %s', PublicationAuthor.__name__, obj)
+            print('Updated', PublicationAuthor.__name__, obj)
     except Exception as exc:
         logger.exception(exc)
         print(exc, os.strerror)
@@ -794,11 +796,11 @@ def updatePublication(title, journal, issn, issue, volume, firstPage, lastPage, 
                 'PMCId': PMCId,
             })
         if created:
-            logger.debug('Created new: %s', obj)
-            print('Created new', obj)
+            logger.debug('Created new %s: %s', Publication.__name__, obj)
+            print('Created new', Publication.__name__, obj)
         else:
-            logger.debug('Updated: %s', obj)
-            print('Updated', obj)
+            logger.debug('Updated %s: %s', Publication.__name__, obj)
+            print('Updated', Publication.__name__, obj)
     except Exception as exc:
         logger.exception(exc)
         print(exc, os.strerror)
@@ -870,11 +872,11 @@ def updateEmdbEntry(emdbId, title, status, emMethod, resolution):
                 'resolution': resolution,
             })
         if created:
-            logger.debug('Created new: %s', obj)
-            print('Created new', obj)
+            logger.debug('Created new %s: %s', EmdbEntry.__name__, obj)
+            print('Created new', EmdbEntry.__name__, obj)
         else:
-            logger.debug('Updated: %s', obj)
-            print('Updated', obj)
+            logger.debug('Updated %s: %s', EmdbEntry.__name__, obj)
+            print('Updated', EmdbEntry.__name__, obj)
     except Exception as exc:
         logger.exception(exc)
         print(exc, os.strerror)
@@ -903,11 +905,11 @@ def updateHybridModel(emdbObj, pdbObj):
             pdbId=pdbObj,
         )
         if created:
-            logger.debug('Created new: %s', obj)
-            print('Created new', obj)
+            logger.debug('Created new %s: %s', HybridModel.__name__, obj)
+            print('Created new', HybridModel.__name__, obj)
         else:
-            logger.debug('Updated: %s', obj)
-            print('Updated', obj)
+            logger.debug('Updated %s: %s', HybridModel.__name__, obj)
+            print('Updated', HybridModel.__name__, obj)
     except Exception as exc:
         logger.exception(exc)
         print(exc, os.strerror)
@@ -924,11 +926,11 @@ def updateUniProtEntry(db_accession, db_code):
                 'externalLink': URL_UNIPROT + db_accession,
             })
         if created:
-            logger.debug('Created new: %s', obj)
-            print('Created new', obj)
+            logger.debug(' %s: %s', UniProtEntry.__name__, obj)
+            print('Created new', UniProtEntry.__name__, obj)
         else:
-            logger.debug('Updated: %s', obj)
-            print('Updated', obj)
+            logger.debug('Updated %s: %s', UniProtEntry.__name__, obj)
+            print('Updated', UniProtEntry.__name__, obj)
     except Exception as exc:
         logger.exception(exc)
         print(exc, os.strerror)
@@ -946,11 +948,11 @@ def updateOrganism(taxonomy_id, scientific_name, common_name):
                 'externalLink': URL_NCBI_TAXONOMY + taxonomy_id,
             })
         if created:
-            logger.debug('Created new: %s', obj)
-            print('Created new', obj)
+            logger.debug('Created new %s: %s', Organism.__name__, obj)
+            print('Created new', Organism.__name__, obj)
         else:
-            logger.debug('Updated: %s', obj)
-            print('Updated', obj)
+            logger.debug('Updated %s: %s', Organism.__name__, obj)
+            print('Updated', Organism.__name__, obj)
     except Exception as exc:
         logger.exception(exc)
         print(exc, os.strerror)
@@ -1005,11 +1007,11 @@ def updateEntitymmCifFile(indx, mmCifDict, uniprotObj=None, organismObj=None):
                 'organism': organismObj,
             })
         if created:
-            logger.debug('Created new: %s', obj)
-            print('Created new', obj)
+            logger.debug('Created new %s: %s', ModelEntity.__name__, obj)
+            print('Created new', ModelEntity.__name__, obj)
         else:
-            logger.debug('Updated: %s', obj)
-            print('Updated', obj)
+            logger.debug('Updated %s: %s', ModelEntity.__name__, obj)
+            print('Updated', ModelEntity.__name__, obj)
     except Exception as exc:
         logger.exception(exc)
         print(exc, os.strerror)
@@ -1026,11 +1028,11 @@ def updatePdbToEntity(pdbObj, polymerObj, quantity=1):
                 'quantity': quantity,
             })
         if created:
-            logger.debug('Created new: %s', obj)
-            print('Created new', obj)
+            logger.debug('Created new %s: %s', PdbToEntity.__name__, obj)
+            print('Created new', PdbToEntity.__name__, obj)
         else:
-            logger.debug('Updated: %s', obj)
-            print('Updated', obj)
+            logger.debug('Updated %s: %s', PdbToEntity.__name__, obj)
+            print('Updated', PdbToEntity.__name__, obj)
     except Exception as exc:
         logger.exception(exc)
         print(exc, os.strerror)
@@ -1118,11 +1120,11 @@ def updateLigandEntity(inChIKey, ligandId, ligandType, ligandName, formula, form
                 'canonicalSMILES': canonicalSMILES if canonicalSMILES else '',
             })
         if created:
-            logger.debug('Created new: %s', obj)
-            print('Created new', obj)
+            logger.debug('Created new %s: %s', LigandEntity.__name__, obj)
+            print('Created new', LigandEntity.__name__, obj)
         else:
-            logger.debug('Updated: %s', obj)
-            print('Updated', obj)
+            logger.debug('Updated %s: %s', LigandEntity.__name__, obj)
+            print('Updated', LigandEntity.__name__, obj)
     except Exception as exc:
         logger.exception(exc)
         print(exc, os.strerror)
@@ -1176,34 +1178,30 @@ def updateLigandEntitymmCifFile(lType, indx, entityId, mmCifDict):
 
     obj = getLigandEntity(ligandId, ligandType, ligandName, None, formula_weights[indx], descriptions[indx], None,
                           None, None, None, None, None, None)
-    # try:
-    #     # first look if the compound is already in the DB
-    #     obj = LigandEntity.objects.get(dbId=ligandId)
-    #     print("Found Compound", ligandId, obj)
-    # except LigandEntity.DoesNotExist:
-    #     obj = None
-    #     # get data from PubChem by ligandId or ligandName
-    #     pubChemCompoundId, inChIKey, inChI, isomericSMILES, canonicalSMILES, formula, formula_weight = getPubChemData(
-    #         ligandId, ligandName)
-    #     assert(inChIKey)
-    #     obj = updateLigandEntity(inChIKey, ligandId, ligandType, ligandName, formula, formula_weight, descriptions[indx],
-    #                              None, None, pubChemCompoundId, inChI, isomericSMILES, canonicalSMILES)
     return obj, quantity[indx]
 
 
-def getPubChemData(ligandId, ligandName):
-    if ligandId:
+def getPubChemData(inChIKey, ligandId, ligandName):
+    print('---> getPubChemData', inChIKey, ligandId, ligandName)
+    pubChemCompoundId = ''
+    if inChIKey:
+        print('----> searching by', inChIKey)
+        pubChemCompoundId = getDataFromPubChem(
+            url=PUBCHEM_WS_URL + 'inchikey/' + inChIKey + '/cids/JSON', jKey='CID')
+    if (not pubChemCompoundId) and ligandId:
+        print('----> searching by', ligandId)
         pubChemCompoundId = getDataFromPubChem(
             url=PUBCHEM_WS_URL + 'xref/RegistryID/' + ligandId + '/cids/JSON', jKey='CID')
-    elif ligandName:
+    if (not pubChemCompoundId) and ligandName:
         # clean the compound name a bit
         ligandName = ligandName.replace('(+/-)', ' ')
         ligandName = ligandName.replace('?', ' ')
         ligandName = ligandName.strip()
+        print('----> searching by', ligandName)
         pubChemCompoundId = getDataFromPubChem(
             url=PUBCHEM_WS_URL + 'name/' + ligandName + '/cids/JSON', jKey='CID')
     if isinstance(pubChemCompoundId, list):
-        print("---> CID:", pubChemCompoundId)
+        print("----> CID:", pubChemCompoundId)
         pubChemCompoundId = pubChemCompoundId[0]
 
     # if Compound PubChem ID can not be found
@@ -1238,11 +1236,11 @@ def updatePdbToLigand(pdbObj, ligandObj, quantity=1):
                 'quantity': quantity,
             })
         if created:
-            logger.debug('Created new: %s', obj)
-            print('Created new', obj)
+            logger.debug('Created new %s: %s', PdbToLigand.__name__, obj)
+            print('Created new', PdbToLigand.__name__, obj)
         else:
-            logger.debug('Updated: %s', obj)
-            print('Updated', obj)
+            logger.debug('Updated %s: %s', PdbToLigand.__name__, obj)
+            print('Updated', PdbToLigand.__name__, obj)
     except Exception as exc:
         logger.exception(exc)
         print(exc, os.strerror)
@@ -1329,11 +1327,11 @@ def updateAuthor(name, orcid):
             orcid=orcid,
         )
         if created:
-            logger.debug('Created new: %s', obj)
-            print('Created new', obj)
+            logger.debug('Created new %s: %s', Author.__name__, obj)
+            print('Created new', Author.__name__, obj)
         else:
-            logger.debug('Updated: %s', obj)
-            print('Updated', obj)
+            logger.debug('Updated %s: %s', Author.__name__, obj)
+            print('Updated', Author.__name__, obj)
     except Exception as exc:
         logger.exception(exc)
         print(exc, os.strerror)
@@ -1379,11 +1377,11 @@ def updateSampleEntity(name, exprSystem,
             domains=domains,
         )
         if created:
-            logger.debug('Created new: %s', obj)
-            print('Created new', obj)
+            logger.debug('Created new %s: %s', SampleEntity.__name__, obj)
+            print('Created new', SampleEntity.__name__, obj)
         else:
-            logger.debug('Updated: %s', obj)
-            print('Updated', obj)
+            logger.debug('Updated %s: %s', SampleEntity.__name__, obj)
+            print('Updated', SampleEntity.__name__, obj)
     except Exception as exc:
         logger.exception(exc)
         print(exc, os.strerror)
@@ -1432,11 +1430,11 @@ def updatePdbEntryDetails(mmCifDict, pdbObj):
             sample=sample,
         )
         if created:
-            logger.debug('Created new: %s', obj)
-            print('Created new', obj)
+            logger.debug('Created new %s: %s', PdbEntryDetails.__name__, obj)
+            print('Created new', PdbEntryDetails.__name__, obj)
         else:
-            logger.debug('Updated: %s', obj)
-            print('Updated', obj)
+            logger.debug('Updated %s: %s', PdbEntryDetails.__name__, obj)
+            print('Updated', PdbEntryDetails.__name__, obj)
     except Exception as exc:
         logger.exception(exc)
         print(exc, os.strerror)
@@ -1458,11 +1456,11 @@ def updateFeatureTypeForIDR(name, description, dataSource, externalLink):
             dataSource=dataSource,
             externalLink=externalLink)
         if created:
-            logger.debug('Created new: %s', obj)
-            print('Created new', obj)
+            logger.debug('Created new %s: %s', FeatureEntity.__name__, obj)
+            print('Created new', FeatureEntity.__name__, obj)
         else:
-            logger.debug('Updated: %s', obj)
-            print('Updated', obj)
+            logger.debug('Updated %s: %s', FeatureEntity.__name__, obj)
+            print('Updated', FeatureEntity.__name__, obj)
     except Exception as exc:
         logger.exception(exc)
         print(exc, os.strerror)
@@ -1484,8 +1482,8 @@ def getOrganism(taxonomy_id, scientific_name='', common_name=''):
                 'externalLink': URL_NCBI_TAXONOMY + taxonomy_id,
             })
         if created:
-            logger.debug('Created new: %s', obj)
-            print('Created new', obj)
+            logger.debug('Created new %s: %s', Organism.__name__, obj)
+            print('Created new', Organism.__name__, obj)
 
     except Exception as exc:
         logger.exception(exc)
@@ -1511,8 +1509,8 @@ def getAuthor(name, email='', address='', orcid='', role=''):
                 }
             )
             if created:
-                logger.debug('Created new: %s', obj)
-                print('Created new', obj)
+                logger.debug('Created new %s: %s', Author.__name__, obj)
+                print('Created new', Author.__name__, obj)
 
         except Exception as exc:
             logger.exception(exc)
@@ -1530,8 +1528,8 @@ def getAuthor(name, email='', address='', orcid='', role=''):
                 }
             )
             if created:
-                logger.debug('Created new: %s', obj)
-                print('Created new', obj)
+                logger.debug('Created new %s: %s', Author.__name__, obj)
+                print('Created new', Author.__name__, obj)
 
         except Exception as exc:
             logger.exception(exc)
@@ -1555,11 +1553,11 @@ def updateAuthorFromIDR(name, email='', address='', orcid='', role=''):
                 'role': role}
         )
         if created:
-            logger.debug('Created new: %s', obj)
-            print('Created new', obj)
+            logger.debug('Created new %s: %s', Author.__name__, obj)
+            print('Created new', Author.__name__, obj)
         else:
-            logger.debug('Updated: %s', obj)
-            print('Updated', obj)
+            logger.debug('Updated %s: %s', Author.__name__, obj)
+            print('Updated', Author.__name__, obj)
     except Exception as exc:
         logger.exception(exc)
         print(exc, os.strerror)
@@ -1590,11 +1588,11 @@ def updateAssayEntity(dbId, name, featureType, description, externalLink, detail
             }
         )
         if created:
-            logger.debug('Created new: %s', obj)
-            print('Created new', obj)
+            logger.debug('Created new %s: %s', AssayEntity.__name__, obj)
+            print('Created new', AssayEntity.__name__, obj)
         else:
-            logger.debug('Updated: %s', obj)
-            print('Updated', obj)
+            logger.debug('Updated %s: %s', AssayEntity.__name__, obj)
+            print('Updated', AssayEntity.__name__, obj)
     except Exception as exc:
         logger.exception(exc)
         print(exc, os.strerror)
@@ -1626,11 +1624,11 @@ def updateScreenEntity(dbId, name, description, type, typeTermAccession, technol
             }
         )
         if created:
-            logger.debug('Created new: %s', obj)
-            print('Created new', obj)
+            logger.debug(' %s: %s', ScreenEntity.__name__, obj)
+            print('Created new', ScreenEntity.__name__, obj)
         else:
-            logger.debug('Updated: %s', obj)
-            print('Updated', obj)
+            logger.debug('Updated %s: %s', ScreenEntity.__name__, obj)
+            print('Updated', ScreenEntity.__name__, obj)
     except Exception as exc:
         logger.exception(exc)
         print(exc, os.strerror)
@@ -1711,11 +1709,11 @@ def updatePlateEntity(dbId, name, screen):
             }
         )
         if created:
-            logger.debug('Created new: %s', obj)
-            print('Created new', obj)
+            logger.debug('Created new %s: %s', PlateEntity.__name__, obj)
+            print('Created new', PlateEntity.__name__, obj)
         else:
-            logger.debug('Updated: %s', obj)
-            print('Updated', obj)
+            logger.debug('Updated %s: %s', PlateEntity.__name__, obj)
+            print('Updated', PlateEntity.__name__, obj)
 
     except Exception as exc:
         logger.exception(exc)
@@ -1753,11 +1751,11 @@ def updateWellEntity(dbId, name, description, ligand, plate, externalLink, image
             }
         )
         if created:
-            logger.debug('Created new: %s', obj)
-            print('Created new', obj)
+            logger.debug('Created new %s: %s', WellEntity.__name__, obj)
+            print('Created new', WellEntity.__name__, obj)
         else:
-            logger.debug('Updated: %s', obj)
-            print('Updated', obj)
+            logger.debug('Updated %s: %s', WellEntity.__name__, obj)
+            print('Updated', WellEntity.__name__, obj)
     except Exception as exc:
         logger.exception(exc)
         print(exc, os.strerror)
@@ -1809,7 +1807,7 @@ def getLigandEntity(dbId, ligandType, name, formula, formula_weight, details, al
     except LigandEntity.DoesNotExist:
         # get data from PubChem by ligandId or ligandName
         pubChemCompoundId, IUPACInChIkey, IUPACInChI, isomericSMILES, canonicalSMILES, formula, formula_weight = getPubChemData(
-            dbId, name)
+            IUPACInChIkey, dbId, name)
         if not IUPACInChIkey:
             print('---> NOT COMPUOUND FOUND:', dbId, name, pubChemCompoundId, IUPACInChIkey,
                   IUPACInChI, isomericSMILES, canonicalSMILES, formula, formula_weight)
@@ -1842,8 +1840,8 @@ def getAnalyses(name, value, description, units, unitsTermAccession, pvalue, dat
             assay=assay,
         )
         if created:
-            logger.debug('Created new: %s', obj)
-            print('Created new', obj)
+            logger.debug('Created new %s: %s', Analyses.__name__, obj)
+            print('Created new', Analyses.__name__, obj)
 
     except Exception as exc:
         logger.exception(exc)
