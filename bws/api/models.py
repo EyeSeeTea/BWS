@@ -237,7 +237,7 @@ class PdbToLigand(models.Model):
 
 
 class LigandEntity(models.Model):
-    IUPACInChIkey = models.CharField(max_length=27, primary_key=True)
+    IUPACInChIkey = models.CharField(max_length=27, primary_key=True, default='')
     dbId = models.CharField(max_length=20, null=True, blank=True)
     pubChemCompoundId = models.CharField(max_length=250,  null=True, blank=True)
     ligandType = models.CharField(max_length=25, null=True, blank=True)
