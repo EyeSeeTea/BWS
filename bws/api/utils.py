@@ -1192,6 +1192,10 @@ def updateLigandEntitymmCifFile(lType, indx, entityId, mmCifDict):
 
 
 def getPubChemData(ligandId, ligandName):
+    '''
+    Get PuChem ID, inChIKey, inChI, isomericSMILES, canonicalSMILES, formula and formula_weight given ligand id or name by means of PuChem-WS
+    '''
+
     if ligandId:
         pubChemCompoundId = getDataFromPubChem(
             url=PUBCHEM_WS_URL + 'xref/RegistryID/' + ligandId + '/cids/JSON', jKey='CID')
@@ -1713,9 +1717,9 @@ def updatePlateEntity(dbId, name, screen):
         if created:
             logger.debug('Created new: %s', obj)
             print('Created new', obj)
-        else:
-            logger.debug('Updated: %s', obj)
-            print('Updated', obj)
+        #else:
+            #logger.debug('Updated: %s', obj)
+            #print('Updated', obj)
 
     except Exception as exc:
         logger.exception(exc)
@@ -1730,7 +1734,7 @@ def updateWellEntity(dbId, name, description, ligand, plate, externalLink, image
 
     obj = None
     try:
-        obj, created = WellEntity.objects.update_or_create(
+        obj, created = WellEntity.objects.get_or_create(
             dbId=dbId,
             defaults={
                 'name': name,
@@ -1761,6 +1765,7 @@ def updateWellEntity(dbId, name, description, ligand, plate, externalLink, image
     except Exception as exc:
         logger.exception(exc)
         print(exc, os.strerror)
+        logger.debug("Well not created or updated: %s", obj)
     return obj
 
 
@@ -1798,20 +1803,23 @@ def getColNameByKW(colNames, keyword1, keyword2):
 def getLigandEntity(dbId, ligandType, name, formula, formula_weight, details, altNames,
                     pubChemCompoundId, systematicNames, IUPACInChI, IUPACInChIkey, isomericSMILES, canonicalSMILES):
     """
-    Get LigandEntity entry given name OR pubChemCompoundId. Create it in case it does not exist
+    Get LigandEntity entry given IUPAC InChIKey. 
+    In case it does not exist, create it given ligand id (from ChEBI) or name by means of PubChem-WS.
+    Export the names of the ligands whose InChIKey cannot be found using PubChem-WS.
+    Returns LigandEntity entry.
     """
 
     obj = None
     try:
         # first look if the compound is already in the DB
         obj = LigandEntity.objects.get(pk=IUPACInChIkey)
-        print("Found Compound", obj)
+        print("Found in DB Compound ", obj)
     except LigandEntity.DoesNotExist:
         # get data from PubChem by ligandId or ligandName
         pubChemCompoundId, IUPACInChIkey, IUPACInChI, isomericSMILES, canonicalSMILES, formula, formula_weight = getPubChemData(
             dbId, name)
         if not IUPACInChIkey:
-            print('---> NOT COMPUOUND FOUND:', dbId, name, pubChemCompoundId, IUPACInChIkey,
+            print('---> NOT INCHIKEY FOUND IN PubChem-WS FOR COMPOUND:', dbId, name, pubChemCompoundId, IUPACInChIkey,
                   IUPACInChI, isomericSMILES, canonicalSMILES, formula, formula_weight)
             save2file(data=[dbId, name, pubChemCompoundId, IUPACInChIkey, IUPACInChI,
                       isomericSMILES, canonicalSMILES, formula, formula_weight],
@@ -1893,6 +1901,7 @@ class IDRUtils(object):
         metadataFile = assayId + metadataFileExtention
 
         # Get Analyses files
+        #TODO: Change for other types of HCS assays that do not have .csv for addicional analyses
         analysesFilePattern = '*.csv'
         analysesPattern = os.path.join(
             assayPath, 'Analyses', analysesFilePattern)
@@ -1990,13 +1999,12 @@ class IDRUtils(object):
             authorRole for authorRole in studyParserObj.study['Study Person Roles'].split("\t")]
 
         for authorEntry in zip(authorLastNames, authorFirstNames, authorEmails, authorAddresses, authorORCIDs, authorRoles):
-            '''
-            NOTE: pseudoName tries to mimic Author entry name from publication['Author List'] 
-            although middle names would be missing. E.g: 
-             Carpenter AE (Author entry name from publication['Author List']); 
-             Carpenter A (Author entry name from study['Study Person Last Name'] + study['Study Person First Name'])
 
-            '''
+            # NOTE: pseudoName tries to mimic Author entry name from publication['Author List'] 
+            # although middle names would be missing. E.g: 
+            # Carpenter AE (Author entry name from publication['Author List']); 
+            # Carpenter A (Author entry name from study['Study Person Last Name'] + study['Study Person First Name'])
+
             pseudoName = ' '.join([authorEntry[0], authorEntry[1][0]])
 
             AuthorEntry = updateAuthorFromIDR(
@@ -2052,6 +2060,8 @@ class IDRUtils(object):
                 value='Severe acute respiratory syndrome coronavirus 2',
                 screenDir=screenDir,
             )
+
+            #TODO: get screen description
 
             # Get screen attributes that are lists
             screenImagingMethods = [
