@@ -317,7 +317,8 @@ class StudyParser(object):
         if not m:
             raise Exception(
                 "Invalid Data DOI: %s" % d[key])
-        return {"Data DOI": m.group("id")}
+        return {"Data DOI": #m.group("id")
+                            d[key]}
 
     @staticmethod
     def parse_organism(component):
