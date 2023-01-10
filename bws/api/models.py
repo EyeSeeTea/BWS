@@ -260,7 +260,8 @@ class LigandEntity(models.Model):
         return '%s/compound/%s' % (PUBCHE_URL, self.pubChemCompoundId,)
 
     def __str__(self):
-        return '%s' % (self.IUPACInChIkey,)
+        return '%s (LigandEntity)' % (self.IUPACInChIkey,)
+
 
 
 class RefinedModelSource(models.Model):
