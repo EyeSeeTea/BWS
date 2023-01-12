@@ -493,8 +493,6 @@ class ScreenEntity(models.Model):
     description = models.CharField(max_length=255, blank=True, default='')
     type = models.CharField(max_length=255, blank=False, default='')
     technologyType = models.CharField(max_length=255, blank=False, default='')
-    technologyTypeTermAccession = models.CharField(
-        max_length=255, null=True, blank=True, default='')
     imagingMethod = models.CharField(max_length=255, blank=True, default='')
     sampleType = models.CharField(max_length=255, blank=True, default='')
     plateCount = models.IntegerField(blank=True, null=True)

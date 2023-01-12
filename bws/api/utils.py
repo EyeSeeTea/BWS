@@ -1604,7 +1604,7 @@ def updateAssayEntity(dbId, name, featureType, description, externalLink, detail
     return obj
 
 
-def updateScreenEntity(dbId, name, description, type, technologyType, technologyTypeTermAccession, imagingMethod, sampleType, plateCount, dataDoi, assay):
+def updateScreenEntity(dbId, name, description, type, technologyType, imagingMethod, sampleType, plateCount, dataDoi, assay):
     """
     Update ScreenEntity entry or create in case it does not exist
     """
@@ -1618,7 +1618,6 @@ def updateScreenEntity(dbId, name, description, type, technologyType, technology
                 'description': description,
                 'type': type,
                 'technologyType': technologyType,
-                'technologyTypeTermAccession': technologyTypeTermAccession,
                 'imagingMethod': imagingMethod,
                 'sampleType': sampleType,
                 'plateCount': plateCount,
@@ -2095,7 +2094,6 @@ class IDRUtils(object):
                 description=screen['Screen Description'],
                 type='; '.join(screentype_str),
                 technologyType='; '.join(screentechtype_str),
-                technologyTypeTermAccession=screen['Screen Technology Type Term Accession'],
                 imagingMethod='; '.join(screenimg_str),
                 sampleType=screen['Screen Sample Type'],
                 # plateCount=plateCount,
