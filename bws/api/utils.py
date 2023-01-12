@@ -1570,7 +1570,7 @@ def updateAuthorFromIDR(name, email='', address='', orcid='', role=''):
     return obj
 
 
-def updateAssayEntity(dbId, name, featureType, description, externalLink, details, assayType, assayTypeTermAccession, screenCount, BIAId, releaseDate, dataDoi):
+def updateAssayEntity(dbId, name, featureType, description, externalLink, details, assayType, screenCount, BIAId, releaseDate, dataDoi):
     """
     Update AssayEntity entry or create in case it does not exist
     """
@@ -1586,7 +1586,6 @@ def updateAssayEntity(dbId, name, featureType, description, externalLink, detail
                 'externalLink': externalLink,
                 'details': details,
                 'assayType': assayType,
-                'assayTypeTermAccession': assayTypeTermAccession,
                 'screenCount': screenCount,
                 'BIAId': BIAId,
                 'releaseDate': releaseDate,
@@ -2022,6 +2021,11 @@ class IDRUtils(object):
         assayTypeTermAccessions = [
             assayTypeTermAccession for assayTypeTermAccession in studyParserObj.study['Study Type Term Accession'].split("\t")]
 
+        # Combine assay types with term accessions and convert them into strings
+        assayType_zip = list(zip(assayTypes, assayTypeTermAccessions))
+        assayType_str = ['%s (%s)' % (x[0], x[1]) for x in assayType_zip]
+
+
         AssayEntityEntry = updateAssayEntity(
             name=studyParserObj.study['Study Title'],
             featureType=FeatureTypeEntry,
@@ -2030,8 +2034,7 @@ class IDRUtils(object):
             externalLink='',
             details=studyParserObj.study['Study Key Words'],
             dbId=assayId,
-            assayType='; '.join(assayTypes),
-            assayTypeTermAccession='; '.join(assayTypeTermAccessions),
+            assayType='; '.join(assayType_str),
             screenCount=studyParserObj.study['Study Screens Number'],
             BIAId=studyParserObj.study['Study BioImage Archive Accession'],
             releaseDate=studyParserObj.study['Study Public Release Date'],

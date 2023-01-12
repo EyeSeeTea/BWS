@@ -470,8 +470,6 @@ class AssayEntity(FeatureModelEntity):
     dbId = models.CharField(max_length=50, blank=False,
                             default='', primary_key=True)
     assayType = models.CharField(max_length=255, blank=True, default='')
-    assayTypeTermAccession = models.CharField(
-        max_length=255, blank=True, default='')
     organisms = models.ManyToManyField(Organism)
     publications = models.ManyToManyField(Publication)
     screenCount = models.IntegerField(blank=True, null=True)
