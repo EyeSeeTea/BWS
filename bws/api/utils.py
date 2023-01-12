@@ -2063,22 +2063,31 @@ class IDRUtils(object):
                 screenDir=screenDir,
             )
 
-            # Get screen attributes that are lists
+            # Get screen imaging methods and combine them with their term accessions 
             screenImagingMethods = [
                 screenImagingMethod for screenImagingMethod in screen['Screen Imaging Method'].split("\t")]
             screenImagingTermAccessions = [
                 screenImagingTermAccession for screenImagingTermAccession in screen['Screen Imaging Method Term Accession'].split("\t")]
-            # plateCount =
 
-            # Combine screen imaging methods with term accessions and convert them into strings
             screenimg_zip = list(zip(screenImagingMethods, screenImagingTermAccessions))
             screenimg_str = ['%s (%s)' % (y[0], y[1]) for y in screenimg_zip]
+
+            # Get screen types and combine them with their term accessions
+            screenTypes = [
+                screenType for screenType in screen['Screen Type'].split("\t")]
+            screenTypeTermAccessions = [
+                screenTypeTermAccession for screenTypeTermAccession in screen['Screen Type Term Accession'].split("\t")]
+
+            screentype_zip = list(zip(screenTypes, screenTypeTermAccessions))
+            screentype_str = ['%s (%s)' % (i[0], i[1]) for i in screentype_zip]
+
 
             ScreenEntityEntry = updateScreenEntity(
                 dbId=screenId,
                 name=screenName,
                 description=screen['Screen Description'],
-                type=screen['Screen Type'],
+                #type=screen['Screen Type'],
+                type='; '.join(screentype_str),
                 typeTermAccession=screen['Screen Type Term Accession'],
                 technologyType=screen['Screen Technology Type'],
                 technologyTypeTermAccession=screen['Screen Technology Type Term Accession'],
