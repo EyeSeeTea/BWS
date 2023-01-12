@@ -107,7 +107,7 @@ class ScreenEntitySerializer(serializers.ModelSerializer):
     class Meta:
         model = ScreenEntity
         fields = ['dbId', 'name', 'description', 'type', 'typeTermAccession', 'technologyType', 'technologyTypeTermAccession',
-                  'imagingMethod', 'imagingMethodTermAccession', 'sampleType', 'dataDoi', 'plateCount', 'plates']
+                  'imagingMethod', 'sampleType', 'dataDoi', 'plateCount', 'plates']
 
     def get_plates(self, obj):
 

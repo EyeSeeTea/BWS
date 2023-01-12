@@ -498,8 +498,6 @@ class ScreenEntity(models.Model):
     technologyTypeTermAccession = models.CharField(
         max_length=255, null=True, blank=True, default='')
     imagingMethod = models.CharField(max_length=255, blank=True, default='')
-    imagingMethodTermAccession = models.CharField(
-        max_length=255, null=True, blank=True, default='')
     sampleType = models.CharField(max_length=255, blank=True, default='')
     plateCount = models.IntegerField(blank=True, null=True)
     dataDoi = models.CharField(max_length=255, blank=True, default='')

@@ -1604,7 +1604,7 @@ def updateAssayEntity(dbId, name, featureType, description, externalLink, detail
     return obj
 
 
-def updateScreenEntity(dbId, name, description, type, typeTermAccession, technologyType, technologyTypeTermAccession, imagingMethod, imagingMethodTermAccession, sampleType, plateCount, dataDoi, assay):
+def updateScreenEntity(dbId, name, description, type, typeTermAccession, technologyType, technologyTypeTermAccession, imagingMethod, sampleType, plateCount, dataDoi, assay):
     """
     Update ScreenEntity entry or create in case it does not exist
     """
@@ -1621,7 +1621,6 @@ def updateScreenEntity(dbId, name, description, type, typeTermAccession, technol
                 'technologyType': technologyType,
                 'technologyTypeTermAccession': technologyTypeTermAccession,
                 'imagingMethod': imagingMethod,
-                'imagingMethodTermAccession': imagingMethodTermAccession,
                 'sampleType': sampleType,
                 'plateCount': plateCount,
                 'dataDoi': dataDoi,
@@ -2064,14 +2063,16 @@ class IDRUtils(object):
                 screenDir=screenDir,
             )
 
-            #TODO: get screen description
-
             # Get screen attributes that are lists
             screenImagingMethods = [
                 screenImagingMethod for screenImagingMethod in screen['Screen Imaging Method'].split("\t")]
             screenImagingTermAccessions = [
                 screenImagingTermAccession for screenImagingTermAccession in screen['Screen Imaging Method Term Accession'].split("\t")]
             # plateCount =
+
+            # Combine screen imaging methods with term accessions and convert them into strings
+            screenimg_zip = list(zip(screenImagingMethods, screenImagingTermAccessions))
+            screenimg_str = ['%s (%s)' % (y[0], y[1]) for y in screenimg_zip]
 
             ScreenEntityEntry = updateScreenEntity(
                 dbId=screenId,
@@ -2081,9 +2082,7 @@ class IDRUtils(object):
                 typeTermAccession=screen['Screen Type Term Accession'],
                 technologyType=screen['Screen Technology Type'],
                 technologyTypeTermAccession=screen['Screen Technology Type Term Accession'],
-                imagingMethod='; '.join(screenImagingMethods),
-                imagingMethodTermAccession='; '.join(
-                    screenImagingTermAccessions),
+                imagingMethod='; '.join(screenimg_str),
                 sampleType=screen['Screen Sample Type'],
                 # plateCount=plateCount,
                 plateCount=None,
