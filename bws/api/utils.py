@@ -2080,13 +2080,21 @@ class IDRUtils(object):
             screentype_zip = list(zip(screenTypes, screenTypeTermAccessions))
             screentype_str = ['%s (%s)' % (i[0], i[1]) for i in screentype_zip]
 
+            # Get screen technology types and combine them with their term accessions
+            screenTechTypes = [
+                screenTechType for screenTechType in screen['Screen Technology Type'].split("\t")]
+            screenTechTypeTermAccessions = [
+                screenTechTypeTermAccession for screenTechTypeTermAccession in screen['Screen Technology Type Term Accession'].split("\t")]
+
+            screentechtype_zip = list(zip(screenTechTypes, screenTechTypeTermAccessions))
+            screentechtype_str = ['%s (%s)' % (i[0], i[1]) for i in screentechtype_zip]
 
             ScreenEntityEntry = updateScreenEntity(
                 dbId=screenId,
                 name=screenName,
                 description=screen['Screen Description'],
                 type='; '.join(screentype_str),
-                technologyType=screen['Screen Technology Type'],
+                technologyType='; '.join(screentechtype_str),
                 technologyTypeTermAccession=screen['Screen Technology Type Term Accession'],
                 imagingMethod='; '.join(screenimg_str),
                 sampleType=screen['Screen Sample Type'],
