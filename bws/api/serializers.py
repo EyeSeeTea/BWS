@@ -342,13 +342,16 @@ class LigandEntitySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = LigandEntity
-        fields = ['imageData',
-                  'dbId', 'ligandType', 'name', 'formula', 'formula_weight',
+        fields = [
+                  'IUPACInChIkey',
+                  'dbId', 'ligandType', 'name',
+                  'formula', 'formula_weight',
                   'details', 'altNames',
                   'imageLink', 'externalLink',
                   'pubChemCompoundId', 'systematicNames',
-                  'IUPACInChI', 'IUPACInChIkey',
+                  'IUPACInChI', 
                   'isomericSMILES', 'canonicalSMILES',
+                  'imageData',
                   ]
         depth = 2
 
@@ -360,12 +363,13 @@ class LigandEntitySerializer(serializers.ModelSerializer):
 
         # Given the wells associated to a specific ligand, get the tuple of all ids associated to each well (FeatureType, AssayEntity, ScreenEntity and PlateEntity ids)
         featureTypeId_list2, assayEntityId_list2, screenEntityId_list2, plateEntityId_list2, wellEntityId_list2 = [], [], [], [], []
-        for well in obj.well.all():
-            featureTypeId_list2.append(well.plate.screen.assay.featureType_id)
-            assayEntityId_list2.append(well.plate.screen.assay_id)
-            screenEntityId_list2.append(well.plate.screen_id)
-            plateEntityId_list2.append(well.plate_id)
-            wellEntityId_list2.append(well.dbId)
+        if hasattr(obj, 'well'):
+            for well in obj.well.all():
+                featureTypeId_list2.append(well.plate.screen.assay.featureType_id)
+                assayEntityId_list2.append(well.plate.screen.assay_id)
+                screenEntityId_list2.append(well.plate.screen_id)
+                plateEntityId_list2.append(well.plate_id)
+                wellEntityId_list2.append(well.dbId)
 
         zip_list = list(zip(
             featureTypeId_list2,
@@ -405,7 +409,8 @@ class PdbLigandSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = PdbToLigand
-        fields = '__all__'
+        # fields = '__all__'
+        fields = ['pdbId', 'ligand', 'quantity']
         depth = 1
 
 
@@ -421,7 +426,6 @@ class EntityExportSerializer(serializers.ModelSerializer):
                   'name',
                   'details',
                   'altNames',
-                  'organism',
                   'isAntibody',
                   'isNanobody',
                   'isSybody',
