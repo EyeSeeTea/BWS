@@ -38,7 +38,13 @@ urlpatterns = [
     # get a PDB Entry by pdb_id
     re_path(r'^pdbentry/(?P<pk>\d[a-zA-Z]\w{2})/$', views.PdbEntryViewSet.as_view({'get': 'retrieve'})),
     re_path(r'^pdbentry/(?P<pdb_id>\d[a-zA-Z]\w{2})/ligands/$', views.LigandsSectionViewSet.as_view({'get': 'list'})),
-    re_path(r'^pdbentry/(?P<pdb_id>\d[a-zA-Z]\w{2})/entities/$', views.EntitiesSectionViewSet.as_view({'get': 'list'})),    
+    re_path(r'^pdbentry/(?P<pdb_id>\d[a-zA-Z]\w{2})/entities/$', views.EntitiesSectionViewSet.as_view({'get': 'list'})),
+
+    # EM Validation annotations statistics
+    re_path(r'^emv/$', views.EmvDataView.as_view()),
+    re_path(r'^emv/(?P<db_id>(\d[a-zA-Z]\w{2}|[EMD]*[emd]*-\d{4,5}))/$', views.EmvDataByIDView.as_view()),
+    re_path(r'^emv/(?P<method>(stats|deepres|monores|blocres|mapq|fscq|daq))/$', views.EmvDataByMethodView.as_view()),
+    re_path(r'^emv/(?P<db_id>(\d[a-zA-Z]\w{2}|[EMD]*[emd]*-\d{4,5}))/(?P<method>(stats|deepres|monores|blocres|mapq|fscq|daq))/$', views.EmvDataByIdMethodView.as_view()),
 ]
 
 

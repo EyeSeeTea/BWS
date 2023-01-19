@@ -1,3 +1,4 @@
+import glob
 import re
 import json
 import logging
@@ -20,26 +21,32 @@ logger = logging.getLogger(__name__)
 REGEX_PDB_ID = re.compile('^\d\w{3}$')
 DEEP_RES_FNAME_TEMPLATE = "%(pdb_id)s.deepres.aa.pdb"
 MONORES_FNAME_TEMPLATE = "%(pdb_id)s.monores.aa.pdb"
+BLOCRES_FNAME_TEMPLATE = "%(pdb_id)s.blocres.aa.pdb"
 MAPQ_FNAME_TEMPLATE = "%(pdb_id)s.mapq.aa.pdb"
+DAQ_FNAME_TEMPLATE = "%(pdb_id)s.daq.aa.pdb"
 FSCQ_TEMPLATE = "%(pdb_id)s.fscq.aa.pdb"
 ANN_TYPES_DICT = {
     "localResolution": {
         "deepres": DEEP_RES_FNAME_TEMPLATE,
-        "monores": MONORES_FNAME_TEMPLATE
+        "monores": MONORES_FNAME_TEMPLATE,
+        "blocres": BLOCRES_FNAME_TEMPLATE
     },
     "modelQuality": {
         "mapq": MAPQ_FNAME_TEMPLATE,
-        "fscq": FSCQ_TEMPLATE
+        "fscq": FSCQ_TEMPLATE,
+        "daq": DAQ_FNAME_TEMPLATE
     }
 }
 ANN_TYPES_MIN_VAL = {
     "localResolution": {
         "deepres": 1.5,
-        "monores": 1.5
+        "monores": 1.5,
+        "blocres": 1.5
     },
     "modelQuality": {
         "mapq": -1,
-        "fscq": -3
+        "fscq": -3,
+        "daq": -1
     }
 }
 
@@ -442,3 +449,137 @@ class EntitiesSectionViewSet(viewsets.ReadOnlyModelViewSet):
         pdb_id = self.kwargs['pdb_id']
         queryset = ModelEntity.objects.filter(pdbentities__pdbId=pdb_id)
         return queryset
+
+
+def _getEmvDataFiles(path, pattern):
+    data_files = []
+    logger.debug("Reading data folder: %s", path)
+    try:
+        search_path = "%s/%s" % (path, pattern)
+        data_files = glob.glob(search_path, recursive=True)
+    except (Exception) as exc:
+        logger.exception(exc)
+    return data_files
+
+
+def _getJsonEMVEntry(file):
+    fname = os.path.basename(file)
+    fnameparts = fname.split("_")
+    emdb_id = fnameparts[0].upper()
+    pdb_id = fnameparts[1].upper() if '_stats' not in fname else ""
+    entryType = "EMV data" if '_stats' not in fname else "EMV Statistics"
+    return {
+        "EMVentry": {
+            "emdb": emdb_id,
+            "pdb": pdb_id,
+            "type": entryType,
+            "filename": fname,
+        }
+    }
+
+
+class EmvDataView(APIView):
+
+    def get(self, request, **kwargs):
+        """
+        Get a list of all EMV entries
+        """
+        data_files = []
+        entries = []
+        data_files = _getEmvDataFiles(
+            path="%s/%s" % (EMDB_DATA_DIR, 'emd-*'), pattern='*emv_*.json')
+        for file in data_files:
+            entries.append(_getJsonEMVEntry(file))
+        if entries:
+            return Response(entries)
+        else:
+            return HttpResponseNotFound()
+
+
+class EmvDataByMethodView(APIView):
+
+    def get(self, request, **kwargs):
+        """
+        Get a list of all EMV entries by method
+        method : stats | deepres | monores | blocres | mapq | fscq | daq
+        """
+        data_files = []
+        entries = []
+        if 'method' in self.kwargs:
+            method = self.kwargs['method']
+        data_files = _getEmvDataFiles(
+            path="%s/%s" % (EMDB_DATA_DIR, 'emd-*'), pattern="*emv_*%s.json" % (method,))
+        for file in data_files:
+            entries.append(_getJsonEMVEntry(file))
+        if entries:
+            return Response(entries)
+        else:
+            content = {
+                "request": "EMV: %s" % (method),
+                "detail": "Entry not found"
+            }
+            return Response(content, status=status.HTTP_404_NOT_FOUND)
+
+
+class EmvDataByIDView(APIView):
+
+    def get(self, request, **kwargs):
+        """
+        Get a list of all EMV entries by DB ID
+        db_id : PDB | EMDB
+        """
+        data_files = []
+        entries = []
+        if 'db_id' in self.kwargs:
+            db_id = self.kwargs['db_id'].lower()
+            if db_id.startswith('emd-'):
+                path = "%s/%s" % (EMDB_DATA_DIR, db_id)
+                pattern = "%s*_emv_*.json" % (db_id,)
+            else:
+                path = "%s/%s" % (EMDB_DATA_DIR, 'emd-*')
+                pattern = "*%s_emv_*.json" % (db_id,)
+        data_files = _getEmvDataFiles(path, pattern)
+        for file in data_files:
+            entries.append(_getJsonEMVEntry(file))
+        if entries:
+            return Response(entries)
+        else:
+            content = {
+                "request": "EMV: %s" % (db_id),
+                "detail": "Entry not found"
+            }
+            return Response(content, status=status.HTTP_404_NOT_FOUND)
+
+
+class EmvDataByIdMethodView(APIView):
+
+    def get(self, request, **kwargs):
+        """
+        Get a JSON file with EMV data for an entry by DB ID and method
+        db_id : PDB | EMDB
+        method : stats | deepres | monores | blocres | mapq | fscq | daq
+        """
+        data_files = []
+        if 'method' in self.kwargs:
+            method = self.kwargs['method']
+        if 'db_id' in self.kwargs:
+            db_id = self.kwargs['db_id'].lower()
+            if db_id.startswith('emd-'):
+                path = "%s/%s" % (EMDB_DATA_DIR, db_id)
+                pattern = "*%s.json" % (method,)
+            else:
+                path = "%s/%s" % (EMDB_DATA_DIR, 'emd-*')
+                pattern = "*%s_emv_%s.json" % (db_id, method,)
+        data_files = _getEmvDataFiles(path, pattern)
+        # there should be only one file for entry/method
+        if len(data_files) != 1:
+            content = {
+                "request": "EMV: %s/%s" % (db_id, method),
+                "detail": "Entry not found"
+            }
+            return Response(content, status=status.HTTP_404_NOT_FOUND)
+        fileName = data_files[0]
+        # return JSON file
+        with open(fileName, 'r') as jfile:
+            resp = json.load(jfile)
+        return Response(resp)
