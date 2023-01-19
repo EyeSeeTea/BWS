@@ -174,10 +174,10 @@ LOGGING = {
 }
 
 REST_FRAMEWORK = {
-    'DEFAULT_VERSION': '0.1.7-DEV',
+    'DEFAULT_VERSION': '0.2.0-PROD',
     # use this line to produce JSON only responses, globaly
-    # 'DEFAULT_RENDERER_CLASSES': ['rest_framework.renderers.JSONRenderer',],
-    'DEFAULT_RENDERER_CLASSES': ['rest_framework.renderers.JSONRenderer', 'rest_framework.renderers.BrowsableAPIRenderer',],
+    'DEFAULT_RENDERER_CLASSES': ['rest_framework.renderers.JSONRenderer',],
+    # 'DEFAULT_RENDERER_CLASSES': ['rest_framework.renderers.JSONRenderer', 'rest_framework.renderers.BrowsableAPIRenderer',],
     'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
     'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.coreapi.AutoSchema',
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
