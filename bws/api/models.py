@@ -10,6 +10,7 @@ FILE_TYPES = ["PDB_ANN_FROM_MAP", "ISOLDE",
 
 EMDB_URL = "https://www.ebi.ac.uk/emdb"
 BIONOTES_URL = "https://3dbionotes.cnb.csic.es"
+PUBCHE_URL="https://pubchem.ncbi.nlm.nih.gov"
 
 SINGLE_PARTICLE = "Single Particle"
 HELICAL = "Shelical"
@@ -236,24 +237,31 @@ class PdbToLigand(models.Model):
 
 
 class LigandEntity(models.Model):
+    IUPACInChIkey = models.CharField(max_length=27, primary_key=True)
     dbId = models.CharField(max_length=20, null=True, blank=True)
+    pubChemCompoundId = models.CharField(max_length=250,  null=True, blank=True)
     ligandType = models.CharField(max_length=25, null=True, blank=True)
-    name = models.CharField(max_length=200)
-    formula = models.CharField(max_length=200, null=True, blank=True)
+    name = models.CharField(max_length=255, null=True, blank=True)
+    formula = models.CharField(max_length=255, null=True, blank=True)
     formula_weight = models.FloatField(null=True, blank=True)
-    details = models.CharField(max_length=200, null=True, blank=True)
+    details = models.CharField(max_length=2000, null=True, blank=True)
     altNames = models.CharField(max_length=5000, null=True, blank=True)
-    imageLink = models.CharField(max_length=200, null=True, blank=True)
-    externalLink = models.CharField(max_length=200, null=True, blank=True)
-    pubChemCompoundId = models.CharField(max_length=200, blank=True, null=True)
-    systematicNames = models.CharField(max_length=200, null=True, blank=True)
-    IUPACInChI = models.CharField(max_length=500, null=True, blank=True)
-    IUPACInChIkey = models.CharField(max_length=500, null=True, blank=True)
-    isomericSMILES = models.CharField(max_length=500, null=True, blank=True)
-    canonicalSMILES = models.CharField(max_length=500, null=True, blank=True)
+    systematicNames = models.CharField(max_length=2000, null=True, blank=True)
+    IUPACInChI = models.CharField(max_length=2000, null=True, blank=True)
+    isomericSMILES = models.CharField(max_length=2000, null=True, blank=True)
+    canonicalSMILES = models.CharField(max_length=2000, null=True, blank=True)
+
+    def imageLink(self):
+        # https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/inchikey/RZJQGNCSTQAWON-UHFFFAOYSA-N/PNG
+        return '%s/rest/pug/compound/inchikey/%s/PNG' % (PUBCHE_URL, self.IUPACInChIkey,)
+
+    def externalLink(self):
+        # https://pubchem.ncbi.nlm.nih.gov/compound/63253327
+        return '%s/compound/%s' % (PUBCHE_URL, self.pubChemCompoundId,)
 
     def __str__(self):
-        return '%s' % (self.dbId if self.dbId else (self.pubChemCompoundId if self.pubChemCompoundId else self.name))
+        return '%s' % (self.IUPACInChIkey,)
+
 
 class RefinedModelSource(models.Model):
     # name of the data source, e.g. 'PDB-REDO', 'CSTF (Coronavirus Structural TaskForce)', etc
@@ -433,8 +441,9 @@ class FeatureEntity(models.Model):
     pdbentry = models.ForeignKey(PdbEntry,
                                  related_name='%(class)s_features', null=True, blank=True, on_delete=models.CASCADE)
     externalLink = models.URLField(max_length=200, default='', blank=True)
+
     class Meta:
-            abstract = True
+        abstract = True
 
 
 class FeatureModelEntity(FeatureEntity):
@@ -571,3 +580,29 @@ class StructureTopic(models.Model):
 
     def __str__(self):
         return '%s: %s(%s)' % (self.topic.name, self.structure.pdbId if self.structure.pdbId else '', self.structure.emdbId if self.structure.emdbId else '')
+
+
+class Analyses(models.Model):
+    '''
+    Additional Analyses on HCS Assay results to describe a ligand effects.
+    '''
+    name = models.CharField(max_length=255, blank=False,
+                            null=False, default='')
+    # TODO: cambiar a null=False, blank=False
+    value = models.FloatField(blank=True, null=True)
+    description = models.CharField(
+        max_length=255, blank=True, null=True, default='')
+    units = models.CharField(max_length=255, blank=True, null=True, default='')
+    unitsTermAccession = models.CharField(
+        max_length=255, blank=False, null=True, default='')
+    pvalue = models.FloatField(null=True, blank=True)
+    dataComment = models.CharField(
+        max_length=255, blank=True, null=True, default='')
+
+    ligand = models.ForeignKey(LigandEntity,
+                               related_name='%(class)s_analyses', on_delete=models.CASCADE)
+    assay = models.ForeignKey(AssayEntity,
+                              related_name='%(class)s_analyses', on_delete=models.CASCADE)
+
+    def __str__(self):
+        return '%s (%s)' % (self.name, self.ligand)

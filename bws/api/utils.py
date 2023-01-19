@@ -1,4 +1,5 @@
 from cmath import nan
+import glob
 import json
 import logging
 import os
@@ -35,6 +36,7 @@ REGEX_MAP2MODELQUALITY_FILE = re.compile('^\d\w{3}\.(mapq|fscq)\.pdb$')
 REGEX_IDR_ID = re.compile('.*(idr\d{4})-.*-.*')
 REGEX_TAXON_REF = re.compile('(ncbitaxon).*')
 REGEX_SCREEN_NAME = re.compile('.*\/(screen)(.*)')
+PUBCHEM_WS_URL = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/'
 
 
 def findGeneric(pattern, dirToLook=THORN_DATA_DIR):
@@ -51,7 +53,6 @@ def findGeneric(pattern, dirToLook=THORN_DATA_DIR):
             except KeyError:
                 data[pdbId] = [candidate]
     return data
-
 
 
 class PdbEntryAnnFromMapsUtils(object):
@@ -134,6 +135,30 @@ def save_json(data,  path, filename, createIfNotExist=True):
     return f.name
 
 
+def save2file(data, path, filename, createIfNotExist=True, append=True):
+    """
+    Save data into a text file
+    if data is a list of items, will be concatenated in a single string
+    file will be created if not exists, by default
+    data will be appended, by default
+    """
+    logger.debug("- save data: %s %s", path, filename)
+    if path and createIfNotExist:
+        os.makedirs(path, exist_ok=True)
+    full_path = os.path.join(path, filename)
+    strData = ''
+    if isinstance(data, list):
+        strData = ' '.join([str(item) for item in data if item])
+        strData += '\n'
+    if append:
+        with open(full_path, 'a') as f:
+            f.write(strData)
+    else:
+        with open(full_path, 'w') as f:
+            f.write(strData)
+    return f.name
+
+
 def getGitHubFileList(url, ext=''):
     """
     Get the list of files from a GitHub repository
@@ -206,11 +231,11 @@ def updateRefinedModel(emdbObj, pdbObj, sourceObj, methodObj, filename, external
                 'details': details,
             })
         if created:
-            logger.debug('Created new: %s', obj)
-            print('Created new', obj)
+            logger.debug('Created new %s: %s', RefinedModel.__name__, obj)
+            print('Created new', RefinedModel.__name__, obj)
         else:
-            logger.debug('Updated: %s', obj)
-            print('Updated', obj)
+            logger.debug('Updated%s: %s', RefinedModel.__name__, obj)
+            print('Updated', RefinedModel.__name__, obj)
     except Exception as exc:
         logger.exception(exc)
         print(exc, os.strerror)
@@ -411,8 +436,8 @@ def update_RefinedModel(refmodel):
                 'details': details if details else '',
             })
         if created:
-            logger.debug('Created new: %s', obj)
-            print('Created new', obj)
+            logger.debug('Created new %s: %s', RefinedModel.__name__, obj)
+            print('Created new', RefinedModel.__name__, obj)
         else:
             logger.debug('Updated: %s', obj)
             print('Updated', obj)
@@ -503,11 +528,11 @@ def updateTopic(name, description=''):
             }
         )
         if created:
-            logger.debug('Created new: %s', obj)
-            print('Created new', obj)
+            logger.debug('Created new %s: %s', Topic.__name__, obj)
+            print('Created new', Topic.__name__, obj)
         else:
-            logger.debug('Updated: %s', obj)
-            print('Updated', obj)
+            logger.debug('Updated %s: %s', Topic.__name__, obj)
+            print('Updated', Topic.__name__, obj)
     except Exception as exc:
         logger.exception(exc)
         print(exc, os.strerror)
@@ -524,11 +549,11 @@ def updateStructureTopic(structure, topic):
             }
         )
         if created:
-            logger.debug('Created new: %s', obj)
-            print('Created new', obj)
+            logger.debug('Created new %s: %s', StructureTopic.__name__, obj)
+            print('Created new', StructureTopic.__name__, obj)
         else:
-            logger.debug('Updated: %s', obj)
-            print('Updated', obj)
+            logger.debug('Updated %s: %s', StructureTopic.__name__, obj)
+            print('Updated', StructureTopic.__name__, obj)
     except Exception as exc:
         logger.exception(exc)
         print(exc, os.strerror)
@@ -549,11 +574,12 @@ def updateRefinedModelSource(name, description='', url=''):
             }
         )
         if created:
-            logger.debug('Created new: %s', obj)
-            print('Created new', obj)
+            logger.debug('Created new %s: %s',
+                         RefinedModelSource.__name__, obj)
+            print('Created new', RefinedModelSource.__name__, obj)
         else:
-            logger.debug('Updated: %s', obj)
-            print('Updated', obj)
+            logger.debug('Updated %s: %s', RefinedModelSource.__name__, obj)
+            print('Updated', RefinedModelSource.__name__, obj)
     except Exception as exc:
         logger.exception(exc)
         print(exc, os.strerror)
@@ -574,11 +600,12 @@ def updateRefinedModelMethod(source, name, description='', url=''):
                 'externalLink': url,
             })
         if created:
-            logger.debug('Created new: %s', obj)
-            print('Created new', obj)
+            logger.debug('Created new %s: %s',
+                         RefinedModelMethod.__name__, obj)
+            print('Created new', RefinedModelMethod.__name__, obj)
         else:
-            logger.debug('Updated: %s', obj)
-            print('Updated', obj)
+            logger.debug('Updated %s: %s', RefinedModelMethod.__name__, obj)
+            print('Updated', RefinedModelMethod.__name__, obj)
     except Exception as exc:
         logger.exception(exc)
         print(exc, os.strerror)
@@ -598,13 +625,13 @@ def getStructuresFromPath(path):
         # Get files from path
         filenames = getCifFiles(path)
 
-        for filename in filenames:
+        numFiles = len(filenames)
+        for idx, filename in enumerate(filenames):
             entryId = filename.replace('.cif', '')
-
             # Read mmCIF to dictionary
             mmCifDict = fileCif2Json(path, filename)
+            print("->>> Entry:", idx, "/", numFiles)
             obj = readmmCifFile(mmCifDict)
-            # break
 
     except Exception as exc:
         logger.exception(exc)
@@ -660,8 +687,8 @@ def readmmCifFile(mmCifDict):
     entityList = getPdbToEntityListmmCifFile(mmCifDict, pdbObj)
 
     # get list of branched Ligands
-    branchedligandList = getPdbToLigandListmmCifFile(
-        'branched', mmCifDict, pdbObj)
+    # branchedligandList = getPdbToLigandListmmCifFile(
+    #     'branched', mmCifDict, pdbObj)
 
     # get list of non-polymers Ligands
     nonPolymerligandList = getPdbToLigandListmmCifFile(
@@ -701,11 +728,11 @@ def updatePdbentry(entryId, title, status, releaseDate, method, keywords):
                 'keywords': keywords,
             })
         if created:
-            logger.debug('Created new: %s', obj)
-            print('Created new', obj)
+            logger.debug('Created new %s: %s', PdbEntry.__name__, obj)
+            print('Created new', PdbEntry.__name__, obj)
         else:
-            logger.debug('Updated: %s', obj)
-            print('Updated', obj)
+            logger.debug('Updated %s: %s', PdbEntry.__name__, obj)
+            print('Updated', PdbEntry.__name__, obj)
     except Exception as exc:
         logger.exception(exc)
         print(exc, os.strerror)
@@ -739,11 +766,11 @@ def updatePublicationAuthor(name, orcid, ordinal, publication):
                 'ordinal': ordinal,
             })
         if created:
-            logger.debug('Created new: %s', obj)
-            print('Created new', obj)
+            logger.debug('Created new %s: %s', PublicationAuthor.__name__, obj)
+            print('Created new', PublicationAuthor.__name__, obj)
         else:
-            logger.debug('Updated: %s', obj)
-            print('Updated', obj)
+            logger.debug('Updated %s: %s', PublicationAuthor.__name__, obj)
+            print('Updated', PublicationAuthor.__name__, obj)
     except Exception as exc:
         logger.exception(exc)
         print(exc, os.strerror)
@@ -769,11 +796,11 @@ def updatePublication(title, journal, issn, issue, volume, firstPage, lastPage, 
                 'PMCId': PMCId,
             })
         if created:
-            logger.debug('Created new: %s', obj)
-            print('Created new', obj)
+            logger.debug('Created new %s: %s', Publication.__name__, obj)
+            print('Created new', Publication.__name__, obj)
         else:
-            logger.debug('Updated: %s', obj)
-            print('Updated', obj)
+            logger.debug('Updated %s: %s', Publication.__name__, obj)
+            print('Updated', Publication.__name__, obj)
     except Exception as exc:
         logger.exception(exc)
         print(exc, os.strerror)
@@ -845,11 +872,11 @@ def updateEmdbEntry(emdbId, title, status, emMethod, resolution):
                 'resolution': resolution,
             })
         if created:
-            logger.debug('Created new: %s', obj)
-            print('Created new', obj)
+            logger.debug('Created new %s: %s', EmdbEntry.__name__, obj)
+            print('Created new', EmdbEntry.__name__, obj)
         else:
-            logger.debug('Updated: %s', obj)
-            print('Updated', obj)
+            logger.debug('Updated %s: %s', EmdbEntry.__name__, obj)
+            print('Updated', EmdbEntry.__name__, obj)
     except Exception as exc:
         logger.exception(exc)
         print(exc, os.strerror)
@@ -878,11 +905,11 @@ def updateHybridModel(emdbObj, pdbObj):
             pdbId=pdbObj,
         )
         if created:
-            logger.debug('Created new: %s', obj)
-            print('Created new', obj)
+            logger.debug('Created new %s: %s', HybridModel.__name__, obj)
+            print('Created new', HybridModel.__name__, obj)
         else:
-            logger.debug('Updated: %s', obj)
-            print('Updated', obj)
+            logger.debug('Updated %s: %s', HybridModel.__name__, obj)
+            print('Updated', HybridModel.__name__, obj)
     except Exception as exc:
         logger.exception(exc)
         print(exc, os.strerror)
@@ -899,11 +926,11 @@ def updateUniProtEntry(db_accession, db_code):
                 'externalLink': URL_UNIPROT + db_accession,
             })
         if created:
-            logger.debug('Created new: %s', obj)
-            print('Created new', obj)
+            logger.debug(' %s: %s', UniProtEntry.__name__, obj)
+            print('Created new', UniProtEntry.__name__, obj)
         else:
-            logger.debug('Updated: %s', obj)
-            print('Updated', obj)
+            logger.debug('Updated %s: %s', UniProtEntry.__name__, obj)
+            print('Updated', UniProtEntry.__name__, obj)
     except Exception as exc:
         logger.exception(exc)
         print(exc, os.strerror)
@@ -921,11 +948,11 @@ def updateOrganism(taxonomy_id, scientific_name, common_name):
                 'externalLink': URL_NCBI_TAXONOMY + taxonomy_id,
             })
         if created:
-            logger.debug('Created new: %s', obj)
-            print('Created new', obj)
+            logger.debug('Created new %s: %s', Organism.__name__, obj)
+            print('Created new', Organism.__name__, obj)
         else:
-            logger.debug('Updated: %s', obj)
-            print('Updated', obj)
+            logger.debug('Updated %s: %s', Organism.__name__, obj)
+            print('Updated', Organism.__name__, obj)
     except Exception as exc:
         logger.exception(exc)
         print(exc, os.strerror)
@@ -980,11 +1007,11 @@ def updateEntitymmCifFile(indx, mmCifDict, uniprotObj=None, organismObj=None):
                 'organism': organismObj,
             })
         if created:
-            logger.debug('Created new: %s', obj)
-            print('Created new', obj)
+            logger.debug('Created new %s: %s', ModelEntity.__name__, obj)
+            print('Created new', ModelEntity.__name__, obj)
         else:
-            logger.debug('Updated: %s', obj)
-            print('Updated', obj)
+            logger.debug('Updated %s: %s', ModelEntity.__name__, obj)
+            print('Updated', ModelEntity.__name__, obj)
     except Exception as exc:
         logger.exception(exc)
         print(exc, os.strerror)
@@ -1001,11 +1028,11 @@ def updatePdbToEntity(pdbObj, polymerObj, quantity=1):
                 'quantity': quantity,
             })
         if created:
-            logger.debug('Created new: %s', obj)
-            print('Created new', obj)
+            logger.debug('Created new %s: %s', PdbToEntity.__name__, obj)
+            print('Created new', PdbToEntity.__name__, obj)
         else:
-            logger.debug('Updated: %s', obj)
-            print('Updated', obj)
+            logger.debug('Updated %s: %s', PdbToEntity.__name__, obj)
+            print('Updated', PdbToEntity.__name__, obj)
     except Exception as exc:
         logger.exception(exc)
         print(exc, os.strerror)
@@ -1054,7 +1081,7 @@ def item_generator(json_input, lookup_key):
             yield from item_generator(item, lookup_key)
 
 
-def geDataFromPubChem(url, jKey, returnList=False):
+def getDataFromPubChem(url, jKey, returnList=False):
     value = ''
     jdata = ''
     try:
@@ -1070,6 +1097,38 @@ def geDataFromPubChem(url, jKey, returnList=False):
         logger.exception(exc)
         print('- >>>>',  exc, os.strerror)
     return value
+
+
+def updateLigandEntity(inChIKey, ligandId, ligandType, ligandName, formula, formula_weight, details,
+                       altNames, systematicNames, pubChemCompoundId, IUPACInChI, isomericSMILES, canonicalSMILES):
+    obj = None
+    try:
+        obj, created = LigandEntity.objects.update_or_create(
+            IUPACInChIkey=inChIKey,
+            defaults={
+                'dbId': ligandId if ligandId else '',
+                'pubChemCompoundId': pubChemCompoundId if pubChemCompoundId else '',
+                'ligandType': ligandType if ligandType else '',
+                'name': ligandName if ligandName else '',
+                'formula': formula if formula else '',
+                'formula_weight': formula_weight if formula_weight else '',
+                'details': details if details else '',
+                'altNames': altNames if altNames else '',
+                'systematicNames': systematicNames if systematicNames else '',
+                'IUPACInChI': IUPACInChI if IUPACInChI else '',
+                'isomericSMILES': isomericSMILES if isomericSMILES else '',
+                'canonicalSMILES': canonicalSMILES if canonicalSMILES else '',
+            })
+        if created:
+            logger.debug('Created new %s: %s', LigandEntity.__name__, obj)
+            print('Created new', LigandEntity.__name__, obj)
+        else:
+            logger.debug('Updated %s: %s', LigandEntity.__name__, obj)
+            print('Updated', LigandEntity.__name__, obj)
+    except Exception as exc:
+        logger.exception(exc)
+        print(exc, os.strerror)
+    return obj
 
 
 def updateLigandEntitymmCifFile(lType, indx, entityId, mmCifDict):
@@ -1117,52 +1176,54 @@ def updateLigandEntitymmCifFile(lType, indx, entityId, mmCifDict):
                 ligandName = desc
                 ligandId = ligand
 
-    # get data from PubChem
-    url_prefix = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/'
-    if ligandName:
-        cid = geDataFromPubChem(url=url_prefix + 'name/' + ligandName +
-                                '/cids/JSON', jKey='CID')
-        inChIKey = geDataFromPubChem(url=url_prefix +
-                                     'cid/' + cid +
-                                     '/property/InChIKey/json', jKey='InChIKey')
-        inChI = geDataFromPubChem(url=url_prefix + 'cid/' + cid +
-                                  '/property/InChI/json', jKey='InChI')
-        isomericSMILES = geDataFromPubChem(url=url_prefix + 'cid/' + cid +
-                                           '/property/isomericSMILES/json', jKey='IsomericSMILES')
-        canonicalSMILES = geDataFromPubChem(url=url_prefix + 'cid/' + cid +
-                                            '/property/CanonicalSMILES/json', jKey='CanonicalSMILES')
-        formula = geDataFromPubChem(url=url_prefix + 'cid/' + cid +
-                                    '/property/MolecularFormula/json', jKey='MolecularFormula')
-
-    obj = None
-    #  TODO: be aware dbId is not longer the primary key
-    try:
-        obj, created = LigandEntity.objects.update_or_create(
-            dbId=ligandId,
-            defaults={
-                'ligandType': ligandType if ligandType else '',
-                'name': ligandName if ligandName else '',
-                'formula': formula if formula else '',
-                'formula_weight': formula_weights[indx] if formula_weights[indx] else '',
-                'details': descriptions[indx] if descriptions[indx] else '',
-                'imageLink': "" if lType == 'branched' else URL_LIGAND_IMAGE_EBI + ligandId + "_400.svg",
-                'externalLink': "" if lType == 'branched' else URL_LIGAND_EBI + ligandId,
-                'pubChemCompoundId': cid if cid else '',
-                'IUPACInChIkey': inChIKey if inChIKey else '',
-                'IUPACInChI': inChI if inChI else '',
-                'isomericSMILES': isomericSMILES if isomericSMILES else '',
-                'canonicalSMILES': canonicalSMILES if canonicalSMILES else '',
-            })
-        if created:
-            logger.debug('Created new: %s', obj)
-            print('Created new', obj)
-        else:
-            logger.debug('Updated: %s', obj)
-            print('Updated', obj)
-    except Exception as exc:
-        logger.exception(exc)
-        print(exc, os.strerror)
+    obj = getLigandEntity(ligandId, ligandType, ligandName, None, formula_weights[indx], descriptions[indx], None,
+                          None, None, None, None, None, None)
     return obj, quantity[indx]
+
+
+def getPubChemData(inChIKey, ligandId, ligandName):
+    print('---> getPubChemData', inChIKey, ligandId, ligandName)
+    pubChemCompoundId = ''
+    if inChIKey:
+        print('----> searching by', inChIKey)
+        pubChemCompoundId = getDataFromPubChem(
+            url=PUBCHEM_WS_URL + 'inchikey/' + inChIKey + '/cids/JSON', jKey='CID')
+    if (not pubChemCompoundId) and ligandId:
+        print('----> searching by', ligandId)
+        pubChemCompoundId = getDataFromPubChem(
+            url=PUBCHEM_WS_URL + 'xref/RegistryID/' + ligandId + '/cids/JSON', jKey='CID')
+    if (not pubChemCompoundId) and ligandName:
+        # clean the compound name a bit
+        ligandName = ligandName.replace('(+/-)', ' ')
+        ligandName = ligandName.replace('?', ' ')
+        ligandName = ligandName.strip()
+        print('----> searching by', ligandName)
+        pubChemCompoundId = getDataFromPubChem(
+            url=PUBCHEM_WS_URL + 'name/' + ligandName + '/cids/JSON', jKey='CID')
+    if isinstance(pubChemCompoundId, list):
+        print("----> CID:", pubChemCompoundId)
+        pubChemCompoundId = pubChemCompoundId[0]
+
+    # if Compound PubChem ID can not be found
+    if not pubChemCompoundId:
+        return None, None, None, None, None, None, None
+
+    assert pubChemCompoundId
+    inChIKey = getDataFromPubChem(url=PUBCHEM_WS_URL +
+                                  'cid/' + pubChemCompoundId +
+                                  '/property/InChIKey/json', jKey='InChIKey')
+    inChI = getDataFromPubChem(url=PUBCHEM_WS_URL + 'cid/' + pubChemCompoundId +
+                               '/property/InChI/json', jKey='InChI')
+    isomericSMILES = getDataFromPubChem(url=PUBCHEM_WS_URL + 'cid/' + pubChemCompoundId +
+                                        '/property/isomericSMILES/json', jKey='IsomericSMILES')
+    canonicalSMILES = getDataFromPubChem(url=PUBCHEM_WS_URL + 'cid/' + pubChemCompoundId +
+                                         '/property/CanonicalSMILES/json', jKey='CanonicalSMILES')
+    formula = getDataFromPubChem(url=PUBCHEM_WS_URL + 'cid/' + pubChemCompoundId +
+                                 '/property/MolecularFormula/json', jKey='MolecularFormula')
+    formula_weight = getDataFromPubChem(url=PUBCHEM_WS_URL + 'cid/' + pubChemCompoundId +
+                                        '/property/MolecularWeight/json', jKey='MolecularWeight')
+
+    return pubChemCompoundId, inChIKey, inChI, isomericSMILES, canonicalSMILES, formula, formula_weight
 
 
 def updatePdbToLigand(pdbObj, ligandObj, quantity=1):
@@ -1175,11 +1236,11 @@ def updatePdbToLigand(pdbObj, ligandObj, quantity=1):
                 'quantity': quantity,
             })
         if created:
-            logger.debug('Created new: %s', obj)
-            print('Created new', obj)
+            logger.debug('Created new %s: %s', PdbToLigand.__name__, obj)
+            print('Created new', PdbToLigand.__name__, obj)
         else:
-            logger.debug('Updated: %s', obj)
-            print('Updated', obj)
+            logger.debug('Updated %s: %s', PdbToLigand.__name__, obj)
+            print('Updated', PdbToLigand.__name__, obj)
     except Exception as exc:
         logger.exception(exc)
         print(exc, os.strerror)
@@ -1266,11 +1327,11 @@ def updateAuthor(name, orcid):
             orcid=orcid,
         )
         if created:
-            logger.debug('Created new: %s', obj)
-            print('Created new', obj)
+            logger.debug('Created new %s: %s', Author.__name__, obj)
+            print('Created new', Author.__name__, obj)
         else:
-            logger.debug('Updated: %s', obj)
-            print('Updated', obj)
+            logger.debug('Updated %s: %s', Author.__name__, obj)
+            print('Updated', Author.__name__, obj)
     except Exception as exc:
         logger.exception(exc)
         print(exc, os.strerror)
@@ -1316,11 +1377,11 @@ def updateSampleEntity(name, exprSystem,
             domains=domains,
         )
         if created:
-            logger.debug('Created new: %s', obj)
-            print('Created new', obj)
+            logger.debug('Created new %s: %s', SampleEntity.__name__, obj)
+            print('Created new', SampleEntity.__name__, obj)
         else:
-            logger.debug('Updated: %s', obj)
-            print('Updated', obj)
+            logger.debug('Updated %s: %s', SampleEntity.__name__, obj)
+            print('Updated', SampleEntity.__name__, obj)
     except Exception as exc:
         logger.exception(exc)
         print(exc, os.strerror)
@@ -1369,11 +1430,11 @@ def updatePdbEntryDetails(mmCifDict, pdbObj):
             sample=sample,
         )
         if created:
-            logger.debug('Created new: %s', obj)
-            print('Created new', obj)
+            logger.debug('Created new %s: %s', PdbEntryDetails.__name__, obj)
+            print('Created new', PdbEntryDetails.__name__, obj)
         else:
-            logger.debug('Updated: %s', obj)
-            print('Updated', obj)
+            logger.debug('Updated %s: %s', PdbEntryDetails.__name__, obj)
+            print('Updated', PdbEntryDetails.__name__, obj)
     except Exception as exc:
         logger.exception(exc)
         print(exc, os.strerror)
@@ -1390,16 +1451,16 @@ def updateFeatureTypeForIDR(name, description, dataSource, externalLink):
     obj = None
     try:
         obj, created = FeatureType.objects.update_or_create(
-                name=name,
-                description=description,
-                dataSource=dataSource,
-                externalLink=externalLink)
+            name=name,
+            description=description,
+            dataSource=dataSource,
+            externalLink=externalLink)
         if created:
-            logger.debug('Created new: %s', obj)
-            print('Created new', obj)
+            logger.debug('Created new %s: %s', FeatureEntity.__name__, obj)
+            print('Created new', FeatureEntity.__name__, obj)
         else:
-            logger.debug('Updated: %s', obj)
-            print('Updated', obj)
+            logger.debug('Updated %s: %s', FeatureEntity.__name__, obj)
+            print('Updated', FeatureEntity.__name__, obj)
     except Exception as exc:
         logger.exception(exc)
         print(exc, os.strerror)
@@ -1421,8 +1482,8 @@ def getOrganism(taxonomy_id, scientific_name='', common_name=''):
                 'externalLink': URL_NCBI_TAXONOMY + taxonomy_id,
             })
         if created:
-            logger.debug('Created new: %s', obj)
-            print('Created new', obj)
+            logger.debug('Created new %s: %s', Organism.__name__, obj)
+            print('Created new', Organism.__name__, obj)
 
     except Exception as exc:
         logger.exception(exc)
@@ -1436,7 +1497,7 @@ def getAuthor(name, email='', address='', orcid='', role=''):
     """
     obj = None
 
-    if orcid != '': # When orcid is specified
+    if orcid != '':  # When orcid is specified
         try:
             obj, created = Author.objects.get_or_create(
                 orcid=orcid,
@@ -1448,14 +1509,14 @@ def getAuthor(name, email='', address='', orcid='', role=''):
                 }
             )
             if created:
-                logger.debug('Created new: %s', obj)
-                print('Created new', obj)
+                logger.debug('Created new %s: %s', Author.__name__, obj)
+                print('Created new', Author.__name__, obj)
 
         except Exception as exc:
             logger.exception(exc)
             print(exc, os.strerror)
 
-    else: # When orcid is not specified
+    else:  # When orcid is not specified
         try:
             obj, created = Author.objects.get_or_create(
                 name=name,
@@ -1467,14 +1528,15 @@ def getAuthor(name, email='', address='', orcid='', role=''):
                 }
             )
             if created:
-                logger.debug('Created new: %s', obj)
-                print('Created new', obj)
+                logger.debug('Created new %s: %s', Author.__name__, obj)
+                print('Created new', Author.__name__, obj)
 
         except Exception as exc:
             logger.exception(exc)
             print(exc, os.strerror)
 
     return obj
+
 
 def updateAuthorFromIDR(name, email='', address='', orcid='', role=''):
     """
@@ -1483,23 +1545,24 @@ def updateAuthorFromIDR(name, email='', address='', orcid='', role=''):
     obj = None
     try:
         obj, created = Author.objects.update_or_create(
-                name__contains=name,
-                defaults={
-                    'email': email,
-                    'address': address, 
-                    'orcid': orcid, 
-                    'role': role}
-                )
+            name__contains=name,
+            defaults={
+                'email': email,
+                'address': address,
+                'orcid': orcid,
+                'role': role}
+        )
         if created:
-            logger.debug('Created new: %s', obj)
-            print('Created new', obj)
+            logger.debug('Created new %s: %s', Author.__name__, obj)
+            print('Created new', Author.__name__, obj)
         else:
-            logger.debug('Updated: %s', obj)
-            print('Updated', obj)
+            logger.debug('Updated %s: %s', Author.__name__, obj)
+            print('Updated', Author.__name__, obj)
     except Exception as exc:
         logger.exception(exc)
         print(exc, os.strerror)
     return obj
+
 
 def updateAssayEntity(dbId, name, featureType, description, externalLink, details, assayType, assayTypeTermAccession, screenCount, BIAId, releaseDate, dataDoi):
     """
@@ -1512,7 +1575,7 @@ def updateAssayEntity(dbId, name, featureType, description, externalLink, detail
             dbId=dbId,
             defaults={
                 'name': name,
-                'featureType': featureType, 
+                'featureType': featureType,
                 'description': description,
                 'externalLink': externalLink,
                 'details': details,
@@ -1523,13 +1586,13 @@ def updateAssayEntity(dbId, name, featureType, description, externalLink, detail
                 'releaseDate': releaseDate,
                 'dataDoi': dataDoi
             }
-            )
+        )
         if created:
-            logger.debug('Created new: %s', obj)
-            print('Created new', obj)
+            logger.debug('Created new %s: %s', AssayEntity.__name__, obj)
+            print('Created new', AssayEntity.__name__, obj)
         else:
-            logger.debug('Updated: %s', obj)
-            print('Updated', obj)
+            logger.debug('Updated %s: %s', AssayEntity.__name__, obj)
+            print('Updated', AssayEntity.__name__, obj)
     except Exception as exc:
         logger.exception(exc)
         print(exc, os.strerror)
@@ -1559,13 +1622,13 @@ def updateScreenEntity(dbId, name, description, type, typeTermAccession, technol
                 'dataDoi': dataDoi,
                 'assay': assay,
             }
-            )
+        )
         if created:
-            logger.debug('Created new: %s', obj)
-            print('Created new', obj)
+            logger.debug(' %s: %s', ScreenEntity.__name__, obj)
+            print('Created new', ScreenEntity.__name__, obj)
         else:
-            logger.debug('Updated: %s', obj)
-            print('Updated', obj)
+            logger.debug('Updated %s: %s', ScreenEntity.__name__, obj)
+            print('Updated', ScreenEntity.__name__, obj)
     except Exception as exc:
         logger.exception(exc)
         print(exc, os.strerror)
@@ -1602,31 +1665,32 @@ def getScreenId(session, key, value, screenDir):
         if screenDir in s['name']:
             return s['id']
 
+
 def getScreenDataframe(session, screenId):
     '''
     Get screen dataframe including plate, ligand, and well data from OMERO webgateway
     '''
-    
+
     # Set url variables
     qs = {'screenId': screenId}
     url = URL_SCREEN_TABLE.format(**qs)
-            
+
     # Create a dataframe from "data" key in json output from url
     jsonData = session.get(url).json()
     columns = jsonData['data']['columns']
     data = jsonData['data']['rows']
-    df  = pd.DataFrame(data, columns = columns).convert_dtypes()
+    df = pd.DataFrame(data, columns=columns).convert_dtypes()
 
     # Get column names that could harbor float values (i.e. micromolecular concentration and percentage of inhibition)
     mc_colName = getColNameByKW(df.columns, 'micromolar', 'concentration')
     pi_colName = getColNameByKW(df.columns, 'percentage', 'inhibition')
 
-    # Replace commans ',' with dots '.' to avoid string to float conversion issues 
+    # Replace commans ',' with dots '.' to avoid string to float conversion issues
     df[pi_colName] = df[pi_colName].str.replace(',', '.')
-    
+
     if mc_colName != None:
         df[mc_colName] = df[mc_colName].str.replace(',', '.')
-    
+
     return df
 
 
@@ -1643,10 +1707,14 @@ def updatePlateEntity(dbId, name, screen):
                 'name': name,
                 'screen': screen
             }
-            )
+        )
         if created:
-            logger.debug('Created new: %s', obj)
-            print('Created new', obj)
+            logger.debug('Created new %s: %s', PlateEntity.__name__, obj)
+            print('Created new', PlateEntity.__name__, obj)
+        else:
+            logger.debug('Updated %s: %s', PlateEntity.__name__, obj)
+            print('Updated', PlateEntity.__name__, obj)
+
     except Exception as exc:
         logger.exception(exc)
         print(exc, os.strerror)
@@ -1675,19 +1743,19 @@ def updateWellEntity(dbId, name, description, ligand, plate, externalLink, image
                 'controlType': controlType,
                 'qualityControl': qualityControl,
                 'micromolarConcentration': micromolarConcentration,
-                'percentageInhibition': percentageInhibition, 
-                'hitOver75Activity': hitOver75Activity, 
+                'percentageInhibition': percentageInhibition,
+                'hitOver75Activity': hitOver75Activity,
                 'numberCells': numberCells,
                 'phenotypeAnnotationLevel': phenotypeAnnotationLevel,
                 'channels': channels
             }
-            )
+        )
         if created:
-            logger.debug('Created new: %s', obj)
-            print('Created new', obj)
+            logger.debug('Created new %s: %s', WellEntity.__name__, obj)
+            print('Created new', WellEntity.__name__, obj)
         else:
-            logger.debug('Updated: %s', obj)
-            print('Updated', obj)
+            logger.debug('Updated %s: %s', WellEntity.__name__, obj)
+            print('Updated', WellEntity.__name__, obj)
     except Exception as exc:
         logger.exception(exc)
         print(exc, os.strerror)
@@ -1710,139 +1778,85 @@ def getImageIdsFromWellId(session, wellId):
         imageIds.append(wellSample['Image']['@id'])
 
     return imageIds
-        
+
 
 def getColNameByKW(colNames, keyword1, keyword2):
     '''
     Get the column name from a list of column names that match with 2 given keywords
     '''
 
-    REGEX_KEYWORD = '(?=.*{keyword1})(?=.*{keyword2}).*$'.format(**{'keyword1': keyword1, 'keyword2': keyword2})
+    REGEX_KEYWORD = '(?=.*{keyword1})(?=.*{keyword2}).*$'.format(**
+                                                                 {'keyword1': keyword1, 'keyword2': keyword2})
 
     for colName in colNames:
         if re.match(REGEX_KEYWORD, colName.lower()):
             return colName
 
 
-
-def getLigandEntity(dbId, ligandType, name, formula, formula_weight, details, altNames, imageLink, externalLink, pubChemCompoundId, systematicNames, IUPACInChI, IUPACInChIkey, isomericSMILES, canonicalSMILES):
+def getLigandEntity(dbId, ligandType, name, formula, formula_weight, details, altNames,
+                    pubChemCompoundId, systematicNames, IUPACInChI, IUPACInChIkey, isomericSMILES, canonicalSMILES):
     """
     Get LigandEntity entry given name OR pubChemCompoundId. Create it in case it does not exist
     """
 
     obj = None
+    try:
+        # first look if the compound is already in the DB
+        obj = LigandEntity.objects.get(pk=IUPACInChIkey)
+        print("Found Compound", obj)
+    except LigandEntity.DoesNotExist:
+        # get data from PubChem by ligandId or ligandName
+        pubChemCompoundId, IUPACInChIkey, IUPACInChI, isomericSMILES, canonicalSMILES, formula, formula_weight = getPubChemData(
+            IUPACInChIkey, dbId, name)
+        if not IUPACInChIkey:
+            print('---> NOT COMPUOUND FOUND:', dbId, name, pubChemCompoundId, IUPACInChIkey,
+                  IUPACInChI, isomericSMILES, canonicalSMILES, formula, formula_weight)
+            save2file(data=[dbId, name, pubChemCompoundId, IUPACInChIkey, IUPACInChI,
+                      isomericSMILES, canonicalSMILES, formula, formula_weight],
+                      path=os.path.join(LOCAL_DATA_DIR, 'IDR'), filename='ligands_not_found.txt')
+            return None
+        assert(IUPACInChIkey)
+        obj = updateLigandEntity(IUPACInChIkey, dbId, ligandType, name, formula,
+                                 formula_weight, None, altNames, systematicNames, pubChemCompoundId, IUPACInChI, isomericSMILES, canonicalSMILES)
+    return obj
 
-    # Get LigandEntity using pubChemCompoundId (for those cases in which name is an empty value)
-    if name == '':
-        try:
-            obj, created = LigandEntity.objects.get_or_create(
-                    pubChemCompoundId=pubChemCompoundId,
-                    defaults={
-                        'name': name, 
-                        'dbId': dbId,
-                        'ligandType': ligandType,
-                        'formula': formula,
-                        'formula_weight': formula_weight,
-                        'details': details,
-                        'altNames': altNames,
-                        'imageLink': imageLink,
-                        'externalLink': externalLink,
-                        'systematicNames': systematicNames,
-                        'IUPACInChI': IUPACInChI,
-                        'IUPACInChIkey': IUPACInChIkey,
-                        'isomericSMILES':isomericSMILES,
-                        'canonicalSMILES': canonicalSMILES,
-                        }
-                    )
-            if created:
-                logger.debug('Created new: %s', obj)
-                print('Created new', obj)
-            else:
-                logger.debug('Updated: %s', obj)
-                print('Updated', obj)
-        except Exception as exc:
-            logger.exception(exc)
-            print(exc, os.strerror)
-        return obj
 
-    # Get LigandEntity using name (for those cases in which pubChemCompoundId is an empty value)
-    elif pubChemCompoundId == '':
-        try:
-            obj, created = LigandEntity.objects.get_or_create(
-                    name=name,
-                    defaults={
-                        'pubChemCompoundId': pubChemCompoundId, 
-                        'dbId': dbId,
-                        'ligandType': ligandType,
-                        'formula': formula,
-                        'formula_weight': formula_weight,
-                        'details': details,
-                        'altNames': altNames,
-                        'imageLink': imageLink,
-                        'externalLink': externalLink,
-                        'systematicNames': systematicNames,
-                        'IUPACInChI': IUPACInChI,
-                        'IUPACInChIkey': IUPACInChIkey,
-                        'isomericSMILES':isomericSMILES,
-                        'canonicalSMILES': canonicalSMILES,
-                        }
-                    )
-            if created:
-                logger.debug('Created new: %s', obj)
-                print('Created new', obj)
-            else:
-                logger.debug('Updated: %s', obj)
-                print('Updated', obj)
-        except Exception as exc:
-            logger.exception(exc)
-            print(exc, os.strerror)
-        return obj
+def getAnalyses(name, value, description, units, unitsTermAccession, pvalue, dataComment, ligand, assay):
+    """
+    Get Analyses entry or create in case it does not exist
+    """
 
-    # Get LigandEntity using name or pubChemCompoundId (for those cases in which name and pubChemCompoundId are not empty values)
-    else:
-        try:
-            obj, created = LigandEntity.objects.filter(
-                Q(name=name) | Q(pubChemCompoundId=pubChemCompoundId) # OR operator using Q() objects
-                ).get_or_create(
-                    defaults={
-                        'name': name, 
-                        'pubChemCompoundId': pubChemCompoundId, 
-                        'dbId': dbId,
-                        'ligandType': ligandType,
-                        'formula': formula,
-                        'formula_weight': formula_weight,
-                        'details': details,
-                        'altNames': altNames,
-                        'imageLink': imageLink,
-                        'externalLink': externalLink,
-                        'systematicNames': systematicNames,
-                        'IUPACInChI': IUPACInChI,
-                        'IUPACInChIkey': IUPACInChIkey,
-                        'isomericSMILES':isomericSMILES,
-                        'canonicalSMILES': canonicalSMILES,
-                        }
-                    )
-            if created:
-                logger.debug('Created new: %s', obj)
-                print('Created new', obj)
-            else:
-                logger.debug('Updated: %s', obj)
-                print('Updated', obj)
-        except Exception as exc:
-            logger.exception(exc)
-            print(exc, os.strerror)
-        return obj
+    obj = None
+    try:
+        obj, created = Analyses.objects.get_or_create(
+            name=name,
+            value=value,
+            description=description,
+            units=units,
+            unitsTermAccession=unitsTermAccession,
+            pvalue=pvalue,
+            dataComment=dataComment,
+            ligand=ligand,
+            assay=assay,
+        )
+        if created:
+            logger.debug('Created new %s: %s', Analyses.__name__, obj)
+            print('Created new', Analyses.__name__, obj)
+
+    except Exception as exc:
+        logger.exception(exc)
+        print(exc, os.strerror)
+    return obj
 
 
 class IDRUtils(object):
 
-    
     def _updateAssayDirs_fromGitHub(self):
         """
         Update Assay directories in IDR from GitHub repository
         """
 
-        #TODO: crear aqui unas lineas para que se saque un registo.txt con la fecha y el nombre de los directorios de assays 
+        # TODO: crear aqui unas lineas para que se saque un registo.txt con la fecha y el nombre de los directorios de assays
         # (idrNNNN-lastname-example) que se vayan importando para saber cuales son los dirs que quedan por hacer updateLigandEntryFromIDRAssay()
         pass
 
@@ -1866,8 +1880,8 @@ class IDRUtils(object):
         dataSource = 'The Image Data Resource (IDR)'
         externalLink = 'https://idr.openmicroscopy.org/'
 
-        FeatureTypeEntry = updateFeatureTypeForIDR(name, description, dataSource, externalLink)
-
+        FeatureTypeEntry = updateFeatureTypeForIDR(
+            name, description, dataSource, externalLink)
 
         # Get ID and metadata file for IDR assay
         matchObj = re.match(REGEX_IDR_ID, assayPath)
@@ -1876,30 +1890,65 @@ class IDRUtils(object):
         metadataFileExtention = '-study.txt'
         metadataFile = assayId + metadataFileExtention
 
+        # Get Analyses files
+        analysesFilePattern = '*.csv'
+        analysesPattern = os.path.join(
+            assayPath, 'Analyses', analysesFilePattern)
+
+        dfs = []
+        for file in glob.glob(analysesPattern):
+            dfs.append(pd.read_csv(file, sep=';'))
+        if not dfs:
+            # send exception
+            print("ERROR: No files found", analysesPattern)
+            exit(2)
+        analysesDf = pd.concat(dfs)
+
+        # Fix compound name
+        analysesDf = analysesDf.replace(
+            {
+                np.nan: None,
+                'THIOGUANINE': 'TIOGUANINE'  # TODO: solucionar esto
+            }
+        )
+
+        # Get columns names in analyses dataframe
+        n_colName = getColNameByKW(analysesDf.columns, 'standard', 'type')
+        v_colName = getColNameByKW(analysesDf.columns, 'standard', 'value')
+        u_colName = getColNameByKW(analysesDf.columns, 'standard', 'units')
+        uta_colName = getColNameByKW(analysesDf.columns, 'uo', 'units')
+        pv_colName = getColNameByKW(analysesDf.columns, 'pchembl', 'value')
+        dc_colName = getColNameByKW(analysesDf.columns, 'data', 'comment')
+        l_colName = getColNameByKW(analysesDf.columns, 'compound', 'key')
+
         # Parse metadata file using StudyParser
         MetadataFilePath = os.path.join(assayPath, metadataFile)
         studyParserObj = StudyParser(MetadataFilePath)
 
         # Get or Create Organism entries
-        organisms = [organism for organism in studyParserObj.study['Study Organism'].split("\t")]
-        organismTermSources = [termSource for termSource in studyParserObj.study['Study Organism Term Source REF'].split("\t")]
-        organismTermAccessions = [termAccession for termAccession in studyParserObj.study['Study Organism Term Accession'].split("\t")]
+        organisms = [
+            organism for organism in studyParserObj.study['Study Organism'].split("\t")]
+        organismTermSources = [
+            termSource for termSource in studyParserObj.study['Study Organism Term Source REF'].split("\t")]
+        organismTermAccessions = [
+            termAccession for termAccession in studyParserObj.study['Study Organism Term Accession'].split("\t")]
         organism_entry_list = []
 
         for organism in zip(organisms, organismTermSources, organismTermAccessions):
 
             # Check that the Study Organism Term Source REF is NCBI Taxonomy
             TaxonTermSource = organism[1]
-            TaxonRefMatchObj = re.match(REGEX_TAXON_REF, TaxonTermSource.lower())
+            TaxonRefMatchObj = re.match(
+                REGEX_TAXON_REF, TaxonTermSource.lower())
 
             if TaxonRefMatchObj:
-                OrganismEntry = getOrganism(taxonomy_id=organism[2], scientific_name=organism[0])
+                OrganismEntry = getOrganism(
+                    taxonomy_id=organism[2], scientific_name=organism[0])
                 organism_entry_list.append(OrganismEntry)
             else:
-                print('Study Organism Term Source REF for "%s" different from NCBI Taxonomy: '\
-                    '\n\tStudy Organism Term Source REF: %s \n\tStudy Organism Term Accession: %s' \
-                    % (organism[0], TaxonTermSource, organism[2]))
-
+                print('Study Organism Term Source REF for "%s" different from NCBI Taxonomy: '
+                      '\n\tStudy Organism Term Source REF: %s \n\tStudy Organism Term Accession: %s'
+                      % (organism[0], TaxonTermSource, organism[2]))
 
         # Create Author and Publication entries
         publication_entry_list = []
@@ -1912,25 +1961,31 @@ class IDRUtils(object):
                 author_entry_list.append(AuthorEntry)
 
             PublicationEntry = updatePublication(
-                title=publication['Title'], 
-                doi=publication['DOI'], 
-                pubMedId=publication['PubMed ID'], 
-                PMCId=publication['PMC ID'], 
-                journal='', issn='', issue='', volume='', 
-                firstPage='', lastPage='', year='', abstract='') 
+                title=publication['Title'],
+                doi=publication['DOI'],
+                pubMedId=publication['PubMed ID'],
+                PMCId=publication['PMC ID'],
+                journal='', issn='', issue='', volume='',
+                firstPage='', lastPage='', year='', abstract='')
 
             publication_entry_list.append(PublicationEntry)
             # Add already updated/created Author entries to Publicacion entry
-            [PublicationEntry.authors.add(author) for author in author_entry_list]
-
+            [PublicationEntry.authors.add(author)
+             for author in author_entry_list]
 
         # Update Author entries with "Study Contacts" details if exist.
-        authorLastNames = [authorLastName for authorLastName in studyParserObj.study['Study Person Last Name'].split("\t")]
-        authorFirstNames = [authorFirstName for authorFirstName in studyParserObj.study['Study Person First Name'].split("\t")]
-        authorEmails = [authorEmail for authorEmail in studyParserObj.study['Study Person Email'].split("\t")]
-        authorAddresses = [authorAddress for authorAddress in studyParserObj.study['Study Person Address'].split("\t")]
-        authorORCIDs = [authorORCID for authorORCID in studyParserObj.study['Study Person ORCID'].split("\t")]
-        authorRoles = [authorRole for authorRole in studyParserObj.study['Study Person Roles'].split("\t")]
+        authorLastNames = [
+            authorLastName for authorLastName in studyParserObj.study['Study Person Last Name'].split("\t")]
+        authorFirstNames = [
+            authorFirstName for authorFirstName in studyParserObj.study['Study Person First Name'].split("\t")]
+        authorEmails = [
+            authorEmail for authorEmail in studyParserObj.study['Study Person Email'].split("\t")]
+        authorAddresses = [
+            authorAddress for authorAddress in studyParserObj.study['Study Person Address'].split("\t")]
+        authorORCIDs = [
+            authorORCID for authorORCID in studyParserObj.study['Study Person ORCID'].split("\t")]
+        authorRoles = [
+            authorRole for authorRole in studyParserObj.study['Study Person Roles'].split("\t")]
 
         for authorEntry in zip(authorLastNames, authorFirstNames, authorEmails, authorAddresses, authorORCIDs, authorRoles):
             '''
@@ -1940,20 +1995,22 @@ class IDRUtils(object):
              Carpenter A (Author entry name from study['Study Person Last Name'] + study['Study Person First Name'])
 
             '''
-            pseudoName =  ' '.join([authorEntry[0], authorEntry[1][0]])
+            pseudoName = ' '.join([authorEntry[0], authorEntry[1][0]])
 
             AuthorEntry = updateAuthorFromIDR(
-                name=pseudoName, 
-                email=authorEntry[2], 
-                address=authorEntry[3], 
-                orcid=authorEntry[4], 
+                name=pseudoName,
+                email=authorEntry[2],
+                address=authorEntry[3],
+                orcid=authorEntry[4],
                 role=authorEntry[5]
-                )
+            )
 
         # Create AssayEntity entry
         #assayExternalLinks = [(assayExternalLink for assayExternalLink in studyParserObj.study['Study External URL'].split("\t")) if ('Study External URL' in studyParserObj.study) else '']
-        assayTypes = [assayType for assayType in studyParserObj.study['Study Type'].split("\t")] 
-        assayTypeTermAccessions = [assayTypeTermAccession for assayTypeTermAccession in studyParserObj.study['Study Type Term Accession'].split("\t")] 
+        assayTypes = [
+            assayType for assayType in studyParserObj.study['Study Type'].split("\t")]
+        assayTypeTermAccessions = [
+            assayTypeTermAccession for assayTypeTermAccession in studyParserObj.study['Study Type Term Accession'].split("\t")]
 
         AssayEntityEntry = updateAssayEntity(
             name=studyParserObj.study['Study Title'],
@@ -1972,30 +2029,34 @@ class IDRUtils(object):
         )
 
         # Add already updated/created Author entries and Publicacion entries to AssayEntity entry
-        [AssayEntityEntry.organisms.add(orgEnt) for orgEnt in organism_entry_list]
-        [AssayEntityEntry.publications.add(pubEnt) for pubEnt in publication_entry_list]
+        [AssayEntityEntry.organisms.add(orgEnt)
+         for orgEnt in organism_entry_list]
+        [AssayEntityEntry.publications.add(pubEnt)
+         for pubEnt in publication_entry_list]
 
-        
         # Create ScreenEntity entries
         for screen in studyParserObj.components:
 
-            # Get screen name 
+            # Get screen name
             screenDir = screen['Comment\\[IDR Screen Name\\]']
             screenNameMatchObj = re.match(REGEX_SCREEN_NAME, screenDir)
-            screenName = ' '.join([screenNameMatchObj.group(1), screenNameMatchObj.group(2)])
+            screenName = ' '.join(
+                [screenNameMatchObj.group(1), screenNameMatchObj.group(2)])
 
             # Get screen id
             screenId = getScreenId(
                 session,
-                key='organism', 
+                key='organism',
                 value='Severe acute respiratory syndrome coronavirus 2',
                 screenDir=screenDir,
-                )
+            )
 
             # Get screen attributes that are lists
-            screenImagingMethods = [screenImagingMethod for screenImagingMethod in screen['Screen Imaging Method'].split("\t")]
-            screenImagingTermAccessions = [screenImagingTermAccession for screenImagingTermAccession in screen['Screen Imaging Method Term Accession'].split("\t")]
-            #plateCount = 
+            screenImagingMethods = [
+                screenImagingMethod for screenImagingMethod in screen['Screen Imaging Method'].split("\t")]
+            screenImagingTermAccessions = [
+                screenImagingTermAccession for screenImagingTermAccession in screen['Screen Imaging Method Term Accession'].split("\t")]
+            # plateCount =
 
             ScreenEntityEntry = updateScreenEntity(
                 dbId=screenId,
@@ -2006,14 +2067,14 @@ class IDRUtils(object):
                 technologyType=screen['Screen Technology Type'],
                 technologyTypeTermAccession=screen['Screen Technology Type Term Accession'],
                 imagingMethod='; '.join(screenImagingMethods),
-                imagingMethodTermAccession='; '.join(screenImagingTermAccessions),
+                imagingMethodTermAccession='; '.join(
+                    screenImagingTermAccessions),
                 sampleType=screen['Screen Sample Type'],
-                #plateCount=plateCount,
+                # plateCount=plateCount,
                 plateCount=None,
                 dataDoi=screen['Screen Data DOI'],
-                assay=AssayEntityEntry,  
+                assay=AssayEntityEntry,
             )
-
 
             # Create PlateEntity, LigandEntity and WellEntity entries
             screenDf = getScreenDataframe(session, screenId)
@@ -2025,120 +2086,136 @@ class IDRUtils(object):
                     screen=ScreenEntityEntry,
                 )
 
-
                 # Get well ID and image ID associated to it
                 wellId = row['Well']
                 wellImageIds = getImageIdsFromWellId(session, wellId)
 
                 # Get column names in screen DF that harbor key well attributes
                 cl_colName = getColNameByKW(screenDf.columns, 'cell', 'line')
-                clta_colName = getColNameByKW(screenDf.columns, 'accession', '3')
-                ct_colName = getColNameByKW(screenDf.columns, 'control', 'type')
-                qc_colName = getColNameByKW(screenDf.columns, 'control', 'quality')
-                mc_colName = getColNameByKW(screenDf.columns, 'micromolar', 'concentration')
-                pi_colName = getColNameByKW(screenDf.columns, 'percentage', 'inhibition')
-                ho75a_colName = getColNameByKW(screenDf.columns, 'hit', 'activity')
+                clta_colName = getColNameByKW(
+                    screenDf.columns, 'accession', '3')
+                ct_colName = getColNameByKW(
+                    screenDf.columns, 'control', 'type')
+                qc_colName = getColNameByKW(
+                    screenDf.columns, 'control', 'quality')
+                mc_colName = getColNameByKW(
+                    screenDf.columns, 'micromolar', 'concentration')
+                pi_colName = getColNameByKW(
+                    screenDf.columns, 'percentage', 'inhibition')
+                ho75a_colName = getColNameByKW(
+                    screenDf.columns, 'hit', 'activity')
                 nc_colName = getColNameByKW(screenDf.columns, 'number', 'cell')
-                pal_colName = getColNameByKW(screenDf.columns, 'phenotype', 'level')
+                pal_colName = getColNameByKW(
+                    screenDf.columns, 'phenotype', 'level')
                 c_colName = getColNameByKW(screenDf.columns, 'channel', '')
 
                 # Create WellEntity entries for unkown wells (no ligand tested and no control)
-                if row['Compound Name'] == '' and row['Control Type'] == '':  
-        
+                if row['Compound Name'] == '' and row['Control Type'] == '':
+
                     WellEntityEntry = updateWellEntity(
                         dbId=wellId,
                         name=row['Well Name'],
                         description='Unkown details',
                         ligand=None,
                         plate=PlateEntityEntry,
-                        externalLink=URL_SHOW_KEY.format(**{'key': 'well', 'keyId': wellId}),
-                        imageThumbailLink=URL_THUMBNAIL.format(**{'imageId': wellImageIds[0]}),
+                        externalLink=URL_SHOW_KEY.format(
+                            **{'key': 'well', 'keyId': wellId}),
+                        imageThumbailLink=URL_THUMBNAIL.format(
+                            **{'imageId': wellImageIds[0]}),
                         imagesIds=wellImageIds,
                         cellLine=row[cl_colName],
                         cellLineTermAccession=row[clta_colName],
                         controlType=row[ct_colName],
                         qualityControl=row[qc_colName],
                         micromolarConcentration=None,
-                        percentageInhibition=float(row[pi_colName]) if row[pi_colName] != '' else None,
+                        percentageInhibition=float(
+                            row[pi_colName]) if row[pi_colName] != '' else None,
                         hitOver75Activity=row[ho75a_colName],
                         numberCells=row[nc_colName] if row[nc_colName] != '' else None,
                         phenotypeAnnotationLevel=row[pal_colName],
                         channels=row[c_colName]
                     )
-                
+
                 # Create WellEntity entries for positive controls
-                elif row['Compound Name'] == '' and row['Control Type'] == 'positive':  
+                elif row['Compound Name'] == '' and row['Control Type'] == 'positive':
 
                     WellEntityEntry = updateWellEntity(
                         dbId=wellId,
                         name=row['Well Name'],
-                        description='virus-treated well (no compounds)', 
+                        description='virus-treated well (no compounds). Assigned as 0% inhibition of virus cytopathicity',
                         ligand=None,
                         plate=PlateEntityEntry,
-                        externalLink=URL_SHOW_KEY.format(**{'key': 'well', 'keyId': wellId}),
-                        imageThumbailLink=URL_THUMBNAIL.format(**{'imageId': wellImageIds[0]}),
+                        externalLink=URL_SHOW_KEY.format(
+                            **{'key': 'well', 'keyId': wellId}),
+                        imageThumbailLink=URL_THUMBNAIL.format(
+                            **{'imageId': wellImageIds[0]}),
                         imagesIds=wellImageIds,
                         cellLine=row[cl_colName],
                         cellLineTermAccession=row[clta_colName],
                         controlType=row[ct_colName],
                         qualityControl=row[qc_colName],
                         micromolarConcentration=None,
-                        percentageInhibition=float(row[pi_colName]) if row[pi_colName] != '' else None,
+                        percentageInhibition=float(
+                            row[pi_colName]) if row[pi_colName] != '' else None,
                         hitOver75Activity=row[ho75a_colName],
                         numberCells=row[nc_colName] if row[nc_colName] != '' else None,
                         phenotypeAnnotationLevel=row[pal_colName],
                         channels=row[c_colName]
                     )
-                    
 
                 # Create WellEntity entries for negative controls
-                elif row['Compound Name'] == '' and row['Control Type'] == 'negative':  
+                elif row['Compound Name'] == '' and row['Control Type'] == 'negative':
 
                     WellEntityEntry = updateWellEntity(
                         dbId=wellId,
                         name=row['Well Name'],
-                        description='no-virus- and no-compounds-treated well (cells but no treatment). Expected to have no effect on cells', 
+                        description='no-virus- and no-compounds-treated well. Assigned as 100% inhibition of virus cytopathicity',
                         ligand=None,
                         plate=PlateEntityEntry,
-                        externalLink=URL_SHOW_KEY.format(**{'key': 'well', 'keyId': wellId}),
-                        imageThumbailLink=URL_THUMBNAIL.format(**{'imageId': wellImageIds[0]}),
+                        externalLink=URL_SHOW_KEY.format(
+                            **{'key': 'well', 'keyId': wellId}),
+                        imageThumbailLink=URL_THUMBNAIL.format(
+                            **{'imageId': wellImageIds[0]}),
                         imagesIds=wellImageIds,
                         cellLine=row[cl_colName],
                         cellLineTermAccession=row[clta_colName],
                         controlType=row[ct_colName],
                         qualityControl=row[qc_colName],
                         micromolarConcentration=None,
-                        percentageInhibition=float(row[pi_colName]) if row[pi_colName] != '' else None,
+                        percentageInhibition=float(
+                            row[pi_colName]) if row[pi_colName] != '' else None,
                         hitOver75Activity=row[ho75a_colName],
                         numberCells=row[nc_colName] if row[nc_colName] != '' else None,
                         phenotypeAnnotationLevel=row[pal_colName],
                         channels=row[c_colName]
                     )
-                    
+
                 # Create WellEntity entries with ligand
-                else: 
+                else:
                     # Get column names in screen DF that harbor key ligand attributes
-                    ln_colName = getColNameByKW(screenDf.columns, 'compound', 'name')
-                    pci_colName = getColNameByKW(screenDf.columns, 'pubchem', 'id')
-                    icik_colName = getColNameByKW(screenDf.columns, 'inchikey', '')
+                    ln_colName = getColNameByKW(
+                        screenDf.columns, 'compound', 'name')
+                    pci_colName = getColNameByKW(
+                        screenDf.columns, 'pubchem', 'id')
+                    icik_colName = getColNameByKW(
+                        screenDf.columns, 'inchikey', '')
+                    sm_colName = getColNameByKW(screenDf.columns, 'smiles', '')
 
                     # Create LigandEntity entry
                     LigandEntityEntry = getLigandEntity(
-                        name=row[ln_colName],
-                        pubChemCompoundId=row[pci_colName],
                         dbId=None,
                         ligandType=None,
+                        name=row[ln_colName],
                         formula=None,
                         formula_weight=None,
                         details=None,
                         altNames=None,
-                        imageLink=None,
-                        externalLink=None,
+                        pubChemCompoundId=row[pci_colName],
                         systematicNames=None,
                         IUPACInChI=None,
                         IUPACInChIkey=row[icik_colName],
                         isomericSMILES=None,
-                        canonicalSMILES=None,                        
+                        canonicalSMILES=row[sm_colName],
                     )
 
                    # Update or create WellEntity
@@ -2148,17 +2225,46 @@ class IDRUtils(object):
                         description='well treated with virus and compound',
                         ligand=LigandEntityEntry,
                         plate=PlateEntityEntry,
-                        externalLink=URL_SHOW_KEY.format(**{'key': 'well', 'keyId': wellId}),
-                        imageThumbailLink=URL_THUMBNAIL.format(**{'imageId': wellImageIds[0]}),
+                        externalLink=URL_SHOW_KEY.format(
+                            **{'key': 'well', 'keyId': wellId}),
+                        imageThumbailLink=URL_THUMBNAIL.format(
+                            **{'imageId': wellImageIds[0]}),
                         imagesIds=wellImageIds,
                         cellLine=row[cl_colName],
                         cellLineTermAccession=row[clta_colName],
                         controlType=row[ct_colName],
                         qualityControl=row[qc_colName],
-                        micromolarConcentration=row[mc_colName] if mc_colName  else (10.0 if assayId == 'idr0094' else None), 
-                        percentageInhibition=float(row[pi_colName]) if row[pi_colName] != '' else None, 
+                        micromolarConcentration=row[mc_colName] if mc_colName else (
+                            10.0 if assayId == 'idr0094' else None),
+                        percentageInhibition=float(
+                            row[pi_colName]) if row[pi_colName] != '' else None,
                         hitOver75Activity=row[ho75a_colName],
-                        numberCells=row[nc_colName] if row[nc_colName] != '' else None, 
+                        numberCells=row[nc_colName] if row[nc_colName] != '' else None,
                         phenotypeAnnotationLevel=row[pal_colName],
                         channels=row[c_colName]
                     )
+
+                    if LigandEntityEntry:
+                        indexes = [i for i, elem in enumerate(analysesDf[l_colName].tolist(
+                        )) if elem.upper() == LigandEntityEntry.name.upper()]
+
+                        if indexes:
+                            for index, row in analysesDf.iloc[indexes].iterrows():
+                                if row[n_colName].lower() == 'ic50':
+                                    description = ''
+                                elif row[n_colName].lower() == 'cc50':
+                                    description = ''
+                                elif row[n_colName].lower() == 'selectivity index':
+                                    description = ''
+
+                                getAnalyses(
+                                    name=row[n_colName],
+                                    value=row[v_colName],
+                                    description=description,
+                                    units=row[u_colName],
+                                    unitsTermAccession=row[uta_colName],
+                                    pvalue=row[pv_colName],
+                                    dataComment=row[dc_colName],
+                                    ligand=LigandEntityEntry,
+                                    assay=AssayEntityEntry,
+                                )
