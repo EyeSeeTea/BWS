@@ -25,6 +25,11 @@ Or alternativelly, run commands directly using the docker container command line
 - docker exec -it bws-web-1 python manage.py updateDB_fromHCSAssay /data/IDR/idr0094-ellinger-sarscov2
 
 
+Pre-Process data from COVID19 NMR Consortium (C19-NMR-C)
+- docker exec -it bws_web_1 python3 /tools/pre-process_data.py -i /data/C19-NMR-C/C19-NMR-C-Summary/Summary-ordered.csv -o /data/C19-NMR-C/C19-NMR-C_pre-processed_data.csv
+- docker exec -it bws_web_1 python3 /tools/pre-process_data.py -i /data/C19-NMR-C/All_Proteins_CNB_CSIC.csv -o /data/C19-NMR-C/C19-NMR-C_All_Proteins_pre-processed_data.csv 
+
+
 Create superuser
 docker exec -it <runningdocker_id> python manage.py createsuperuser
 
