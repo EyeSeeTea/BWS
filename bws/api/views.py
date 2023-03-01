@@ -501,7 +501,7 @@ class EmvDataByMethodView(APIView):
     def get(self, request, **kwargs):
         """
         Get a list of all EMV entries by method
-        method : stats | deepres | monores | blocres | mapq | fscq | daq
+        method : deepres | monores | blocres | mapq | fscq | daq
         """
         data_files = []
         entries = []
@@ -557,7 +557,7 @@ class EmvDataByIdMethodView(APIView):
         """
         Get a JSON file with EMV data for an entry by DB ID and method
         db_id : PDB | EMDB
-        method : stats | deepres | monores | blocres | mapq | fscq | daq
+        method : deepres | monores | blocres | mapq | fscq | daq
         """
         data_files = []
         if 'method' in self.kwargs:
@@ -572,6 +572,37 @@ class EmvDataByIdMethodView(APIView):
                 pattern = "*%s_emv_%s.json" % (db_id, method,)
         data_files = _getEmvDataFiles(path, pattern)
         # there should be only one file for entry/method
+        if len(data_files) != 1:
+            content = {
+                "request": "EMV: %s/%s" % (db_id, method),
+                "detail": "Entry not found"
+            }
+            return Response(content, status=status.HTTP_404_NOT_FOUND)
+        fileName = data_files[0]
+        # return JSON file
+        with open(fileName, 'r') as jfile:
+            resp = json.load(jfile)
+        return Response(resp)
+
+
+class EmvDataLocalresConsensus(APIView):
+
+    def get(self, request, **kwargs):
+        """
+        Get the consensus of all localresolution EMV methods by DB ID
+        db_id : PDB | EMDB
+        """
+        data_files = []
+        method = 'localresolution_consensus'
+        if 'db_id' in self.kwargs:
+            db_id = self.kwargs['db_id'].lower()
+            if db_id.startswith('emd-'):
+                path = "%s/%s" % (EMDB_DATA_DIR, db_id)
+                # <EMDB-ID>_emv_localresolution_consensus.json
+                # emd-34424_emv_localresolution_consensus.json
+                pattern = "%s_emv_%s.json" % (db_id, method,)
+        data_files = _getEmvDataFiles(path, pattern)
+        # there should be only one file
         if len(data_files) != 1:
             content = {
                 "request": "EMV: %s/%s" % (db_id, method),
