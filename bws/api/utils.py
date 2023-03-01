@@ -625,13 +625,13 @@ def getStructuresFromPath(path):
         # Get files from path
         filenames = getCifFiles(path)
 
-        for filename in filenames:
+        numFiles = len(filenames)
+        for idx, filename in enumerate(filenames):
             entryId = filename.replace('.cif', '')
-
             # Read mmCIF to dictionary
             mmCifDict = fileCif2Json(path, filename)
+            print("->>> Entry:", idx, "/", numFiles)
             obj = readmmCifFile(mmCifDict)
-            # break
 
     except Exception as exc:
         logger.exception(exc)
