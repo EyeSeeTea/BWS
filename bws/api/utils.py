@@ -2275,14 +2275,14 @@ class IDRUtils(object):
                         if indexes:
                             for index, row in analysesDf.iloc[indexes].iterrows():
                                 if row[n_colName].lower() == 'ic50':
-                                    description = ''
+                                    description = 'The half maximal inhibitory concentration (IC50) is a measure of the potency of a substance in inhibiting a specific biological or biochemical function.'
                                 elif row[n_colName].lower() == 'cc50':
-                                    description = ''
+                                    description = 'The 50% cytotoxic concentration (CC50) is the concentration of test compound  that reduced the cell viability by 50% when compared to untreated controls'
                                 elif row[n_colName].lower() == 'selectivity index':
-                                    description = ''
+                                    description = 'The selectivity index (SI) is defined as the ratio of cytotoxicity to biological activity, which means the ratio of the 50% cytotoxic concentration, CC50, to the 50% antiviral concentration, IC50, (CC50/IC50)'
 
                                 getAnalyses(
-                                    name=row[n_colName],
+                                    name=row[n_colName],#TODO: add standard relation!!!!
                                     value=row[v_colName],
                                     description=description,
                                     units=row[u_colName],
