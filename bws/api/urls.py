@@ -44,11 +44,10 @@ urlpatterns = [
     re_path(r'^emv/(?P<db_id>(\d[a-zA-Z]\w{2}|[EMD]*[emd]*-\d{4,5}))/$', views.EmvDataByIDView.as_view()),
 
 
-    re_path(r'^emv/(?P<method>(deepres|monores|blocres|mapq|fscq|daq))/$', views.EmvDataByMethodView.as_view()),
-
+    re_path(r'^emv/(?P<method>(stats|deepres|monores|blocres|mapq|fscq|daq))/$', views.EmvDataByMethodView.as_view()),
+    re_path(r'^emv/(?P<db_id>(\d[a-zA-Z]\w{2}|[EMD]*[emd]*-\d{4,5}))/(?P<method>(stats|deepres|monores|blocres|mapq|fscq|daq))/$', views.EmvDataByIdMethodView.as_view()),
     re_path(r'^emv/(?P<db_id>(\d[a-zA-Z]\w{2}|[EMD]*[emd]*-\d{4,5}))/localresolution/consensus/$', views.EmvDataLocalresConsensus.as_view()),
-    
-    re_path(r'^emv/(?P<db_id>(\d[a-zA-Z]\w{2}|[EMD]*[emd]*-\d{4,5}))/(?P<method>(deepres|monores|blocres|mapq|fscq|daq))/$', views.EmvDataByIdMethodView.as_view()),
+    re_path(r'^emv/(?P<db_id>(\d[a-zA-Z]\w{2}|[EMD]*[emd]*-\d{4,5}))/localresolution/rank/$', views.EmvDataLocalresRank.as_view()),
 ]
 
 
