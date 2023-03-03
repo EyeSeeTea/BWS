@@ -581,13 +581,13 @@ class Analyses(models.Model):
     '''
     name = models.CharField(max_length=255, blank=False,
                             null=False, default='')
-    # TODO: cambiar a null=False, blank=False
-    value = models.FloatField(blank=True, null=True)
+    relation = models.CharField(max_length=10, blank=True, null=True, default='=')
+    value = models.FloatField(null=False, blank=False)
     description = models.CharField(
         max_length=255, blank=True, null=True, default='')
     units = models.CharField(max_length=255, blank=True, null=True, default='')
     unitsTermAccession = models.CharField(
-        max_length=255, blank=False, null=True, default='')
+        max_length=255, blank=True, null=True, default='')
     pvalue = models.FloatField(null=True, blank=True)
     dataComment = models.CharField(
         max_length=255, blank=True, null=True, default='')

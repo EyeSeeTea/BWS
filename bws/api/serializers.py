@@ -32,7 +32,7 @@ class DataFileSerializer(serializers.ModelSerializer):
 class AnalysesSerializer(serializers.ModelSerializer):
     class Meta:
         model = Analyses
-        fields = ['name', 'value', 'description', 'units',
+        fields = ['name', 'relation', 'value', 'description', 'units',
                   'unitsTermAccession', 'pvalue', 'dataComment']
 
 

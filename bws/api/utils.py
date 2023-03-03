@@ -1825,7 +1825,7 @@ def getLigandEntity(dbId, ligandType, name, formula, formula_weight, details, al
     return obj
 
 
-def getAnalyses(name, value, description, units, unitsTermAccession, pvalue, dataComment, ligand, assay):
+def getAnalyses(name, relation, value, description, units, unitsTermAccession, pvalue, dataComment, ligand, assay):
     """
     Get Analyses entry or create in case it does not exist
     """
@@ -1834,6 +1834,7 @@ def getAnalyses(name, value, description, units, unitsTermAccession, pvalue, dat
     try:
         obj, created = Analyses.objects.get_or_create(
             name=name,
+            relation=relation,
             value=value,
             description=description,
             units=units,
@@ -1919,6 +1920,7 @@ class IDRUtils(object):
 
         # Get columns names in analyses dataframe
         n_colName = getColNameByKW(analysesDf.columns, 'standard', 'type')
+        r_colName = getColNameByKW(analysesDf.columns, 'standard', 'relation')
         v_colName = getColNameByKW(analysesDf.columns, 'standard', 'value')
         u_colName = getColNameByKW(analysesDf.columns, 'standard', 'units')
         uta_colName = getColNameByKW(analysesDf.columns, 'uo', 'units')
@@ -2282,7 +2284,8 @@ class IDRUtils(object):
                                     description = 'The selectivity index (SI) is defined as the ratio of cytotoxicity to biological activity, which means the ratio of the 50% cytotoxic concentration, CC50, to the 50% antiviral concentration, IC50, (CC50/IC50)'
 
                                 getAnalyses(
-                                    name=row[n_colName],#TODO: add standard relation!!!!
+                                    name=row[n_colName],
+                                    relation=[r_colName],
                                     value=row[v_colName],
                                     description=description,
                                     units=row[u_colName],
