@@ -89,7 +89,7 @@ class PlateEntitySerializer(serializers.ModelSerializer):
                     wellid_list.append(well[4])  # tupl[4] = WellEntity id
 
             # Given the list of Well IDs, get queryset including all WellEntity models and pass it to WellEntitySerializer
-            well_qs = WellEntity.objects.filter(dbId__in=wellid_list)
+            well_qs = WellEntity.objects.filter(dbId__in=wellid_list).order_by('name')
             return WellEntitySerializer(many=True,  context=context).to_representation(well_qs)
 
     def get_controlWells(self, obj):
