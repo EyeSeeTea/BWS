@@ -582,7 +582,7 @@ class Analyses(models.Model):
     name = models.CharField(max_length=255, blank=False,
                             null=False, default='')
     relation = models.CharField(max_length=10, blank=True, null=True, default='=')
-    value = models.FloatField(null=False, blank=False)
+    value = models.FloatField(null=False, blank=False, default=0)
     description = models.CharField(
         max_length=255, blank=True, null=True, default='')
     units = models.CharField(max_length=255, blank=True, null=True, default='')
