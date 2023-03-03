@@ -599,3 +599,32 @@ class Analyses(models.Model):
 
     def __str__(self):
         return '%s (%s)' % (self.name, self.ligand)
+
+class Ontology(models.Model):
+    '''
+    Ontology.
+    '''
+    name = models.CharField(max_length=255, blank=False,
+                            null=False, default='')
+    description = models.CharField(max_length=900, blank=False,
+                            null=False, default='')
+    externalLink = models.URLField(max_length=200, default='', blank=True)
+    
+    def __str__(self):
+        return '%s' % (self.name)
+    
+class OntologyTerm(models.Model):
+    '''
+    Ontology term.
+    '''
+    dbId = models.CharField(max_length=50, blank=False,
+                            default='', primary_key=True)
+    name = models.CharField(max_length=255, blank=False,
+                            null=False, default='')
+    description = models.CharField(max_length=900, blank=False,
+                            null=False, default='')
+    externalLink = models.URLField(max_length=200, default='', blank=True)
+    source = models.ForeignKey(Ontology, related_name = 'terms', on_delete=models.CASCADE)
+    
+    def __str__(self):
+        return '%s' % (self.name)
