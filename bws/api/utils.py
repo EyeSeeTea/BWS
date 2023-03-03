@@ -1182,6 +1182,10 @@ def updateLigandEntitymmCifFile(lType, indx, entityId, mmCifDict):
 
 
 def getPubChemData(inChIKey, ligandId, ligandName):
+    '''
+    Get PuChem ID, inChIKey, inChI, isomericSMILES, canonicalSMILES, formula and formula_weight given ligand inChIKey, id or name by means of PuChem-WS
+    '''
+
     print('---> getPubChemData', inChIKey, ligandId, ligandName)
     pubChemCompoundId = ''
     if inChIKey:
@@ -1564,7 +1568,7 @@ def updateAuthorFromIDR(name, email='', address='', orcid='', role=''):
     return obj
 
 
-def updateAssayEntity(dbId, name, featureType, description, externalLink, details, assayType, assayTypeTermAccession, screenCount, BIAId, releaseDate, dataDoi):
+def updateAssayEntity(dbId, name, featureType, description, externalLink, details, assayType, screenCount, BIAId, releaseDate, dataDoi):
     """
     Update AssayEntity entry or create in case it does not exist
     """
@@ -1580,7 +1584,6 @@ def updateAssayEntity(dbId, name, featureType, description, externalLink, detail
                 'externalLink': externalLink,
                 'details': details,
                 'assayType': assayType,
-                'assayTypeTermAccession': assayTypeTermAccession,
                 'screenCount': screenCount,
                 'BIAId': BIAId,
                 'releaseDate': releaseDate,
@@ -1599,7 +1602,7 @@ def updateAssayEntity(dbId, name, featureType, description, externalLink, detail
     return obj
 
 
-def updateScreenEntity(dbId, name, description, type, typeTermAccession, technologyType, technologyTypeTermAccession, imagingMethod, imagingMethodTermAccession, sampleType, plateCount, dataDoi, assay):
+def updateScreenEntity(dbId, name, description, type, technologyType, imagingMethod, sampleType, plateCount, dataDoi, assay):
     """
     Update ScreenEntity entry or create in case it does not exist
     """
@@ -1612,11 +1615,8 @@ def updateScreenEntity(dbId, name, description, type, typeTermAccession, technol
                 'name': name,
                 'description': description,
                 'type': type,
-                'typeTermAccession': typeTermAccession,
                 'technologyType': technologyType,
-                'technologyTypeTermAccession': technologyTypeTermAccession,
                 'imagingMethod': imagingMethod,
-                'imagingMethodTermAccession': imagingMethodTermAccession,
                 'sampleType': sampleType,
                 'plateCount': plateCount,
                 'dataDoi': dataDoi,
@@ -1728,7 +1728,7 @@ def updateWellEntity(dbId, name, description, ligand, plate, externalLink, image
 
     obj = None
     try:
-        obj, created = WellEntity.objects.update_or_create(
+        obj, created = WellEntity.objects.get_or_create(
             dbId=dbId,
             defaults={
                 'name': name,
@@ -1759,6 +1759,7 @@ def updateWellEntity(dbId, name, description, ligand, plate, externalLink, image
     except Exception as exc:
         logger.exception(exc)
         print(exc, os.strerror)
+        logger.debug("Well not created or updated: %s", obj)
     return obj
 
 
@@ -1796,20 +1797,23 @@ def getColNameByKW(colNames, keyword1, keyword2):
 def getLigandEntity(dbId, ligandType, name, formula, formula_weight, details, altNames,
                     pubChemCompoundId, systematicNames, IUPACInChI, IUPACInChIkey, isomericSMILES, canonicalSMILES):
     """
-    Get LigandEntity entry given name OR pubChemCompoundId. Create it in case it does not exist
+    Get LigandEntity entry given IUPAC InChIKey. 
+    In case it does not exist, create it given ligand id (from ChEBI) or name by means of PubChem-WS.
+    Export the names of the ligands whose InChIKey cannot be found using PubChem-WS.
+    Returns LigandEntity entry.
     """
 
     obj = None
     try:
         # first look if the compound is already in the DB
         obj = LigandEntity.objects.get(pk=IUPACInChIkey)
-        print("Found Compound", obj)
+        print("Found in DB Compound ", obj)
     except LigandEntity.DoesNotExist:
         # get data from PubChem by ligandId or ligandName
         pubChemCompoundId, IUPACInChIkey, IUPACInChI, isomericSMILES, canonicalSMILES, formula, formula_weight = getPubChemData(
             IUPACInChIkey, dbId, name)
         if not IUPACInChIkey:
-            print('---> NOT COMPUOUND FOUND:', dbId, name, pubChemCompoundId, IUPACInChIkey,
+            print('---> NOT INCHIKEY FOUND IN PubChem-WS FOR COMPOUND:', dbId, name, pubChemCompoundId, IUPACInChIkey,
                   IUPACInChI, isomericSMILES, canonicalSMILES, formula, formula_weight)
             save2file(data=[dbId, name, pubChemCompoundId, IUPACInChIkey, IUPACInChI,
                       isomericSMILES, canonicalSMILES, formula, formula_weight],
@@ -1821,7 +1825,7 @@ def getLigandEntity(dbId, ligandType, name, formula, formula_weight, details, al
     return obj
 
 
-def getAnalyses(name, value, description, units, unitsTermAccession, pvalue, dataComment, ligand, assay):
+def getAnalyses(name, relation, value, description, units, unitsTermAccession, pvalue, dataComment, ligand, assay):
     """
     Get Analyses entry or create in case it does not exist
     """
@@ -1830,6 +1834,7 @@ def getAnalyses(name, value, description, units, unitsTermAccession, pvalue, dat
     try:
         obj, created = Analyses.objects.get_or_create(
             name=name,
+            relation=relation,
             value=value,
             description=description,
             units=units,
@@ -1891,6 +1896,7 @@ class IDRUtils(object):
         metadataFile = assayId + metadataFileExtention
 
         # Get Analyses files
+        #TODO: Change for other types of HCS assays that do not have .csv for addicional analyses
         analysesFilePattern = '*.csv'
         analysesPattern = os.path.join(
             assayPath, 'Analyses', analysesFilePattern)
@@ -1914,6 +1920,7 @@ class IDRUtils(object):
 
         # Get columns names in analyses dataframe
         n_colName = getColNameByKW(analysesDf.columns, 'standard', 'type')
+        r_colName = getColNameByKW(analysesDf.columns, 'standard', 'relation')
         v_colName = getColNameByKW(analysesDf.columns, 'standard', 'value')
         u_colName = getColNameByKW(analysesDf.columns, 'standard', 'units')
         uta_colName = getColNameByKW(analysesDf.columns, 'uo', 'units')
@@ -1988,13 +1995,12 @@ class IDRUtils(object):
             authorRole for authorRole in studyParserObj.study['Study Person Roles'].split("\t")]
 
         for authorEntry in zip(authorLastNames, authorFirstNames, authorEmails, authorAddresses, authorORCIDs, authorRoles):
-            '''
-            NOTE: pseudoName tries to mimic Author entry name from publication['Author List'] 
-            although middle names would be missing. E.g: 
-             Carpenter AE (Author entry name from publication['Author List']); 
-             Carpenter A (Author entry name from study['Study Person Last Name'] + study['Study Person First Name'])
 
-            '''
+            # NOTE: pseudoName tries to mimic Author entry name from publication['Author List'] 
+            # although middle names would be missing. E.g: 
+            # Carpenter AE (Author entry name from publication['Author List']); 
+            # Carpenter A (Author entry name from study['Study Person Last Name'] + study['Study Person First Name'])
+
             pseudoName = ' '.join([authorEntry[0], authorEntry[1][0]])
 
             AuthorEntry = updateAuthorFromIDR(
@@ -2012,6 +2018,11 @@ class IDRUtils(object):
         assayTypeTermAccessions = [
             assayTypeTermAccession for assayTypeTermAccession in studyParserObj.study['Study Type Term Accession'].split("\t")]
 
+        # Combine assay types with term accessions and convert them into strings
+        assayType_zip = list(zip(assayTypes, assayTypeTermAccessions))
+        assayType_str = ['%s (%s)' % (x[0], x[1]) for x in assayType_zip]
+
+
         AssayEntityEntry = updateAssayEntity(
             name=studyParserObj.study['Study Title'],
             featureType=FeatureTypeEntry,
@@ -2020,8 +2031,7 @@ class IDRUtils(object):
             externalLink='',
             details=studyParserObj.study['Study Key Words'],
             dbId=assayId,
-            assayType='; '.join(assayTypes),
-            assayTypeTermAccession='; '.join(assayTypeTermAccessions),
+            assayType='; '.join(assayType_str),
             screenCount=studyParserObj.study['Study Screens Number'],
             BIAId=studyParserObj.study['Study BioImage Archive Accession'],
             releaseDate=studyParserObj.study['Study Public Release Date'],
@@ -2051,24 +2061,40 @@ class IDRUtils(object):
                 screenDir=screenDir,
             )
 
-            # Get screen attributes that are lists
+            # Get screen imaging methods and combine them with their term accessions 
             screenImagingMethods = [
                 screenImagingMethod for screenImagingMethod in screen['Screen Imaging Method'].split("\t")]
             screenImagingTermAccessions = [
                 screenImagingTermAccession for screenImagingTermAccession in screen['Screen Imaging Method Term Accession'].split("\t")]
-            # plateCount =
+
+            screenimg_zip = list(zip(screenImagingMethods, screenImagingTermAccessions))
+            screenimg_str = ['%s (%s)' % (y[0], y[1]) for y in screenimg_zip]
+
+            # Get screen types and combine them with their term accessions
+            screenTypes = [
+                screenType for screenType in screen['Screen Type'].split("\t")]
+            screenTypeTermAccessions = [
+                screenTypeTermAccession for screenTypeTermAccession in screen['Screen Type Term Accession'].split("\t")]
+
+            screentype_zip = list(zip(screenTypes, screenTypeTermAccessions))
+            screentype_str = ['%s (%s)' % (i[0], i[1]) for i in screentype_zip]
+
+            # Get screen technology types and combine them with their term accessions
+            screenTechTypes = [
+                screenTechType for screenTechType in screen['Screen Technology Type'].split("\t")]
+            screenTechTypeTermAccessions = [
+                screenTechTypeTermAccession for screenTechTypeTermAccession in screen['Screen Technology Type Term Accession'].split("\t")]
+
+            screentechtype_zip = list(zip(screenTechTypes, screenTechTypeTermAccessions))
+            screentechtype_str = ['%s (%s)' % (i[0], i[1]) for i in screentechtype_zip]
 
             ScreenEntityEntry = updateScreenEntity(
                 dbId=screenId,
                 name=screenName,
                 description=screen['Screen Description'],
-                type=screen['Screen Type'],
-                typeTermAccession=screen['Screen Type Term Accession'],
-                technologyType=screen['Screen Technology Type'],
-                technologyTypeTermAccession=screen['Screen Technology Type Term Accession'],
-                imagingMethod='; '.join(screenImagingMethods),
-                imagingMethodTermAccession='; '.join(
-                    screenImagingTermAccessions),
+                type='; '.join(screentype_str),
+                technologyType='; '.join(screentechtype_str),
+                imagingMethod='; '.join(screenimg_str),
                 sampleType=screen['Screen Sample Type'],
                 # plateCount=plateCount,
                 plateCount=None,
@@ -2251,14 +2277,15 @@ class IDRUtils(object):
                         if indexes:
                             for index, row in analysesDf.iloc[indexes].iterrows():
                                 if row[n_colName].lower() == 'ic50':
-                                    description = ''
+                                    description = 'The half maximal inhibitory concentration (IC50) is a measure of the potency of a substance in inhibiting a specific biological or biochemical function.'
                                 elif row[n_colName].lower() == 'cc50':
-                                    description = ''
+                                    description = 'The 50% cytotoxic concentration (CC50) is the concentration of test compound  that reduced the cell viability by 50% when compared to untreated controls'
                                 elif row[n_colName].lower() == 'selectivity index':
-                                    description = ''
+                                    description = 'The selectivity index (SI) is defined as the ratio of cytotoxicity to biological activity, which means the ratio of the 50% cytotoxic concentration, CC50, to the 50% antiviral concentration, IC50, (CC50/IC50)'
 
                                 getAnalyses(
                                     name=row[n_colName],
+                                    relation=[r_colName],
                                     value=row[v_colName],
                                     description=description,
                                     units=row[u_colName],

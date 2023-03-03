@@ -32,7 +32,7 @@ class DataFileSerializer(serializers.ModelSerializer):
 class AnalysesSerializer(serializers.ModelSerializer):
     class Meta:
         model = Analyses
-        fields = ['name', 'value', 'description', 'units',
+        fields = ['name', 'relation', 'value', 'description', 'units',
                   'unitsTermAccession', 'pvalue', 'dataComment']
 
 
@@ -89,7 +89,7 @@ class PlateEntitySerializer(serializers.ModelSerializer):
                     wellid_list.append(well[4])  # tupl[4] = WellEntity id
 
             # Given the list of Well IDs, get queryset including all WellEntity models and pass it to WellEntitySerializer
-            well_qs = WellEntity.objects.filter(dbId__in=wellid_list)
+            well_qs = WellEntity.objects.filter(dbId__in=wellid_list).order_by('name')
             return WellEntitySerializer(many=True,  context=context).to_representation(well_qs)
 
     def get_controlWells(self, obj):
@@ -106,8 +106,8 @@ class ScreenEntitySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ScreenEntity
-        fields = ['dbId', 'name', 'type', 'typeTermAccession', 'technologyType', 'technologyTypeTermAccession',
-                  'imagingMethod', 'imagingMethodTermAccession', 'sampleType', 'dataDoi', 'plateCount', 'plates']
+        fields = ['dbId', 'name', 'description', 'type', 'technologyType', 
+                  'imagingMethod', 'sampleType', 'dataDoi', 'plateCount', 'plates']
 
     def get_plates(self, obj):
 
@@ -138,7 +138,7 @@ class AssayEntitySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = AssayEntity
-        fields = ['dbId', 'name', 'description', 'assayType', 'assayTypeTermAccession', 'organisms',
+        fields = ['dbId', 'name', 'description', 'assayType', 'organisms',
                   'externalLink', 'releaseDate', 'publications', 'dataDoi', 'BIAId', 'screenCount', 'screens', 'additionalAnalyses']
 
     def get_screens(self, obj):

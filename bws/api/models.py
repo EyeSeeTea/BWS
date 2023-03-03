@@ -237,7 +237,7 @@ class PdbToLigand(models.Model):
 
 
 class LigandEntity(models.Model):
-    IUPACInChIkey = models.CharField(max_length=27, primary_key=True)
+    IUPACInChIkey = models.CharField(max_length=27, primary_key=True, default='')
     dbId = models.CharField(max_length=20, null=True, blank=True)
     pubChemCompoundId = models.CharField(max_length=250,  null=True, blank=True)
     ligandType = models.CharField(max_length=25, null=True, blank=True)
@@ -260,7 +260,8 @@ class LigandEntity(models.Model):
         return '%s/compound/%s' % (PUBCHE_URL, self.pubChemCompoundId,)
 
     def __str__(self):
-        return '%s' % (self.IUPACInChIkey,)
+        return '%s (LigandEntity)' % (self.IUPACInChIkey,)
+
 
 
 class RefinedModelSource(models.Model):
@@ -469,8 +470,6 @@ class AssayEntity(FeatureModelEntity):
     dbId = models.CharField(max_length=50, blank=False,
                             default='', primary_key=True)
     assayType = models.CharField(max_length=255, blank=True, default='')
-    assayTypeTermAccession = models.CharField(
-        max_length=255, blank=True, default='')
     organisms = models.ManyToManyField(Organism)
     publications = models.ManyToManyField(Publication)
     screenCount = models.IntegerField(blank=True, null=True)
@@ -493,14 +492,8 @@ class ScreenEntity(models.Model):
     name = models.CharField(max_length=255, blank=False, default='')
     description = models.CharField(max_length=255, blank=True, default='')
     type = models.CharField(max_length=255, blank=False, default='')
-    typeTermAccession = models.CharField(
-        max_length=255, null=True, blank=True, default='')
     technologyType = models.CharField(max_length=255, blank=False, default='')
-    technologyTypeTermAccession = models.CharField(
-        max_length=255, null=True, blank=True, default='')
     imagingMethod = models.CharField(max_length=255, blank=True, default='')
-    imagingMethodTermAccession = models.CharField(
-        max_length=255, null=True, blank=True, default='')
     sampleType = models.CharField(max_length=255, blank=True, default='')
     plateCount = models.IntegerField(blank=True, null=True)
     dataDoi = models.CharField(max_length=255, blank=True, default='')
@@ -588,13 +581,13 @@ class Analyses(models.Model):
     '''
     name = models.CharField(max_length=255, blank=False,
                             null=False, default='')
-    # TODO: cambiar a null=False, blank=False
-    value = models.FloatField(blank=True, null=True)
+    relation = models.CharField(max_length=10, blank=True, null=True, default='=')
+    value = models.FloatField(null=False, blank=False, default=0)
     description = models.CharField(
         max_length=255, blank=True, null=True, default='')
     units = models.CharField(max_length=255, blank=True, null=True, default='')
     unitsTermAccession = models.CharField(
-        max_length=255, blank=False, null=True, default='')
+        max_length=255, blank=True, null=True, default='')
     pvalue = models.FloatField(null=True, blank=True)
     dataComment = models.CharField(
         max_length=255, blank=True, null=True, default='')
