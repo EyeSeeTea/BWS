@@ -69,7 +69,35 @@ class DataFile(models.Model):
 
 # ========== ========== ========== ========== ========== ========== ==========
 
-
+class Ontology(models.Model):
+    '''
+    Ontology.
+    '''
+    name = models.CharField(max_length=255, blank=False,
+                            null=False, default='')
+    description = models.CharField(max_length=900, blank=False,
+                            null=False, default='')
+    externalLink = models.URLField(max_length=200, default='', blank=True)
+    
+    def __str__(self):
+        return '%s' % (self.name)
+    
+class OntologyTerm(models.Model):
+    '''
+    Ontology term.
+    '''
+    dbId = models.CharField(max_length=50, blank=False,
+                            default='', primary_key=True)
+    name = models.CharField(max_length=255, blank=False,
+                            null=False, default='')
+    description = models.CharField(max_length=900, blank=False,
+                            null=False, default='')
+    externalLink = models.URLField(max_length=200, default='', blank=True)
+    source = models.ForeignKey(Ontology, related_name = 'terms', on_delete=models.CASCADE)
+    
+    def __str__(self):
+        return '%s' % (self.name)
+    
 class EmdbEntry(models.Model):
     dbId = models.CharField(max_length=10, blank=False,
                             default='', primary_key=True, validators=[
@@ -469,7 +497,7 @@ class AssayEntity(FeatureModelEntity):
 
     dbId = models.CharField(max_length=50, blank=False,
                             default='', primary_key=True)
-    assayType = models.CharField(max_length=255, blank=True, default='')
+    assayType = models.ManyToManyField(OntologyTerm)
     organisms = models.ManyToManyField(Organism)
     publications = models.ManyToManyField(Publication)
     screenCount = models.IntegerField(blank=True, null=True)
@@ -491,9 +519,9 @@ class ScreenEntity(models.Model):
                             default='', primary_key=True)
     name = models.CharField(max_length=255, blank=False, default='')
     description = models.CharField(max_length=255, blank=True, default='')
-    type = models.CharField(max_length=255, blank=False, default='')
-    technologyType = models.CharField(max_length=255, blank=False, default='')
-    imagingMethod = models.CharField(max_length=255, blank=True, default='')
+    type = models.ManyToManyField(OntologyTerm)
+    technologyType = models.ManyToManyField(OntologyTerm)
+    imagingMethod = models.ManyToManyField(OntologyTerm)
     sampleType = models.CharField(max_length=255, blank=True, default='')
     plateCount = models.IntegerField(blank=True, null=True)
     dataDoi = models.CharField(max_length=255, blank=True, default='')
@@ -532,7 +560,7 @@ class WellEntity(models.Model):
     externalLink = models.URLField(max_length=200, blank=True)
     imageThumbailLink = models.URLField(max_length=200, blank=True)
     imagesIds = models.CharField(max_length=255, blank=True, default='')
-    cellLine = models.CharField(max_length=255, blank=True, default='') #TODO add foreignkey
+    cellLine = models.ManyToManyField(OntologyTerm)
     controlType = models.CharField(max_length=255, blank=True, default='')
     qualityControl = models.CharField(max_length=255, blank=True, default='')
     micromolarConcentration = models.FloatField(
@@ -583,7 +611,7 @@ class Analyses(models.Model):
     value = models.FloatField(null=False, blank=False, default=0)
     description = models.CharField(
         max_length=255, blank=True, null=True, default='')
-    units = models.CharField(max_length=255, blank=True, null=True, default='') #TODO: add foreign key
+    units = models.ManyToManyField(OntologyTerm)
     pvalue = models.FloatField(null=True, blank=True)
     dataComment = models.CharField(
         max_length=255, blank=True, null=True, default='')
@@ -595,32 +623,3 @@ class Analyses(models.Model):
 
     def __str__(self):
         return '%s (%s)' % (self.name, self.ligand)
-
-class Ontology(models.Model):
-    '''
-    Ontology.
-    '''
-    name = models.CharField(max_length=255, blank=False,
-                            null=False, default='')
-    description = models.CharField(max_length=900, blank=False,
-                            null=False, default='')
-    externalLink = models.URLField(max_length=200, default='', blank=True)
-    
-    def __str__(self):
-        return '%s' % (self.name)
-    
-class OntologyTerm(models.Model):
-    '''
-    Ontology term.
-    '''
-    dbId = models.CharField(max_length=50, blank=False,
-                            default='', primary_key=True)
-    name = models.CharField(max_length=255, blank=False,
-                            null=False, default='')
-    description = models.CharField(max_length=900, blank=False,
-                            null=False, default='')
-    externalLink = models.URLField(max_length=200, default='', blank=True)
-    source = models.ForeignKey(Ontology, related_name = 'terms', on_delete=models.CASCADE)
-    
-    def __str__(self):
-        return '%s' % (self.name)
