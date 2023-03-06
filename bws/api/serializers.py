@@ -61,8 +61,8 @@ class OrganismSerializer(serializers.ModelSerializer):
 class WellEntitySerializer(serializers.ModelSerializer):
 
     class Meta:
-        model = WellEntity #TODO: remove cellLineTermAccession
-        fields = ['dbId', 'name', 'externalLink', 'imagesIds', 'imageThumbailLink', 'cellLine', 'cellLineTermAccession', 'controlType', 'qualityControl',
+        model = WellEntity
+        fields = ['dbId', 'name', 'externalLink', 'imagesIds', 'imageThumbailLink', 'cellLine', 'controlType', 'qualityControl',
                   'micromolarConcentration', 'percentageInhibition', 'hitOver75Activity', 'numberCells', 'phenotypeAnnotationLevel', 'channels']
 
 

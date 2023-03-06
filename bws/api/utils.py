@@ -1721,7 +1721,7 @@ def updatePlateEntity(dbId, name, screen):
     return obj
 
 
-def updateWellEntity(dbId, name, description, ligand, plate, externalLink, imageThumbailLink, imagesIds, cellLine, cellLineTermAccession, controlType, qualityControl, micromolarConcentration, percentageInhibition, hitOver75Activity, numberCells, phenotypeAnnotationLevel, channels):
+def updateWellEntity(dbId, name, description, ligand, plate, externalLink, imageThumbailLink, imagesIds, cellLine, controlType, qualityControl, micromolarConcentration, percentageInhibition, hitOver75Activity, numberCells, phenotypeAnnotationLevel, channels):
     """
     Update WellEntity entry or create in case it does not exist
     """
@@ -1739,7 +1739,6 @@ def updateWellEntity(dbId, name, description, ligand, plate, externalLink, image
                 'imageThumbailLink': imageThumbailLink,
                 'imagesIds': imagesIds,
                 'cellLine': cellLine,
-                'cellLineTermAccession': cellLineTermAccession,
                 'controlType': controlType,
                 'qualityControl': qualityControl,
                 'micromolarConcentration': micromolarConcentration,
@@ -2153,8 +2152,7 @@ class IDRUtils(object):
                         imageThumbailLink=URL_THUMBNAIL.format(
                             **{'imageId': wellImageIds[0]}),
                         imagesIds=wellImageIds,
-                        cellLine=row[cl_colName],
-                        cellLineTermAccession=row[clta_colName], #TODO: remove cellLineTermAccession and create ontology term
+                        cellLine=row[cl_colName], #TODO: provide OntologyTerm object for cellLine
                         controlType=row[ct_colName],
                         qualityControl=row[qc_colName],
                         micromolarConcentration=None,
@@ -2180,8 +2178,7 @@ class IDRUtils(object):
                         imageThumbailLink=URL_THUMBNAIL.format(
                             **{'imageId': wellImageIds[0]}),
                         imagesIds=wellImageIds,
-                        cellLine=row[cl_colName],
-                        cellLineTermAccession=row[clta_colName], #TODO: remove cellLineTermAccession and create ontology term
+                        cellLine=row[cl_colName], #TODO: provide OntologyTerm object for cellLine
                         controlType=row[ct_colName],
                         qualityControl=row[qc_colName],
                         micromolarConcentration=None,
@@ -2207,8 +2204,7 @@ class IDRUtils(object):
                         imageThumbailLink=URL_THUMBNAIL.format(
                             **{'imageId': wellImageIds[0]}),
                         imagesIds=wellImageIds,
-                        cellLine=row[cl_colName],
-                        cellLineTermAccession=row[clta_colName], #TODO: remove cellLineTermAccession and create ontology term
+                        cellLine=row[cl_colName], #TODO: provide OntologyTerm object for cellLine
                         controlType=row[ct_colName],
                         qualityControl=row[qc_colName],
                         micromolarConcentration=None,
@@ -2261,7 +2257,6 @@ class IDRUtils(object):
                             **{'imageId': wellImageIds[0]}),
                         imagesIds=wellImageIds,
                         cellLine=row[cl_colName], #TODO: provide OntologyTerm object for cellLine
-                        cellLineTermAccession=row[clta_colName], #TODO: remove cellLineTermAccession and create ontology term
                         controlType=row[ct_colName],
                         qualityControl=row[qc_colName],
                         micromolarConcentration=row[mc_colName] if mc_colName else (

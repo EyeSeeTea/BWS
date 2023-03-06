@@ -533,8 +533,6 @@ class WellEntity(models.Model):
     imageThumbailLink = models.URLField(max_length=200, blank=True)
     imagesIds = models.CharField(max_length=255, blank=True, default='')
     cellLine = models.CharField(max_length=255, blank=True, default='') #TODO add foreignkey
-    cellLineTermAccession = models.CharField( #TODO: remove cellLineTermAccession
-        max_length=255, blank=True, default='')
     controlType = models.CharField(max_length=255, blank=True, default='')
     qualityControl = models.CharField(max_length=255, blank=True, default='')
     micromolarConcentration = models.FloatField(
