@@ -32,8 +32,8 @@ class DataFileSerializer(serializers.ModelSerializer):
 class AnalysesSerializer(serializers.ModelSerializer):
     class Meta:
         model = Analyses
-        fields = ['name', 'relation', 'value', 'description', 'units',
-                  'unitsTermAccession', 'pvalue', 'dataComment']
+        fields = ['name', 'relation', 'value', 'description', 'units'
+                  , 'pvalue', 'dataComment']
 
 
 class AuthorSerializer(serializers.ModelSerializer):
@@ -61,7 +61,7 @@ class OrganismSerializer(serializers.ModelSerializer):
 class WellEntitySerializer(serializers.ModelSerializer):
 
     class Meta:
-        model = WellEntity
+        model = WellEntity #TODO: remove cellLineTermAccession
         fields = ['dbId', 'name', 'externalLink', 'imagesIds', 'imageThumbailLink', 'cellLine', 'cellLineTermAccession', 'controlType', 'qualityControl',
                   'micromolarConcentration', 'percentageInhibition', 'hitOver75Activity', 'numberCells', 'phenotypeAnnotationLevel', 'channels']
 

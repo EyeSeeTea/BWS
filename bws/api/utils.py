@@ -1825,7 +1825,7 @@ def getLigandEntity(dbId, ligandType, name, formula, formula_weight, details, al
     return obj
 
 
-def getAnalyses(name, relation, value, description, units, unitsTermAccession, pvalue, dataComment, ligand, assay):
+def getAnalyses(name, relation, value, description, units, pvalue, dataComment, ligand, assay):
     """
     Get Analyses entry or create in case it does not exist
     """
@@ -1838,7 +1838,6 @@ def getAnalyses(name, relation, value, description, units, unitsTermAccession, p
             value=value,
             description=description,
             units=units,
-            unitsTermAccession=unitsTermAccession,
             pvalue=pvalue,
             dataComment=dataComment,
             ligand=ligand,
@@ -1933,6 +1932,7 @@ class IDRUtils(object):
         studyParserObj = StudyParser(MetadataFilePath)
 
         # Get or Create Organism entries
+        #TODO: create ontology term??
         organisms = [
             organism for organism in studyParserObj.study['Study Organism'].split("\t")]
         organismTermSources = [
@@ -2013,6 +2013,7 @@ class IDRUtils(object):
 
         # Create AssayEntity entry
         #assayExternalLinks = [(assayExternalLink for assayExternalLink in studyParserObj.study['Study External URL'].split("\t")) if ('Study External URL' in studyParserObj.study) else '']
+        #TODO: create ontology term
         assayTypes = [
             assayType for assayType in studyParserObj.study['Study Type'].split("\t")]
         assayTypeTermAccessions = [
@@ -2062,6 +2063,7 @@ class IDRUtils(object):
             )
 
             # Get screen imaging methods and combine them with their term accessions 
+            #TODO: crete ontology term
             screenImagingMethods = [
                 screenImagingMethod for screenImagingMethod in screen['Screen Imaging Method'].split("\t")]
             screenImagingTermAccessions = [
@@ -2071,6 +2073,7 @@ class IDRUtils(object):
             screenimg_str = ['%s (%s)' % (y[0], y[1]) for y in screenimg_zip]
 
             # Get screen types and combine them with their term accessions
+            #TODO: create ontology term
             screenTypes = [
                 screenType for screenType in screen['Screen Type'].split("\t")]
             screenTypeTermAccessions = [
@@ -2080,6 +2083,7 @@ class IDRUtils(object):
             screentype_str = ['%s (%s)' % (i[0], i[1]) for i in screentype_zip]
 
             # Get screen technology types and combine them with their term accessions
+            #TODO: create ontology term
             screenTechTypes = [
                 screenTechType for screenTechType in screen['Screen Technology Type'].split("\t")]
             screenTechTypeTermAccessions = [
@@ -2150,7 +2154,7 @@ class IDRUtils(object):
                             **{'imageId': wellImageIds[0]}),
                         imagesIds=wellImageIds,
                         cellLine=row[cl_colName],
-                        cellLineTermAccession=row[clta_colName],
+                        cellLineTermAccession=row[clta_colName], #TODO: remove cellLineTermAccession and create ontology term
                         controlType=row[ct_colName],
                         qualityControl=row[qc_colName],
                         micromolarConcentration=None,
@@ -2177,7 +2181,7 @@ class IDRUtils(object):
                             **{'imageId': wellImageIds[0]}),
                         imagesIds=wellImageIds,
                         cellLine=row[cl_colName],
-                        cellLineTermAccession=row[clta_colName],
+                        cellLineTermAccession=row[clta_colName], #TODO: remove cellLineTermAccession and create ontology term
                         controlType=row[ct_colName],
                         qualityControl=row[qc_colName],
                         micromolarConcentration=None,
@@ -2204,7 +2208,7 @@ class IDRUtils(object):
                             **{'imageId': wellImageIds[0]}),
                         imagesIds=wellImageIds,
                         cellLine=row[cl_colName],
-                        cellLineTermAccession=row[clta_colName],
+                        cellLineTermAccession=row[clta_colName], #TODO: remove cellLineTermAccession and create ontology term
                         controlType=row[ct_colName],
                         qualityControl=row[qc_colName],
                         micromolarConcentration=None,
@@ -2256,8 +2260,8 @@ class IDRUtils(object):
                         imageThumbailLink=URL_THUMBNAIL.format(
                             **{'imageId': wellImageIds[0]}),
                         imagesIds=wellImageIds,
-                        cellLine=row[cl_colName],
-                        cellLineTermAccession=row[clta_colName],
+                        cellLine=row[cl_colName], #TODO: provide OntologyTerm object for cellLine
+                        cellLineTermAccession=row[clta_colName], #TODO: remove cellLineTermAccession and create ontology term
                         controlType=row[ct_colName],
                         qualityControl=row[qc_colName],
                         micromolarConcentration=row[mc_colName] if mc_colName else (
@@ -2288,8 +2292,7 @@ class IDRUtils(object):
                                     relation=[r_colName],
                                     value=row[v_colName],
                                     description=description,
-                                    units=row[u_colName],
-                                    unitsTermAccession=row[uta_colName],
+                                    units=row[u_colName], #TODO: provide OntologyTerm object for units
                                     pvalue=row[pv_colName],
                                     dataComment=row[dc_colName],
                                     ligand=LigandEntityEntry,

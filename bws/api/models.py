@@ -532,8 +532,8 @@ class WellEntity(models.Model):
     externalLink = models.URLField(max_length=200, blank=True)
     imageThumbailLink = models.URLField(max_length=200, blank=True)
     imagesIds = models.CharField(max_length=255, blank=True, default='')
-    cellLine = models.CharField(max_length=255, blank=True, default='')
-    cellLineTermAccession = models.CharField(
+    cellLine = models.CharField(max_length=255, blank=True, default='') #TODO add foreignkey
+    cellLineTermAccession = models.CharField( #TODO: remove cellLineTermAccession
         max_length=255, blank=True, default='')
     controlType = models.CharField(max_length=255, blank=True, default='')
     qualityControl = models.CharField(max_length=255, blank=True, default='')
@@ -585,9 +585,7 @@ class Analyses(models.Model):
     value = models.FloatField(null=False, blank=False, default=0)
     description = models.CharField(
         max_length=255, blank=True, null=True, default='')
-    units = models.CharField(max_length=255, blank=True, null=True, default='')
-    unitsTermAccession = models.CharField(
-        max_length=255, blank=True, null=True, default='')
+    units = models.CharField(max_length=255, blank=True, null=True, default='') #TODO: add foreign key
     pvalue = models.FloatField(null=True, blank=True)
     dataComment = models.CharField(
         max_length=255, blank=True, null=True, default='')
