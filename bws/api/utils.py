@@ -1851,13 +1851,13 @@ def getAnalyses(name, relation, value, description, units, pvalue, dataComment, 
         print(exc, os.strerror)
     return obj
 
-def updateOntology(name, description, externalLink):
+def getOntology(name, description, externalLink):
     """
-    Update Ontology entry or create in case it does not exist
+    Get Ontology entry or create in case it does not exist
     """
     obj = None
     try:
-        obj, created = Ontology.objects.update_or_create(
+        obj, created = Ontology.objects.get_or_create(
             name=name,
             defaults={
                 'description': description,
@@ -1867,9 +1867,6 @@ def updateOntology(name, description, externalLink):
         if created:
             logger.debug('Created new %s: %s', Ontology.__name__, obj)
             print('Created new', Ontology.__name__, obj)
-        else:
-            logger.debug('Updated %s: %s', Ontology.__name__, obj)
-            print('Updated', Ontology.__name__, obj)
     except Exception as exc:
         logger.exception(exc)
         print(exc, os.strerror)
@@ -2061,7 +2058,7 @@ class IDRUtils(object):
                 role=authorEntry[5]
             )
 
-        # Create AssayEntity entry
+        # Create Ontology, OntologyTerm and AssayEntity entry
         #assayExternalLinks = [(assayExternalLink for assayExternalLink in studyParserObj.study['Study External URL'].split("\t")) if ('Study External URL' in studyParserObj.study) else '']
         #TODO: create ontology term
         assayTypes = [
