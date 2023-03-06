@@ -1900,6 +1900,29 @@ def updateOntologyTerm(dbId, name, description, externalLink, source):
         print(exc, os.strerror)
     return obj
 
+def detectOntologyByDbId(dbId):
+    if 'efo' in dbId.lower():
+        name = 'Experimental Factor Ontology (EFO)'
+        description = 'The Experimental Factor Ontology (EFO) provides a systematic description of many experimental variables available in EBI databases, and for external projects such as the NHGRI GWAS catalogue. It combines parts of several biological ontologies, such as anatomy, disease and chemical compounds. The scope of EFO is to support the annotation, analysis and visualization of data handled by many groups at the EBI and as the core ontology for OpenTargets.org'
+        externalLink = 'http://www.ebi.ac.uk/efo'
+    elif 'bao' in dbId.lower():
+        name = 'BioAssay Ontology (BAO)'
+        description = 'The BioAssay Ontology (BAO) describes biological screening assays and their results including high-throughput screening (HTS) data for the purpose of categorizing assays and data analysis. BAO is an extensible, knowledge-based, highly expressive (currently SHOIQ(D)) description of biological assays making use of descriptive logic based features of the Web Ontology Language (OWL). BAO currently has over 700 classes and also makes use of several other ontologies. It describes several concepts related to biological screening, including Perturbagen, Format, Meta Target, Design, Detection Technology, and Endpoint. '
+        externalLink = 'http://bioassayontology.org'
+    elif 'fbbi' in dbId.lower():
+        name = 'Biological Imaging Methods Ontology (FBbi)'
+        description = 'A structured controlled vocabulary of sample preparation, visualization and imaging methods used in biomedical research'
+        externalLink = 'http://cellimagelibrary.org/'
+    elif 'uo' in dbId.lower():
+        name = 'Units of measurement ontology (UO)'
+        description = 'A structured controlled vocabulary of sample preparation, visualization and imaging methods used in biomedical research'
+        externalLink = 'http://cellimagelibrary.org/'
+    else:
+        print('Unkown ontology for %s' % (dbId))
+        return
+    
+    return name, description, externalLink
+
 class IDRUtils(object):
 
     def _updateAssayDirs_fromGitHub(self):
