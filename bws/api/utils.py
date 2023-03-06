@@ -1851,6 +1851,57 @@ def getAnalyses(name, relation, value, description, units, pvalue, dataComment, 
         print(exc, os.strerror)
     return obj
 
+def updateOntology(name, description, externalLink):
+    """
+    Update Ontology entry or create in case it does not exist
+    """
+    obj = None
+    try:
+        obj, created = Ontology.objects.update_or_create(
+            name=name,
+            defaults={
+                'description': description,
+                'externalLink': externalLink,
+            }
+        )
+        if created:
+            logger.debug('Created new %s: %s', Ontology.__name__, obj)
+            print('Created new', Ontology.__name__, obj)
+        else:
+            logger.debug('Updated %s: %s', Ontology.__name__, obj)
+            print('Updated', Ontology.__name__, obj)
+    except Exception as exc:
+        logger.exception(exc)
+        print(exc, os.strerror)
+    return obj
+
+def updateOntologyTerm(dbId, name, description, externalLink, source):
+    """
+    Update OntologyTerm entry or create in case it does not exist
+    """
+
+    obj = None
+    try:
+        obj, created = OntologyTerm.objects.update_or_create(
+            dbId=dbId,
+            defaults={
+                'name': name,
+                'description': description,
+                'externalLink': externalLink,
+                'source': source,
+            }
+        )
+        if created:
+            logger.debug('Created new %s: %s', OntologyTerm.__name__, obj)
+            print('Created new', OntologyTerm.__name__, obj)
+        else:
+            logger.debug('Updated %s: %s', Ontology.__name__, obj)
+            print('Updated', OntologyTerm.__name__, obj)
+
+    except Exception as exc:
+        logger.exception(exc)
+        print(exc, os.strerror)
+    return obj
 
 class IDRUtils(object):
 
