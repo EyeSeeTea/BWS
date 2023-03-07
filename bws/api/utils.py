@@ -2074,8 +2074,7 @@ class IDRUtils(object):
         n_colName = getColNameByKW(analysesDf.columns, 'standard', 'type')
         r_colName = getColNameByKW(analysesDf.columns, 'standard', 'relation')
         v_colName = getColNameByKW(analysesDf.columns, 'standard', 'value')
-        u_colName = getColNameByKW(analysesDf.columns, 'standard', 'units')
-        uta_colName = getColNameByKW(analysesDf.columns, 'uo', 'units')
+        u_colName = getColNameByKW(analysesDf.columns, 'uo', 'units') # units ontology terms
         pv_colName = getColNameByKW(analysesDf.columns, 'pchembl', 'value')
         dc_colName = getColNameByKW(analysesDf.columns, 'data', 'comment')
         l_colName = getColNameByKW(analysesDf.columns, 'compound', 'key')
@@ -2240,7 +2239,7 @@ class IDRUtils(object):
 
                 # Get column names in screen DF that harbor key well attributes
                 cl_colName = getColNameByKW(
-                    screenDf.columns, 'accession', '3') #cellLine column
+                    screenDf.columns, 'accession', '3') #cellLine ontology terms
                 ct_colName = getColNameByKW(
                     screenDf.columns, 'control', 'type')
                 qc_colName = getColNameByKW(
@@ -2391,9 +2390,11 @@ class IDRUtils(object):
                     )
 
                     if LigandEntityEntry:
+                        # Check if LigandEntityEntry is in analyses dataframe and get ligand indexes
                         indexes = [i for i, elem in enumerate(analysesDf[l_colName].tolist(
                         )) if elem.upper() == LigandEntityEntry.name.upper()]
 
+                        # Set Analyses description attribute
                         if indexes:
                             for index, row in analysesDf.iloc[indexes].iterrows():
                                 if row[n_colName].lower() == 'ic50':
@@ -2403,12 +2404,19 @@ class IDRUtils(object):
                                 elif row[n_colName].lower() == 'selectivity index':
                                     description = 'The selectivity index (SI) is defined as the ratio of cytotoxicity to biological activity, which means the ratio of the 50% cytotoxic concentration, CC50, to the 50% antiviral concentration, IC50, (CC50/IC50)'
 
+                                # Create Ontology, OntologyTerm entries for Analyses units 
+                                if row[u_colName] is not None:
+                                    unitsEntry = getOntologyTermDataBydbId(row[u_colName])
+                                else:
+                                    unitsEntry = None
+
+                                # Create Analyses entry
                                 getAnalyses(
                                     name=row[n_colName],
-                                    relation=[r_colName],
+                                    relation=row[r_colName],
                                     value=row[v_colName],
                                     description=description,
-                                    units=row[u_colName], #TODO: provide OntologyTerm object for units
+                                    units=unitsEntry,
                                     pvalue=row[pv_colName],
                                     dataComment=row[dc_colName],
                                     ligand=LigandEntityEntry,
