@@ -73,6 +73,8 @@ class Ontology(models.Model):
     '''
     Ontology.
     '''
+    dbId = models.CharField(max_length=50, blank=False,
+                            default='', primary_key=True)
     name = models.CharField(max_length=255, blank=False,
                             null=False, default='')
     description = models.CharField(max_length=900, blank=False,
