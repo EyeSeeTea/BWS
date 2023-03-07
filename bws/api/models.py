@@ -563,7 +563,8 @@ class WellEntity(models.Model):
     externalLink = models.URLField(max_length=200, blank=True)
     imageThumbailLink = models.URLField(max_length=200, blank=True)
     imagesIds = models.CharField(max_length=255, blank=True, default='')
-    cellLines = models.ManyToManyField(OntologyTerm, related_name='cell_term_wells')
+    cellLine = models.ForeignKey(OntologyTerm, default='',
+                                 related_name='cell_term_wells', on_delete=models.CASCADE)
     controlType = models.CharField(max_length=255, blank=True, default='')
     qualityControl = models.CharField(max_length=255, blank=True, default='')
     micromolarConcentration = models.FloatField(
