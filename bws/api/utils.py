@@ -1945,7 +1945,60 @@ def detect_getOntologyByDbId(OntTermId):
 
     return obj
 
+def getDataFromOLS(url, jKey, returnList=False):
+    '''
+    Get data specified for jkey in the JSON response for the OLS url.
+    If value is a list and returnList is not True, it returns only the first item.
+    If value is an integer, it returns a string. 
+    '''
+    jdata = ''
+    try:
+        resp = requests.get(url)
+        if resp.status_code == 200:
+            jdata = resp.json()
+            value = item_generator(jdata, jKey).__next__()
+            if isinstance(value, list) and not returnList:
+                # Check if value list is empty
+                if value: 
+                    value = value[0]
+                else:
+                    value = ''
+            if isinstance(value, int):
+                value = str(value)
+    except Exception as exc:
+        logger.exception(exc)
+        print('- >>>>',  exc, os.strerror)
+    return value
 
+
+def getOntologyTermDataBydbId(dbId):
+    """
+    Get OntologyTerm entry given database id. 
+    In case it does not exist, create it by means of OLS-WS.
+    Create related Ontology entry too if it does no exists.
+    Returns OntologyTerm entry.
+    """
+    obj = None
+    try:
+        # first look if the OntologyTerm entry is already in the DB
+        obj = OntologyTerm.objects.get(pk=dbId)
+    except OntologyTerm.DoesNotExist:
+        # Check Ontology entry is already in the DB
+        try:
+            OntologyEntry = detect_getOntologyByDbId(dbId)
+        except KeyError:
+            print('OntologyTerm %s cannot be created due to unkown Ontology' % (dbId))
+
+        # Get data from OLS by dbId to create OntologyTerm entry
+        url = OLS_WS_URL % ('api', OntologyEntry.dbId, OntologyEntry.queryLink, dbId)
+
+        name = getDataFromOLS(url, 'label')
+        description = getDataFromOLS(url, 'description')
+        externalLink = OLS_WS_URL % ('', OntologyEntry.dbId, OntologyEntry.queryLink, dbId)
+
+        obj = updateOntologyTerm(dbId, name, description, externalLink, OntologyEntry)
+
+    return obj
 class IDRUtils(object):
 
     def _updateAssayDirs_fromGitHub(self):
