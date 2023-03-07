@@ -78,6 +78,7 @@ class Ontology(models.Model):
     description = models.CharField(max_length=900, blank=False,
                             null=False, default='')
     externalLink = models.URLField(max_length=200, default='', blank=True)
+    queryLink = models.URLField(max_length=200, default='', blank=True) # Link that OLS API uses to access ontology data
     
     def __str__(self):
         return '%s' % (self.name)
