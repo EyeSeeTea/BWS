@@ -2239,9 +2239,8 @@ class IDRUtils(object):
                 wellImageIds = getImageIdsFromWellId(session, wellId)
 
                 # Get column names in screen DF that harbor key well attributes
-                cl_colName = getColNameByKW(screenDf.columns, 'cell', 'line')
-                clta_colName = getColNameByKW(
-                    screenDf.columns, 'accession', '3')
+                cl_colName = getColNameByKW(
+                    screenDf.columns, 'accession', '3') #cellLine column
                 ct_colName = getColNameByKW(
                     screenDf.columns, 'control', 'type')
                 qc_colName = getColNameByKW(
@@ -2257,6 +2256,9 @@ class IDRUtils(object):
                     screenDf.columns, 'phenotype', 'level')
                 c_colName = getColNameByKW(screenDf.columns, 'channel', '')
 
+                # Create Ontology, OntologyTerm entries for WellEntity cellLine 
+                cellLineEntry = getOntologyTermDataBydbId(row[cl_colName])
+
                 # Create WellEntity entries for unkown wells (no ligand tested and no control)
                 if row['Compound Name'] == '' and row['Control Type'] == '':
 
@@ -2271,7 +2273,7 @@ class IDRUtils(object):
                         imageThumbailLink=URL_THUMBNAIL.format(
                             **{'imageId': wellImageIds[0]}),
                         imagesIds=wellImageIds,
-                        cellLine=row[cl_colName], #TODO: provide OntologyTerm object for cellLine
+                        cellLine=cellLineEntry, 
                         controlType=row[ct_colName],
                         qualityControl=row[qc_colName],
                         micromolarConcentration=None,
@@ -2297,7 +2299,7 @@ class IDRUtils(object):
                         imageThumbailLink=URL_THUMBNAIL.format(
                             **{'imageId': wellImageIds[0]}),
                         imagesIds=wellImageIds,
-                        cellLine=row[cl_colName], #TODO: provide OntologyTerm object for cellLine
+                        cellLine=cellLineEntry, 
                         controlType=row[ct_colName],
                         qualityControl=row[qc_colName],
                         micromolarConcentration=None,
@@ -2323,7 +2325,7 @@ class IDRUtils(object):
                         imageThumbailLink=URL_THUMBNAIL.format(
                             **{'imageId': wellImageIds[0]}),
                         imagesIds=wellImageIds,
-                        cellLine=row[cl_colName], #TODO: provide OntologyTerm object for cellLine
+                        cellLine=cellLineEntry,
                         controlType=row[ct_colName],
                         qualityControl=row[qc_colName],
                         micromolarConcentration=None,
@@ -2375,7 +2377,7 @@ class IDRUtils(object):
                         imageThumbailLink=URL_THUMBNAIL.format(
                             **{'imageId': wellImageIds[0]}),
                         imagesIds=wellImageIds,
-                        cellLine=row[cl_colName], #TODO: provide OntologyTerm object for cellLine
+                        cellLine=cellLineEntry,
                         controlType=row[ct_colName],
                         qualityControl=row[qc_colName],
                         micromolarConcentration=row[mc_colName] if mc_colName else (
