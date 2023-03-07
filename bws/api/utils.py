@@ -1998,6 +1998,17 @@ def getOntologyTermDataBydbId(dbId):
         obj = updateOntologyTerm(dbId, name, description, externalLink, OntologyEntry)
 
     return obj
+
+def getListOfOntologyTerms(dbId_list):
+    '''
+    Given a list of OntologyTerm IDs, returns a list of OntologyTerm entries
+    '''
+    entry_list = []
+    for dbId in dbId_list:
+        entry = getOntologyTermDataBydbId(dbId)
+        entry_list.append(entry)
+
+    return entry_list
 class IDRUtils(object):
 
     def _updateAssayDirs_fromGitHub(self):
@@ -2157,14 +2168,7 @@ class IDRUtils(object):
             )
 
         # Create Ontology, OntologyTerm entries for AssayEntity type
-        assayTypeTermAccessions = [
-            assayTypeTermAccession for assayTypeTermAccession in studyParserObj.study['Study Type Term Accession'].split("\t")]
-
-        assayOntologyTerm_list = []
-        for term in assayTypeTermAccessions:
-            OntologyTermEntry = getOntologyTermDataBydbId(term)
-            assayOntologyTerm_list.append(OntologyTermEntry)
-            
+        assayTypes = getListOfOntologyTerms(studyParserObj.study['Study Type Term Accession'].split("\t"))
             
         # Create Assay entry
         AssayEntityEntry = updateAssayEntity(
@@ -2185,8 +2189,8 @@ class IDRUtils(object):
          for orgEnt in organism_entry_list]
         [AssayEntityEntry.publications.add(pubEnt)
          for pubEnt in publication_entry_list]
-        [AssayEntityEntry.assayType.add(term)#TODO: change to types instead of assayType
-         for term in assayOntologyTerm_list]
+        [AssayEntityEntry.types.add(type)
+         for type in assayTypes]
 
         # Create ScreenEntity entries
         for screen in studyParserObj.components:
