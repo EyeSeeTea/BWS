@@ -614,7 +614,7 @@ class Analyses(models.Model):
     value = models.FloatField(null=False, blank=False, default=0)
     description = models.CharField(
         max_length=255, blank=True, null=True, default='')
-    units = models.ManyToManyField(OntologyTerm, related_name='unit_term_analyses') #TODO: change to foreigKey
+    units = models.ForeignKey(OntologyTerm, related_name='unit_term_analyses', on_delete=models.CASCADE)
     pvalue = models.FloatField(null=True, blank=True)
     dataComment = models.CharField(
         max_length=255, blank=True, null=True, default='')
