@@ -106,8 +106,8 @@ class ScreenEntitySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ScreenEntity
-        fields = ['dbId', 'name', 'description', 'type', 'technologyType', 
-                  'imagingMethod', 'sampleType', 'dataDoi', 'plateCount', 'plates']
+        fields = ['dbId', 'name', 'description', 'types', 'technologyTypes', 
+                  'imagingMethods', 'sampleType', 'dataDoi', 'plateCount', 'plates']
 
     def get_plates(self, obj):
 
@@ -138,7 +138,7 @@ class AssayEntitySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = AssayEntity
-        fields = ['dbId', 'name', 'description', 'assayType', 'organisms',
+        fields = ['dbId', 'name', 'description', 'types', 'organisms',
                   'externalLink', 'releaseDate', 'publications', 'dataDoi', 'BIAId', 'screenCount', 'screens', 'additionalAnalyses']
 
     def get_screens(self, obj):
