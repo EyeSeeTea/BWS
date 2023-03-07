@@ -1602,7 +1602,7 @@ def updateAssayEntity(dbId, name, featureType, description, externalLink, detail
     return obj
 
 
-def updateScreenEntity(dbId, name, description, type, technologyType, imagingMethod, sampleType, plateCount, dataDoi, assay):
+def updateScreenEntity(dbId, name, description, sampleType, plateCount, dataDoi, assay):
     """
     Update ScreenEntity entry or create in case it does not exist
     """
@@ -1614,9 +1614,6 @@ def updateScreenEntity(dbId, name, description, type, technologyType, imagingMet
             defaults={
                 'name': name,
                 'description': description,
-                'type': type,
-                'technologyType': technologyType,
-                'imagingMethod': imagingMethod,
                 'sampleType': sampleType,
                 'plateCount': plateCount,
                 'dataDoi': dataDoi,
@@ -2185,12 +2182,9 @@ class IDRUtils(object):
         )
 
         # Add already updated/created Author Publicacion and OntologyTerm entries to AssayEntity entry
-        [AssayEntityEntry.organisms.add(orgEnt)
-         for orgEnt in organism_entry_list]
-        [AssayEntityEntry.publications.add(pubEnt)
-         for pubEnt in publication_entry_list]
-        [AssayEntityEntry.types.add(type)
-         for type in assayTypes]
+        [AssayEntityEntry.organisms.add(orgEnt) for orgEnt in organism_entry_list]
+        [AssayEntityEntry.publications.add(pubEnt) for pubEnt in publication_entry_list]
+        [AssayEntityEntry.types.add(type) for type in assayTypes]
 
         # Create ScreenEntity entries
         for screen in studyParserObj.components:
@@ -2209,49 +2203,26 @@ class IDRUtils(object):
                 screenDir=screenDir,
             )
 
-            # Get screen imaging methods and combine them with their term accessions 
-            #TODO: crete ontology term
-            screenImagingMethods = [
-                screenImagingMethod for screenImagingMethod in screen['Screen Imaging Method'].split("\t")]
-            screenImagingTermAccessions = [
-                screenImagingTermAccession for screenImagingTermAccession in screen['Screen Imaging Method Term Accession'].split("\t")]
-
-            screenimg_zip = list(zip(screenImagingMethods, screenImagingTermAccessions))
-            screenimg_str = ['%s (%s)' % (y[0], y[1]) for y in screenimg_zip]
-
-            # Get screen types and combine them with their term accessions
-            #TODO: create ontology term
-            screenTypes = [
-                screenType for screenType in screen['Screen Type'].split("\t")]
-            screenTypeTermAccessions = [
-                screenTypeTermAccession for screenTypeTermAccession in screen['Screen Type Term Accession'].split("\t")]
-
-            screentype_zip = list(zip(screenTypes, screenTypeTermAccessions))
-            screentype_str = ['%s (%s)' % (i[0], i[1]) for i in screentype_zip]
-
-            # Get screen technology types and combine them with their term accessions
-            #TODO: create ontology term
-            screenTechTypes = [
-                screenTechType for screenTechType in screen['Screen Technology Type'].split("\t")]
-            screenTechTypeTermAccessions = [
-                screenTechTypeTermAccession for screenTechTypeTermAccession in screen['Screen Technology Type Term Accession'].split("\t")]
-
-            screentechtype_zip = list(zip(screenTechTypes, screenTechTypeTermAccessions))
-            screentechtype_str = ['%s (%s)' % (i[0], i[1]) for i in screentechtype_zip]
+            # Create Ontology, OntologyTerm entries for ScreenEntity imagingMethods, types and technologyTypes
+            imagingMethods = getListOfOntologyTerms(screen['Screen Imaging Method Term Accession'].split("\t"))
+            screenTypes = getListOfOntologyTerms(screen['Screen Type Term Accession'].split("\t"))
+            technologyTypes = getListOfOntologyTerms(screen['Screen Technology Type Term Accession'].split("\t"))
 
             ScreenEntityEntry = updateScreenEntity(
                 dbId=screenId,
                 name=screenName,
                 description=screen['Screen Description'],
-                type='; '.join(screentype_str),
-                technologyType='; '.join(screentechtype_str),
-                imagingMethod='; '.join(screenimg_str),
                 sampleType=screen['Screen Sample Type'],
                 # plateCount=plateCount,
                 plateCount=None,
                 dataDoi=screen['Screen Data DOI'],
                 assay=AssayEntityEntry,
             )
+
+            # Add OntologyTerm entries to ScreenEntity 
+            [ScreenEntityEntry.imagingMethods.add(method) for method in imagingMethods]
+            [ScreenEntityEntry.types.add(type) for type in screenTypes]
+            [ScreenEntityEntry.technologyTypes.add(techtype) for techtype in technologyTypes]
 
             # Create PlateEntity, LigandEntity and WellEntity entries
             screenDf = getScreenDataframe(session, screenId)
