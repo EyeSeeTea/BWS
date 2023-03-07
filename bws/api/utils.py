@@ -1569,7 +1569,7 @@ def updateAuthorFromIDR(name, email='', address='', orcid='', role=''):
     return obj
 
 
-def updateAssayEntity(dbId, name, featureType, description, externalLink, details, assayType, screenCount, BIAId, releaseDate, dataDoi):
+def updateAssayEntity(dbId, name, featureType, description, externalLink, details, screenCount, BIAId, releaseDate, dataDoi):
     """
     Update AssayEntity entry or create in case it does not exist
     """
@@ -1584,7 +1584,6 @@ def updateAssayEntity(dbId, name, featureType, description, externalLink, detail
                 'description': description,
                 'externalLink': externalLink,
                 'details': details,
-                'assayType': assayType,
                 'screenCount': screenCount,
                 'BIAId': BIAId,
                 'releaseDate': releaseDate,
@@ -2157,41 +2156,37 @@ class IDRUtils(object):
                 role=authorEntry[5]
             )
 
-        # Create Ontology, OntologyTerm and AssayEntity entry
-        #assayExternalLinks = [(assayExternalLink for assayExternalLink in studyParserObj.study['Study External URL'].split("\t")) if ('Study External URL' in studyParserObj.study) else '']
-        #TODO: create ontology term
-        assayTypes = [
-            assayType for assayType in studyParserObj.study['Study Type'].split("\t")]
+        # Create Ontology, OntologyTerm entries for AssayEntity type
         assayTypeTermAccessions = [
             assayTypeTermAccession for assayTypeTermAccession in studyParserObj.study['Study Type Term Accession'].split("\t")]
 
-        # Combine assay types with term accessions and create Ontology and OntologyTerm entries
-        assayType_zip = list(zip(assayTypes, assayTypeTermAccessions))
-        
-        for tupl in assayType_zip:
-            pass #TODO: crear ontologia aqui
+        assayOntologyTerm_list = []
+        for term in assayTypeTermAccessions:
+            OntologyTermEntry = getOntologyTermDataBydbId(term)
+            assayOntologyTerm_list.append(OntologyTermEntry)
             
-
+            
+        # Create Assay entry
         AssayEntityEntry = updateAssayEntity(
             name=studyParserObj.study['Study Title'],
             featureType=FeatureTypeEntry,
             description=studyParserObj.study['Study Description'],
-            #externalLink='; '.join(assayExternalLinks),
             externalLink='',
             details=studyParserObj.study['Study Key Words'],
             dbId=assayId,
-            assayType='; '.join(assayType_str),
             screenCount=studyParserObj.study['Study Screens Number'],
             BIAId=studyParserObj.study['Study BioImage Archive Accession'],
             releaseDate=studyParserObj.study['Study Public Release Date'],
             dataDoi=studyParserObj.study['Data DOI'],
         )
 
-        # Add already updated/created Author entries and Publicacion entries to AssayEntity entry
+        # Add already updated/created Author Publicacion and OntologyTerm entries to AssayEntity entry
         [AssayEntityEntry.organisms.add(orgEnt)
          for orgEnt in organism_entry_list]
         [AssayEntityEntry.publications.add(pubEnt)
          for pubEnt in publication_entry_list]
+        [AssayEntityEntry.assayType.add(term)#TODO: change to types instead of assayType
+         for term in assayOntologyTerm_list]
 
         # Create ScreenEntity entries
         for screen in studyParserObj.components:
