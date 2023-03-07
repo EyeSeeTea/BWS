@@ -36,8 +36,9 @@ REGEX_MAP2MODELQUALITY_FILE = re.compile('^\d\w{3}\.(mapq|fscq)\.pdb$')
 REGEX_IDR_ID = re.compile('.*(idr\d{4})-.*-.*')
 REGEX_TAXON_REF = re.compile('(ncbitaxon).*')
 REGEX_SCREEN_NAME = re.compile('.*\/(screen)(.*)')
+REGEX_ONTOLOGY_ID = re.compile('(\w*)_\d*')
 PUBCHEM_WS_URL = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/'
-
+OLS_WS_URL = 'https://www.ebi.ac.uk/ols/%s/ontologies/%s/terms?iri=%s%s'
 
 def findGeneric(pattern, dirToLook=THORN_DATA_DIR):
     data = {}
@@ -1851,17 +1852,19 @@ def getAnalyses(name, relation, value, description, units, pvalue, dataComment, 
         print(exc, os.strerror)
     return obj
 
-def getOntology(name, description, externalLink):
+def getOntology(dbId, name, description, externalLink, queryLink):
     """
     Get Ontology entry or create in case it does not exist
     """
     obj = None
     try:
         obj, created = Ontology.objects.get_or_create(
-            name=name,
+            dbId=dbId,
             defaults={
+                'name': name, 
                 'description': description,
                 'externalLink': externalLink,
+                'queryLink': queryLink,
             }
         )
         if created:
@@ -1900,28 +1903,48 @@ def updateOntologyTerm(dbId, name, description, externalLink, source):
         print(exc, os.strerror)
     return obj
 
-def detectOntologyByDbId(dbId):
+def detect_getOntologyByDbId(OntTermId):
+    '''
+    Detect the ontology depending on the OntologyTerm Id and get/create the Ontology entry.
+    '''
+
+    # Get Ontology ID
+    matchObj = re.match(REGEX_ONTOLOGY_ID, OntTermId)
+    if matchObj:
+        dbId = matchObj.group(1)
+
     if 'efo' in dbId.lower():
-        name = 'Experimental Factor Ontology (EFO)'
+        dbId = 'EFO'
+        name = 'Experimental Factor Ontology'
         description = 'The Experimental Factor Ontology (EFO) provides a systematic description of many experimental variables available in EBI databases, and for external projects such as the NHGRI GWAS catalogue. It combines parts of several biological ontologies, such as anatomy, disease and chemical compounds. The scope of EFO is to support the annotation, analysis and visualization of data handled by many groups at the EBI and as the core ontology for OpenTargets.org'
-        externalLink = 'http://www.ebi.ac.uk/efo'
+        externalLink = 'http://www.ebi.ac.uk/efo/'
+        queryLink = 'http://www.ebi.ac.uk/efo/'
     elif 'bao' in dbId.lower():
-        name = 'BioAssay Ontology (BAO)'
+        dbId = 'BAO'
+        name = 'BioAssay Ontology'
         description = 'The BioAssay Ontology (BAO) describes biological screening assays and their results including high-throughput screening (HTS) data for the purpose of categorizing assays and data analysis. BAO is an extensible, knowledge-based, highly expressive (currently SHOIQ(D)) description of biological assays making use of descriptive logic based features of the Web Ontology Language (OWL). BAO currently has over 700 classes and also makes use of several other ontologies. It describes several concepts related to biological screening, including Perturbagen, Format, Meta Target, Design, Detection Technology, and Endpoint. '
         externalLink = 'http://bioassayontology.org'
+        queryLink = 'http://www.bioassayontology.org/bao%23'
     elif 'fbbi' in dbId.lower():
-        name = 'Biological Imaging Methods Ontology (FBbi)'
+        dbId = 'FBbi'
+        name = 'Biological Imaging Methods Ontology'
         description = 'A structured controlled vocabulary of sample preparation, visualization and imaging methods used in biomedical research'
         externalLink = 'http://cellimagelibrary.org/'
+        queryLink = 'http://purl.obolibrary.org/obo/'
     elif 'uo' in dbId.lower():
-        name = 'Units of measurement ontology (UO)'
+        dbId = 'UO'
+        name = 'Units of measurement ontology'
         description = 'A structured controlled vocabulary of sample preparation, visualization and imaging methods used in biomedical research'
         externalLink = 'http://cellimagelibrary.org/'
+        queryLink = 'http://purl.obolibrary.org/obo/'
     else:
-        print('Unkown ontology for %s' % (dbId))
-        return
+        print('Unkown ontology for %s' % (OntTermId))
+        raise KeyError
     
-    return name, description, externalLink
+    obj = getOntology(dbId, name, description, externalLink, queryLink)
+
+    return obj
+
 
 class IDRUtils(object):
 
@@ -2089,10 +2112,12 @@ class IDRUtils(object):
         assayTypeTermAccessions = [
             assayTypeTermAccession for assayTypeTermAccession in studyParserObj.study['Study Type Term Accession'].split("\t")]
 
-        # Combine assay types with term accessions and convert them into strings
+        # Combine assay types with term accessions and create Ontology and OntologyTerm entries
         assayType_zip = list(zip(assayTypes, assayTypeTermAccessions))
-        assayType_str = ['%s (%s)' % (x[0], x[1]) for x in assayType_zip]
-
+        
+        for tupl in assayType_zip:
+            pass #TODO: crear ontologia aqui
+            
 
         AssayEntityEntry = updateAssayEntity(
             name=studyParserObj.study['Study Title'],
