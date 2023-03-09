@@ -28,12 +28,22 @@ class DataFileSerializer(serializers.ModelSerializer):
 
 # ========== ========== ========== ========== ========== ========== ==========
 
+class OntologySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Ontology
+        fields = ['dbId', 'name', 'description', 'externalLink']
+
+class OntologyTermSerializer(serializers.ModelSerializer):
+    source = serializers.PrimaryKeyRelatedField(read_only=True)
+    class Meta:
+        model = OntologyTerm
+        fields = ['dbId', 'name', 'description', 'externalLink', 'source']
 
 class AnalysesSerializer(serializers.ModelSerializer):
     class Meta:
         model = Analyses
-        fields = ['name', 'relation', 'value', 'description', 'units',
-                  'unitsTermAccession', 'pvalue', 'dataComment']
+        fields = ['name', 'relation', 'value', 'description', 'units'
+                  , 'pvalue', 'dataComment']
 
 
 class AuthorSerializer(serializers.ModelSerializer):
@@ -62,7 +72,7 @@ class WellEntitySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = WellEntity
-        fields = ['dbId', 'name', 'externalLink', 'imagesIds', 'imageThumbailLink', 'cellLine', 'cellLineTermAccession', 'controlType', 'qualityControl',
+        fields = ['dbId', 'name', 'externalLink', 'imagesIds', 'imageThumbailLink', 'cellLine', 'controlType', 'qualityControl',
                   'micromolarConcentration', 'percentageInhibition', 'hitOver75Activity', 'numberCells', 'phenotypeAnnotationLevel', 'channels']
 
 
@@ -106,8 +116,8 @@ class ScreenEntitySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ScreenEntity
-        fields = ['dbId', 'name', 'description', 'type', 'technologyType', 
-                  'imagingMethod', 'sampleType', 'dataDoi', 'plateCount', 'plates']
+        fields = ['dbId', 'name', 'description', 'screenTypes', 'technologyTypes', 
+                  'imagingMethods', 'sampleType', 'dataDoi', 'plateCount', 'plates']
 
     def get_plates(self, obj):
 
@@ -132,13 +142,13 @@ class ScreenEntitySerializer(serializers.ModelSerializer):
 
 class AssayEntitySerializer(serializers.ModelSerializer):
     screens = serializers.SerializerMethodField()
-    organisms = OrganismSerializer(read_only=True, many=True)
+    organisms = serializers.PrimaryKeyRelatedField(read_only=True, many=True)
     publications = PublicationSerializer(read_only=True, many=True)
     additionalAnalyses = serializers.SerializerMethodField()
 
     class Meta:
         model = AssayEntity
-        fields = ['dbId', 'name', 'description', 'assayType', 'organisms',
+        fields = ['dbId', 'name', 'description', 'assayTypes', 'organisms',
                   'externalLink', 'releaseDate', 'publications', 'dataDoi', 'BIAId', 'screenCount', 'screens', 'additionalAnalyses']
 
     def get_screens(self, obj):

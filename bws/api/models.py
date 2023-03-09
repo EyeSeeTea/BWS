@@ -69,7 +69,38 @@ class DataFile(models.Model):
 
 # ========== ========== ========== ========== ========== ========== ==========
 
-
+class Ontology(models.Model):
+    '''
+    Ontology.
+    '''
+    dbId = models.CharField(max_length=50, blank=False,
+                            default='', primary_key=True)
+    name = models.CharField(max_length=255, blank=False,
+                            null=False, default='')
+    description = models.CharField(max_length=900, blank=False,
+                            null=False, default='')
+    externalLink = models.URLField(max_length=200, default='', blank=True)
+    queryLink = models.URLField(max_length=200, default='', blank=True) # Link that OLS API uses to access ontology data
+    
+    def __str__(self):
+        return '%s' % (self.name)
+    
+class OntologyTerm(models.Model):
+    '''
+    Ontology term.
+    '''
+    dbId = models.CharField(max_length=50, blank=False,
+                            default='', primary_key=True)
+    name = models.CharField(max_length=255, blank=False,
+                            null=False, default='')
+    description = models.CharField(max_length=900, blank=False,
+                            null=False, default='')
+    externalLink = models.URLField(max_length=200, default='', blank=True)
+    source = models.ForeignKey(Ontology, related_name = 'terms', on_delete=models.CASCADE)
+    
+    def __str__(self):
+        return '%s' % (self.name)
+    
 class EmdbEntry(models.Model):
     dbId = models.CharField(max_length=10, blank=False,
                             default='', primary_key=True, validators=[
@@ -469,7 +500,7 @@ class AssayEntity(FeatureModelEntity):
 
     dbId = models.CharField(max_length=50, blank=False,
                             default='', primary_key=True)
-    assayType = models.CharField(max_length=255, blank=True, default='')
+    assayTypes = models.ManyToManyField(OntologyTerm, related_name='type_term_assays')
     organisms = models.ManyToManyField(Organism)
     publications = models.ManyToManyField(Publication)
     screenCount = models.IntegerField(blank=True, null=True)
@@ -491,9 +522,9 @@ class ScreenEntity(models.Model):
                             default='', primary_key=True)
     name = models.CharField(max_length=255, blank=False, default='')
     description = models.CharField(max_length=255, blank=True, default='')
-    type = models.CharField(max_length=255, blank=False, default='')
-    technologyType = models.CharField(max_length=255, blank=False, default='')
-    imagingMethod = models.CharField(max_length=255, blank=True, default='')
+    screenTypes = models.ManyToManyField(OntologyTerm, related_name='type_term_screens')
+    technologyTypes = models.ManyToManyField(OntologyTerm, related_name='technology_term_screens')
+    imagingMethods = models.ManyToManyField(OntologyTerm, related_name='imaging_term_screens')
     sampleType = models.CharField(max_length=255, blank=True, default='')
     plateCount = models.IntegerField(blank=True, null=True)
     dataDoi = models.CharField(max_length=255, blank=True, default='')
@@ -532,9 +563,8 @@ class WellEntity(models.Model):
     externalLink = models.URLField(max_length=200, blank=True)
     imageThumbailLink = models.URLField(max_length=200, blank=True)
     imagesIds = models.CharField(max_length=255, blank=True, default='')
-    cellLine = models.CharField(max_length=255, blank=True, default='')
-    cellLineTermAccession = models.CharField(
-        max_length=255, blank=True, default='')
+    cellLine = models.ForeignKey(OntologyTerm, default='',
+                                 related_name='cell_term_wells', on_delete=models.CASCADE)
     controlType = models.CharField(max_length=255, blank=True, default='')
     qualityControl = models.CharField(max_length=255, blank=True, default='')
     micromolarConcentration = models.FloatField(
@@ -585,9 +615,8 @@ class Analyses(models.Model):
     value = models.FloatField(null=False, blank=False, default=0)
     description = models.CharField(
         max_length=255, blank=True, null=True, default='')
-    units = models.CharField(max_length=255, blank=True, null=True, default='')
-    unitsTermAccession = models.CharField(
-        max_length=255, blank=True, null=True, default='')
+    units = models.ForeignKey(OntologyTerm, null=True, blank=True, default='',
+                              related_name='unit_term_analyses', on_delete=models.CASCADE)
     pvalue = models.FloatField(null=True, blank=True)
     dataComment = models.CharField(
         max_length=255, blank=True, null=True, default='')

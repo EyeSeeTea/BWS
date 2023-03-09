@@ -36,8 +36,9 @@ REGEX_MAP2MODELQUALITY_FILE = re.compile('^\d\w{3}\.(mapq|fscq)\.pdb$')
 REGEX_IDR_ID = re.compile('.*(idr\d{4})-.*-.*')
 REGEX_TAXON_REF = re.compile('(ncbitaxon).*')
 REGEX_SCREEN_NAME = re.compile('.*\/(screen)(.*)')
+REGEX_ONTOLOGY_ID = re.compile('(\w*)_\d*')
 PUBCHEM_WS_URL = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/'
-
+OLS_WS_URL = 'https://www.ebi.ac.uk/ols/%s/ontologies/%s/terms?iri=%s%s'
 
 def findGeneric(pattern, dirToLook=THORN_DATA_DIR):
     data = {}
@@ -1568,7 +1569,7 @@ def updateAuthorFromIDR(name, email='', address='', orcid='', role=''):
     return obj
 
 
-def updateAssayEntity(dbId, name, featureType, description, externalLink, details, assayType, screenCount, BIAId, releaseDate, dataDoi):
+def updateAssayEntity(dbId, name, featureType, description, externalLink, details, screenCount, BIAId, releaseDate, dataDoi):
     """
     Update AssayEntity entry or create in case it does not exist
     """
@@ -1583,7 +1584,6 @@ def updateAssayEntity(dbId, name, featureType, description, externalLink, detail
                 'description': description,
                 'externalLink': externalLink,
                 'details': details,
-                'assayType': assayType,
                 'screenCount': screenCount,
                 'BIAId': BIAId,
                 'releaseDate': releaseDate,
@@ -1602,7 +1602,7 @@ def updateAssayEntity(dbId, name, featureType, description, externalLink, detail
     return obj
 
 
-def updateScreenEntity(dbId, name, description, type, technologyType, imagingMethod, sampleType, plateCount, dataDoi, assay):
+def updateScreenEntity(dbId, name, description, sampleType, plateCount, dataDoi, assay):
     """
     Update ScreenEntity entry or create in case it does not exist
     """
@@ -1614,9 +1614,6 @@ def updateScreenEntity(dbId, name, description, type, technologyType, imagingMet
             defaults={
                 'name': name,
                 'description': description,
-                'type': type,
-                'technologyType': technologyType,
-                'imagingMethod': imagingMethod,
                 'sampleType': sampleType,
                 'plateCount': plateCount,
                 'dataDoi': dataDoi,
@@ -1721,7 +1718,7 @@ def updatePlateEntity(dbId, name, screen):
     return obj
 
 
-def updateWellEntity(dbId, name, description, ligand, plate, externalLink, imageThumbailLink, imagesIds, cellLine, cellLineTermAccession, controlType, qualityControl, micromolarConcentration, percentageInhibition, hitOver75Activity, numberCells, phenotypeAnnotationLevel, channels):
+def updateWellEntity(dbId, name, description, ligand, plate, externalLink, imageThumbailLink, imagesIds, cellLine, controlType, qualityControl, micromolarConcentration, percentageInhibition, hitOver75Activity, numberCells, phenotypeAnnotationLevel, channels):
     """
     Update WellEntity entry or create in case it does not exist
     """
@@ -1739,7 +1736,6 @@ def updateWellEntity(dbId, name, description, ligand, plate, externalLink, image
                 'imageThumbailLink': imageThumbailLink,
                 'imagesIds': imagesIds,
                 'cellLine': cellLine,
-                'cellLineTermAccession': cellLineTermAccession,
                 'controlType': controlType,
                 'qualityControl': qualityControl,
                 'micromolarConcentration': micromolarConcentration,
@@ -1825,7 +1821,7 @@ def getLigandEntity(dbId, ligandType, name, formula, formula_weight, details, al
     return obj
 
 
-def getAnalyses(name, relation, value, description, units, unitsTermAccession, pvalue, dataComment, ligand, assay):
+def getAnalyses(name, relation, value, description, units, pvalue, dataComment, ligand, assay):
     """
     Get Analyses entry or create in case it does not exist
     """
@@ -1838,7 +1834,6 @@ def getAnalyses(name, relation, value, description, units, unitsTermAccession, p
             value=value,
             description=description,
             units=units,
-            unitsTermAccession=unitsTermAccession,
             pvalue=pvalue,
             dataComment=dataComment,
             ligand=ligand,
@@ -1853,7 +1848,164 @@ def getAnalyses(name, relation, value, description, units, unitsTermAccession, p
         print(exc, os.strerror)
     return obj
 
+def getOntology(dbId, name, description, externalLink, queryLink):
+    """
+    Get Ontology entry or create in case it does not exist
+    """
+    obj = None
+    try:
+        obj, created = Ontology.objects.get_or_create(
+            dbId=dbId,
+            defaults={
+                'name': name, 
+                'description': description,
+                'externalLink': externalLink,
+                'queryLink': queryLink,
+            }
+        )
+        if created:
+            logger.debug('Created new %s: %s', Ontology.__name__, obj)
+            print('Created new', Ontology.__name__, obj)
+    except Exception as exc:
+        logger.exception(exc)
+        print(exc, os.strerror)
+    return obj
 
+def updateOntologyTerm(dbId, name, description, externalLink, source):
+    """
+    Update OntologyTerm entry or create in case it does not exist
+    """
+
+    obj = None
+    try:
+        obj, created = OntologyTerm.objects.update_or_create(
+            dbId=dbId,
+            defaults={
+                'name': name,
+                'description': description,
+                'externalLink': externalLink,
+                'source': source,
+            }
+        )
+        if created:
+            logger.debug('Created new %s: %s', OntologyTerm.__name__, obj)
+            print('Created new', OntologyTerm.__name__, obj)
+        else:
+            logger.debug('Updated %s: %s', Ontology.__name__, obj)
+            print('Updated', OntologyTerm.__name__, obj)
+
+    except Exception as exc:
+        logger.exception(exc)
+        print(exc, os.strerror)
+    return obj
+
+def detect_getOntologyByDbId(OntTermId):
+    '''
+    Detect the ontology depending on the OntologyTerm Id and get/create the Ontology entry.
+    '''
+
+    # Get Ontology ID
+    matchObj = re.match(REGEX_ONTOLOGY_ID, OntTermId)
+    if matchObj:
+        dbId = matchObj.group(1)
+
+    if 'efo' in dbId.lower():
+        dbId = 'EFO'
+        name = 'Experimental Factor Ontology'
+        description = 'The Experimental Factor Ontology (EFO) provides a systematic description of many experimental variables available in EBI databases, and for external projects such as the NHGRI GWAS catalogue. It combines parts of several biological ontologies, such as anatomy, disease and chemical compounds. The scope of EFO is to support the annotation, analysis and visualization of data handled by many groups at the EBI and as the core ontology for OpenTargets.org'
+        externalLink = 'http://www.ebi.ac.uk/efo/'
+        queryLink = 'http://www.ebi.ac.uk/efo/'
+    elif 'bao' in dbId.lower():
+        dbId = 'BAO'
+        name = 'BioAssay Ontology'
+        description = 'The BioAssay Ontology (BAO) describes biological screening assays and their results including high-throughput screening (HTS) data for the purpose of categorizing assays and data analysis. BAO is an extensible, knowledge-based, highly expressive (currently SHOIQ(D)) description of biological assays making use of descriptive logic based features of the Web Ontology Language (OWL). BAO currently has over 700 classes and also makes use of several other ontologies. It describes several concepts related to biological screening, including Perturbagen, Format, Meta Target, Design, Detection Technology, and Endpoint. '
+        externalLink = 'http://bioassayontology.org'
+        queryLink = 'http://www.bioassayontology.org/bao%23'
+    elif 'fbbi' in dbId.lower():
+        dbId = 'FBbi'
+        name = 'Biological Imaging Methods Ontology'
+        description = 'A structured controlled vocabulary of sample preparation, visualization and imaging methods used in biomedical research'
+        externalLink = 'http://cellimagelibrary.org/'
+        queryLink = 'http://purl.obolibrary.org/obo/'
+    elif 'uo' in dbId.lower():
+        dbId = 'UO'
+        name = 'Units of measurement ontology'
+        description = 'A structured controlled vocabulary of sample preparation, visualization and imaging methods used in biomedical research'
+        externalLink = 'http://cellimagelibrary.org/'
+        queryLink = 'http://purl.obolibrary.org/obo/'
+    else:
+        print('Unkown ontology for %s' % (OntTermId))
+        raise KeyError
+    
+    obj = getOntology(dbId, name, description, externalLink, queryLink)
+
+    return obj
+
+def getDataFromOLS(url, jKey, returnList=False):
+    '''
+    Get data specified for jkey in the JSON response for the OLS url.
+    If value is a list and returnList is not True, it returns only the first item.
+    If value is an integer, it returns a string. 
+    '''
+    jdata = ''
+    try:
+        resp = requests.get(url)
+        if resp.status_code == 200:
+            jdata = resp.json()
+            value = item_generator(jdata, jKey).__next__()
+            if isinstance(value, list) and not returnList:
+                # Check if value list is empty
+                if value: 
+                    value = value[0]
+                else:
+                    value = ''
+            if isinstance(value, int):
+                value = str(value)
+    except Exception as exc:
+        logger.exception(exc)
+        print('- >>>>',  exc, os.strerror)
+    return value
+
+
+def getOntologyTermDataBydbId(dbId):
+    """
+    Get OntologyTerm entry given database id. 
+    In case it does not exist, create it by means of OLS-WS.
+    Create related Ontology entry too if it does no exists.
+    Returns OntologyTerm entry.
+    """
+    obj = None
+    try:
+        # first look if the OntologyTerm entry is already in the DB
+        obj = OntologyTerm.objects.get(pk=dbId)
+    except OntologyTerm.DoesNotExist:
+        # Check Ontology entry is already in the DB
+        try:
+            OntologyEntry = detect_getOntologyByDbId(dbId)
+        except KeyError:
+            print('OntologyTerm %s cannot be created due to unkown Ontology' % (dbId))
+
+        # Get data from OLS by dbId to create OntologyTerm entry
+        url = OLS_WS_URL % ('api', OntologyEntry.dbId, OntologyEntry.queryLink, dbId)
+
+        name = getDataFromOLS(url, 'label')
+        description = getDataFromOLS(url, 'description')
+        externalLink = OLS_WS_URL % ('', OntologyEntry.dbId, OntologyEntry.queryLink, dbId)
+
+        obj = updateOntologyTerm(dbId, name, description, externalLink, OntologyEntry)
+
+    return obj
+
+def getListOfOntologyTerms(dbId_list):
+    '''
+    Given a list of OntologyTerm IDs, returns a list of OntologyTerm entries
+    '''
+    entry_list = []
+    for dbId in dbId_list:
+        entry = getOntologyTermDataBydbId(dbId)
+        entry_list.append(entry)
+
+    return entry_list
 class IDRUtils(object):
 
     def _updateAssayDirs_fromGitHub(self):
@@ -1922,8 +2074,7 @@ class IDRUtils(object):
         n_colName = getColNameByKW(analysesDf.columns, 'standard', 'type')
         r_colName = getColNameByKW(analysesDf.columns, 'standard', 'relation')
         v_colName = getColNameByKW(analysesDf.columns, 'standard', 'value')
-        u_colName = getColNameByKW(analysesDf.columns, 'standard', 'units')
-        uta_colName = getColNameByKW(analysesDf.columns, 'uo', 'units')
+        u_colName = getColNameByKW(analysesDf.columns, 'uo', 'units') # units ontology terms
         pv_colName = getColNameByKW(analysesDf.columns, 'pchembl', 'value')
         dc_colName = getColNameByKW(analysesDf.columns, 'data', 'comment')
         l_colName = getColNameByKW(analysesDf.columns, 'compound', 'key')
@@ -1933,6 +2084,7 @@ class IDRUtils(object):
         studyParserObj = StudyParser(MetadataFilePath)
 
         # Get or Create Organism entries
+        #TODO: create ontology term??
         organisms = [
             organism for organism in studyParserObj.study['Study Organism'].split("\t")]
         organismTermSources = [
@@ -2011,38 +2163,27 @@ class IDRUtils(object):
                 role=authorEntry[5]
             )
 
-        # Create AssayEntity entry
-        #assayExternalLinks = [(assayExternalLink for assayExternalLink in studyParserObj.study['Study External URL'].split("\t")) if ('Study External URL' in studyParserObj.study) else '']
-        assayTypes = [
-            assayType for assayType in studyParserObj.study['Study Type'].split("\t")]
-        assayTypeTermAccessions = [
-            assayTypeTermAccession for assayTypeTermAccession in studyParserObj.study['Study Type Term Accession'].split("\t")]
-
-        # Combine assay types with term accessions and convert them into strings
-        assayType_zip = list(zip(assayTypes, assayTypeTermAccessions))
-        assayType_str = ['%s (%s)' % (x[0], x[1]) for x in assayType_zip]
-
-
+        # Create Ontology, OntologyTerm entries for AssayEntity type
+        assayTypes = getListOfOntologyTerms(studyParserObj.study['Study Type Term Accession'].split("\t"))
+            
+        # Create Assay entry
         AssayEntityEntry = updateAssayEntity(
             name=studyParserObj.study['Study Title'],
             featureType=FeatureTypeEntry,
             description=studyParserObj.study['Study Description'],
-            #externalLink='; '.join(assayExternalLinks),
             externalLink='',
             details=studyParserObj.study['Study Key Words'],
             dbId=assayId,
-            assayType='; '.join(assayType_str),
             screenCount=studyParserObj.study['Study Screens Number'],
             BIAId=studyParserObj.study['Study BioImage Archive Accession'],
             releaseDate=studyParserObj.study['Study Public Release Date'],
             dataDoi=studyParserObj.study['Data DOI'],
         )
 
-        # Add already updated/created Author entries and Publicacion entries to AssayEntity entry
-        [AssayEntityEntry.organisms.add(orgEnt)
-         for orgEnt in organism_entry_list]
-        [AssayEntityEntry.publications.add(pubEnt)
-         for pubEnt in publication_entry_list]
+        # Add already updated/created Author Publicacion and OntologyTerm entries to AssayEntity entry
+        [AssayEntityEntry.organisms.add(orgEnt) for orgEnt in organism_entry_list]
+        [AssayEntityEntry.publications.add(pubEnt) for pubEnt in publication_entry_list]
+        [AssayEntityEntry.assayTypes.add(type) for type in assayTypes]
 
         # Create ScreenEntity entries
         for screen in studyParserObj.components:
@@ -2061,46 +2202,26 @@ class IDRUtils(object):
                 screenDir=screenDir,
             )
 
-            # Get screen imaging methods and combine them with their term accessions 
-            screenImagingMethods = [
-                screenImagingMethod for screenImagingMethod in screen['Screen Imaging Method'].split("\t")]
-            screenImagingTermAccessions = [
-                screenImagingTermAccession for screenImagingTermAccession in screen['Screen Imaging Method Term Accession'].split("\t")]
-
-            screenimg_zip = list(zip(screenImagingMethods, screenImagingTermAccessions))
-            screenimg_str = ['%s (%s)' % (y[0], y[1]) for y in screenimg_zip]
-
-            # Get screen types and combine them with their term accessions
-            screenTypes = [
-                screenType for screenType in screen['Screen Type'].split("\t")]
-            screenTypeTermAccessions = [
-                screenTypeTermAccession for screenTypeTermAccession in screen['Screen Type Term Accession'].split("\t")]
-
-            screentype_zip = list(zip(screenTypes, screenTypeTermAccessions))
-            screentype_str = ['%s (%s)' % (i[0], i[1]) for i in screentype_zip]
-
-            # Get screen technology types and combine them with their term accessions
-            screenTechTypes = [
-                screenTechType for screenTechType in screen['Screen Technology Type'].split("\t")]
-            screenTechTypeTermAccessions = [
-                screenTechTypeTermAccession for screenTechTypeTermAccession in screen['Screen Technology Type Term Accession'].split("\t")]
-
-            screentechtype_zip = list(zip(screenTechTypes, screenTechTypeTermAccessions))
-            screentechtype_str = ['%s (%s)' % (i[0], i[1]) for i in screentechtype_zip]
+            # Create Ontology, OntologyTerm entries for ScreenEntity imagingMethods, screenTypes and technologyTypes
+            imagingMethods = getListOfOntologyTerms(screen['Screen Imaging Method Term Accession'].split("\t"))
+            screenTypes = getListOfOntologyTerms(screen['Screen Type Term Accession'].split("\t"))
+            technologyTypes = getListOfOntologyTerms(screen['Screen Technology Type Term Accession'].split("\t"))
 
             ScreenEntityEntry = updateScreenEntity(
                 dbId=screenId,
                 name=screenName,
                 description=screen['Screen Description'],
-                type='; '.join(screentype_str),
-                technologyType='; '.join(screentechtype_str),
-                imagingMethod='; '.join(screenimg_str),
                 sampleType=screen['Screen Sample Type'],
                 # plateCount=plateCount,
                 plateCount=None,
                 dataDoi=screen['Screen Data DOI'],
                 assay=AssayEntityEntry,
             )
+
+            # Add OntologyTerm entries to ScreenEntity 
+            [ScreenEntityEntry.imagingMethods.add(method) for method in imagingMethods]
+            [ScreenEntityEntry.screenTypes.add(type) for type in screenTypes]
+            [ScreenEntityEntry.technologyTypes.add(techtype) for techtype in technologyTypes]
 
             # Create PlateEntity, LigandEntity and WellEntity entries
             screenDf = getScreenDataframe(session, screenId)
@@ -2117,9 +2238,8 @@ class IDRUtils(object):
                 wellImageIds = getImageIdsFromWellId(session, wellId)
 
                 # Get column names in screen DF that harbor key well attributes
-                cl_colName = getColNameByKW(screenDf.columns, 'cell', 'line')
-                clta_colName = getColNameByKW(
-                    screenDf.columns, 'accession', '3')
+                cl_colName = getColNameByKW(
+                    screenDf.columns, 'accession', '3') #cellLine ontology terms
                 ct_colName = getColNameByKW(
                     screenDf.columns, 'control', 'type')
                 qc_colName = getColNameByKW(
@@ -2135,6 +2255,9 @@ class IDRUtils(object):
                     screenDf.columns, 'phenotype', 'level')
                 c_colName = getColNameByKW(screenDf.columns, 'channel', '')
 
+                # Create Ontology, OntologyTerm entries for WellEntity cellLine 
+                cellLineEntry = getOntologyTermDataBydbId(row[cl_colName])
+
                 # Create WellEntity entries for unkown wells (no ligand tested and no control)
                 if row['Compound Name'] == '' and row['Control Type'] == '':
 
@@ -2149,8 +2272,7 @@ class IDRUtils(object):
                         imageThumbailLink=URL_THUMBNAIL.format(
                             **{'imageId': wellImageIds[0]}),
                         imagesIds=wellImageIds,
-                        cellLine=row[cl_colName],
-                        cellLineTermAccession=row[clta_colName],
+                        cellLine=cellLineEntry, 
                         controlType=row[ct_colName],
                         qualityControl=row[qc_colName],
                         micromolarConcentration=None,
@@ -2176,8 +2298,7 @@ class IDRUtils(object):
                         imageThumbailLink=URL_THUMBNAIL.format(
                             **{'imageId': wellImageIds[0]}),
                         imagesIds=wellImageIds,
-                        cellLine=row[cl_colName],
-                        cellLineTermAccession=row[clta_colName],
+                        cellLine=cellLineEntry, 
                         controlType=row[ct_colName],
                         qualityControl=row[qc_colName],
                         micromolarConcentration=None,
@@ -2203,8 +2324,7 @@ class IDRUtils(object):
                         imageThumbailLink=URL_THUMBNAIL.format(
                             **{'imageId': wellImageIds[0]}),
                         imagesIds=wellImageIds,
-                        cellLine=row[cl_colName],
-                        cellLineTermAccession=row[clta_colName],
+                        cellLine=cellLineEntry,
                         controlType=row[ct_colName],
                         qualityControl=row[qc_colName],
                         micromolarConcentration=None,
@@ -2256,8 +2376,7 @@ class IDRUtils(object):
                         imageThumbailLink=URL_THUMBNAIL.format(
                             **{'imageId': wellImageIds[0]}),
                         imagesIds=wellImageIds,
-                        cellLine=row[cl_colName],
-                        cellLineTermAccession=row[clta_colName],
+                        cellLine=cellLineEntry,
                         controlType=row[ct_colName],
                         qualityControl=row[qc_colName],
                         micromolarConcentration=row[mc_colName] if mc_colName else (
@@ -2271,9 +2390,11 @@ class IDRUtils(object):
                     )
 
                     if LigandEntityEntry:
+                        # Check if LigandEntityEntry is in analyses dataframe and get ligand indexes
                         indexes = [i for i, elem in enumerate(analysesDf[l_colName].tolist(
                         )) if elem.upper() == LigandEntityEntry.name.upper()]
 
+                        # Set Analyses description attribute
                         if indexes:
                             for index, row in analysesDf.iloc[indexes].iterrows():
                                 if row[n_colName].lower() == 'ic50':
@@ -2283,13 +2404,19 @@ class IDRUtils(object):
                                 elif row[n_colName].lower() == 'selectivity index':
                                     description = 'The selectivity index (SI) is defined as the ratio of cytotoxicity to biological activity, which means the ratio of the 50% cytotoxic concentration, CC50, to the 50% antiviral concentration, IC50, (CC50/IC50)'
 
+                                # Create Ontology, OntologyTerm entries for Analyses units 
+                                if row[u_colName] is not None:
+                                    unitsEntry = getOntologyTermDataBydbId(row[u_colName])
+                                else:
+                                    unitsEntry = None
+
+                                # Create Analyses entry
                                 getAnalyses(
                                     name=row[n_colName],
-                                    relation=[r_colName],
+                                    relation=row[r_colName],
                                     value=row[v_colName],
                                     description=description,
-                                    units=row[u_colName],
-                                    unitsTermAccession=row[uta_colName],
+                                    units=unitsEntry,
                                     pvalue=row[pv_colName],
                                     dataComment=row[dc_colName],
                                     ligand=LigandEntityEntry,

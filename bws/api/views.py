@@ -681,3 +681,34 @@ class EmvDataLocalresRank(APIView):
             }
         }
         return Response(content, status=status.HTTP_200_OK)
+
+
+class OntologyViewSet(viewsets.ModelViewSet):
+    """
+    This viewset automatically provides `list` and `detail` actions.
+    """
+    queryset = Ontology.objects.all()
+    serializer_class = OntologySerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    filter_backends = (filters.DjangoFilterBackend, SearchFilter,
+                       OrderingFilter)
+
+class OntologyTermViewSet(viewsets.ReadOnlyModelViewSet):
+
+    serializer_class = OntologyTermSerializer
+
+    def get_queryset(self, **kwargs):
+        
+        ont_id = self.kwargs['ont_id']
+
+        # If term_id is specified in url, filter ontology terms
+        try:
+            term_id = self.kwargs['term_id']
+            queryset = OntologyTerm.objects.filter(
+                source__dbId=ont_id).filter(dbId=term_id)
+            return queryset
+        # If not, provide all ontology terms
+        except KeyError:
+            queryset = OntologyTerm.objects.filter(
+                source__dbId=ont_id)
+            return queryset
