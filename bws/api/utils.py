@@ -2183,7 +2183,7 @@ class IDRUtils(object):
         # Add already updated/created Author Publicacion and OntologyTerm entries to AssayEntity entry
         [AssayEntityEntry.organisms.add(orgEnt) for orgEnt in organism_entry_list]
         [AssayEntityEntry.publications.add(pubEnt) for pubEnt in publication_entry_list]
-        [AssayEntityEntry.types.add(type) for type in assayTypes]
+        [AssayEntityEntry.assayTypes.add(type) for type in assayTypes]
 
         # Create ScreenEntity entries
         for screen in studyParserObj.components:
@@ -2202,7 +2202,7 @@ class IDRUtils(object):
                 screenDir=screenDir,
             )
 
-            # Create Ontology, OntologyTerm entries for ScreenEntity imagingMethods, types and technologyTypes
+            # Create Ontology, OntologyTerm entries for ScreenEntity imagingMethods, screenTypes and technologyTypes
             imagingMethods = getListOfOntologyTerms(screen['Screen Imaging Method Term Accession'].split("\t"))
             screenTypes = getListOfOntologyTerms(screen['Screen Type Term Accession'].split("\t"))
             technologyTypes = getListOfOntologyTerms(screen['Screen Technology Type Term Accession'].split("\t"))
@@ -2220,7 +2220,7 @@ class IDRUtils(object):
 
             # Add OntologyTerm entries to ScreenEntity 
             [ScreenEntityEntry.imagingMethods.add(method) for method in imagingMethods]
-            [ScreenEntityEntry.types.add(type) for type in screenTypes]
+            [ScreenEntityEntry.screenTypes.add(type) for type in screenTypes]
             [ScreenEntityEntry.technologyTypes.add(techtype) for techtype in technologyTypes]
 
             # Create PlateEntity, LigandEntity and WellEntity entries

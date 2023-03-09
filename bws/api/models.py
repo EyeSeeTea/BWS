@@ -500,7 +500,7 @@ class AssayEntity(FeatureModelEntity):
 
     dbId = models.CharField(max_length=50, blank=False,
                             default='', primary_key=True)
-    types = models.ManyToManyField(OntologyTerm, related_name='type_term_assays')
+    assayTypes = models.ManyToManyField(OntologyTerm, related_name='type_term_assays')
     organisms = models.ManyToManyField(Organism)
     publications = models.ManyToManyField(Publication)
     screenCount = models.IntegerField(blank=True, null=True)
@@ -522,7 +522,7 @@ class ScreenEntity(models.Model):
                             default='', primary_key=True)
     name = models.CharField(max_length=255, blank=False, default='')
     description = models.CharField(max_length=255, blank=True, default='')
-    types = models.ManyToManyField(OntologyTerm, related_name='type_term_screens')
+    screenTypes = models.ManyToManyField(OntologyTerm, related_name='type_term_screens')
     technologyTypes = models.ManyToManyField(OntologyTerm, related_name='technology_term_screens')
     imagingMethods = models.ManyToManyField(OntologyTerm, related_name='imaging_term_screens')
     sampleType = models.CharField(max_length=255, blank=True, default='')
