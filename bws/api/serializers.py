@@ -142,7 +142,7 @@ class ScreenEntitySerializer(serializers.ModelSerializer):
 
 class AssayEntitySerializer(serializers.ModelSerializer):
     screens = serializers.SerializerMethodField()
-    organisms = OrganismSerializer(read_only=True, many=True)
+    organisms = serializers.PrimaryKeyRelatedField(read_only=True, many=True)
     publications = PublicationSerializer(read_only=True, many=True)
     additionalAnalyses = serializers.SerializerMethodField()
 
