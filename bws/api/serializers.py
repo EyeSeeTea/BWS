@@ -28,6 +28,16 @@ class DataFileSerializer(serializers.ModelSerializer):
 
 # ========== ========== ========== ========== ========== ========== ==========
 
+class OntologySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Ontology
+        fields = ['dbId', 'name', 'description', 'externalLink']
+
+class OntologyTermSerializer(serializers.ModelSerializer):
+    source = serializers.PrimaryKeyRelatedField(read_only=True)
+    class Meta:
+        model = OntologyTerm
+        fields = ['dbId', 'name', 'description', 'externalLink', 'source']
 
 class AnalysesSerializer(serializers.ModelSerializer):
     class Meta:
