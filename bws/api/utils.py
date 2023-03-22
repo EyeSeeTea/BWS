@@ -1449,7 +1449,7 @@ def updatePdbEntryDetails(mmCifDict, pdbObj):
 # ========== ========== ========== ========== ========== ========== ==========
 
 
-def updateFeatureTypeForIDR(name, description, dataSource, externalLink):
+def updateFeatureType(name, description, dataSource, externalLink):
     """
     Update FeatureType entry
     """
@@ -2037,7 +2037,7 @@ class IDRUtils(object):
         dataSource = 'The Image Data Resource (IDR)'
         externalLink = 'https://idr.openmicroscopy.org/'
 
-        FeatureTypeEntry = updateFeatureTypeForIDR(
+        FeatureTypeEntry = updateFeatureType(
             name, description, dataSource, externalLink)
 
         # Get ID and metadata file for IDR assay
