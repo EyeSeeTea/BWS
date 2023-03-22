@@ -49,13 +49,17 @@ urlpatterns = [
     re_path(r'^emv/(?P<db_id>(\d[a-zA-Z]\w{2}|[EMD]*[emd]*-\d{4,5}))/localresolution/consensus/$', views.EmvDataLocalresConsensus.as_view()),
     re_path(r'^emv/(?P<db_id>(\d[a-zA-Z]\w{2}|[EMD]*[emd]*-\d{4,5}))/localresolution/rank/$', views.EmvDataLocalresRank.as_view()),
 
-    # Ontology related end-points
+    # Ontology related endpoints
     re_path(r'^ontologies/$', views.OntologyViewSet.as_view({'get': 'list'})),
     re_path(r'^ontologies/terms/$', views.AllOntologyTermViewSet.as_view({'get': 'list'})),
-    re_path(r'^ontologies/terms/(?P<term_id>\w[a-zA-Z]*_\d*)$', views.AllOntologyTermViewSet.as_view({'get': 'list'})),
+    re_path(r'^ontologies/terms/(?P<term_id>\w[a-zA-Z]*_\d*)/$', views.AllOntologyTermViewSet.as_view({'get': 'list'})),
     re_path(r'^ontologies/(?P<pk>\w[a-zA-Z]*)/$', views.OntologyViewSet.as_view({'get': 'retrieve'})),
     re_path(r'^ontologies/(?P<ont_id>\w[a-zA-Z]*)/terms/$', views.OntologyTermViewSet.as_view({'get': 'list'})),
     re_path(r'^ontologies/(?P<ont_id>\w[a-zA-Z]*)/terms/(?P<term_id>\w[a-zA-Z]*_\d*)$', views.OntologyTermViewSet.as_view({'get': 'list'})),
+
+    # Organisms related endpoint
+    re_path(r'^organisms/$', views.OrganismViewSet.as_view({'get': 'list'})),
+    re_path(r'^organisms/(?P<ncbi_taxonomy_id>\d*)/$', views.OrganismViewSet.as_view({'get': 'list'})),
 ]
 
 

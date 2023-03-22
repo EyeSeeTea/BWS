@@ -728,3 +728,19 @@ class AllOntologyTermViewSet(viewsets.ReadOnlyModelViewSet):
         except KeyError:
             queryset = OntologyTerm.objects.all()
             return queryset
+
+class OrganismViewSet(viewsets.ReadOnlyModelViewSet):
+
+    serializer_class = OrganismSerializer
+
+    def get_queryset(self, **kwargs):
+        
+        # If ncbi_taxonomy_id is specified in url, filter Organisms
+        try:
+            ncbi_taxonomy_id = self.kwargs['ncbi_taxonomy_id']
+            queryset = Organism.objects.filter(ncbi_taxonomy_id=ncbi_taxonomy_id)
+            return queryset
+        # If not, provide all Organisms
+        except KeyError:
+            queryset = Organism.objects.all()
+            return queryset

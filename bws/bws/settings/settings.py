@@ -175,7 +175,7 @@ LOGGING = {
 
 REST_FRAMEWORK = {
     # update before going into production
-    'DEFAULT_VERSION': '0.2.1-DEV',
+    'DEFAULT_VERSION': '0.2.2-DEV',
     # use this line to produce JSON only responses, globaly
     # 'DEFAULT_RENDERER_CLASSES': ['rest_framework.renderers.JSONRenderer',],
     'DEFAULT_RENDERER_CLASSES': ['rest_framework.renderers.JSONRenderer', 'rest_framework.renderers.BrowsableAPIRenderer',],
