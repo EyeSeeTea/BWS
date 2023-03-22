@@ -31,6 +31,7 @@ Or alternativelly, run commands directly using the docker container command line
 - docker exec -it bws_web_1 python manage.py makemigrations
 - docker exec -it bws_web_1 python manage.py migrate
 - docker exec -it bws_web_1 python manage.py initBaseTables
+- docker exec -it bws_web_1 python manage.py updateEntriesFromDir /data/covid/
 - docker exec -it bws_web_1 python manage.py updateDB_fromHCSAssay /data/IDR/idr0094-ellinger-sarscov2
 
 Pre-Process data from COVID19 NMR Consortium (C19-NMR-C)

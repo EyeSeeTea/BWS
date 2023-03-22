@@ -712,3 +712,19 @@ class OntologyTermViewSet(viewsets.ReadOnlyModelViewSet):
             queryset = OntologyTerm.objects.filter(
                 source__dbId=ont_id)
             return queryset
+
+class AllOntologyTermViewSet(viewsets.ReadOnlyModelViewSet):
+
+    serializer_class = OntologyTermSerializer
+
+    def get_queryset(self, **kwargs):
+        
+        # If term_id is specified in url, filter ontology terms
+        try:
+            term_id = self.kwargs['term_id']
+            queryset = OntologyTerm.objects.filter(dbId=term_id)
+            return queryset
+        # If not, provide all ontology terms
+        except KeyError:
+            queryset = OntologyTerm.objects.all()
+            return queryset
