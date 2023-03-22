@@ -51,6 +51,8 @@ urlpatterns = [
 
     # Ontology related end-points
     re_path(r'^ontologies/$', views.OntologyViewSet.as_view({'get': 'list'})),
+    re_path(r'^ontologies/terms/$', views.AllOntologyTermViewSet.as_view({'get': 'list'})),
+    re_path(r'^ontologies/terms/(?P<term_id>\w[a-zA-Z]*_\d*)$', views.AllOntologyTermViewSet.as_view({'get': 'list'})),
     re_path(r'^ontologies/(?P<pk>\w[a-zA-Z]*)/$', views.OntologyViewSet.as_view({'get': 'retrieve'})),
     re_path(r'^ontologies/(?P<ont_id>\w[a-zA-Z]*)/terms/$', views.OntologyTermViewSet.as_view({'get': 'list'})),
     re_path(r'^ontologies/(?P<ont_id>\w[a-zA-Z]*)/terms/(?P<term_id>\w[a-zA-Z]*_\d*)$', views.OntologyTermViewSet.as_view({'get': 'list'})),
