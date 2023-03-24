@@ -40,6 +40,197 @@ REGEX_ONTOLOGY_ID = re.compile('(\w*)_\d*')
 PUBCHEM_WS_URL = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/'
 OLS_WS_URL = 'https://www.ebi.ac.uk/ols/%s/ontologies/%s/terms?iri=%s%s'
 
+ORF1ab_COVERAGE = [
+    {
+    'name': 'NSP1',
+    'start': 1,
+    'end': 180,
+    },
+
+    {
+    'name': 'NSP1 GD',
+    'start': 12,
+    'end': 127,
+    },
+
+    {
+    'name': 'NSP2',
+    'start': 181,
+    'end': 818,
+    },
+
+    {
+    'name': 'NSP2 CtDR',
+    'start': 690,
+    'end': 818,
+    },
+
+    {
+    'name': 'NSP3',
+    'start': 819,
+    'end': 2763,
+    },
+
+    {
+    'name': 'NSP3 UBl1',
+    'start': 821,
+    'end': 929,
+    },
+
+    {
+    'name': 'NSP3 MacroDomain',
+    'start': 1025,
+    'end': 1194,
+    },
+
+    {
+    'name': 'NSP3 SUD-N',
+    'start': 1231,
+    'end': 1359,
+    },
+
+    {
+    'name': 'NSP3 SUD-M',
+    'start': 1367,
+    'end': 1494,
+    },
+
+    {
+    'name': 'NSP3 SUD-C',
+    'start': 1496,
+    'end': 1561,
+    },
+
+    {
+    'name': 'NSP3 Ubl2',
+    'start': 1565,
+    'end': 1620,
+    },
+
+    {
+    'name': 'NSP3 PLPro',
+    'start': 1634,
+    'end': 1898,
+    },
+
+    {
+    'name': 'NSP3 NAB',
+    'start': 1911,
+    'end': 2021,
+    },
+
+    {
+    'name': 'NSP3 Y3',
+    'start': 2660,
+    'end': 2763,
+    },
+
+    {
+    'name': 'NSP4',
+    'start': 2764,
+    'end': 3263,
+    },
+
+    {
+    'name': 'NSP5',
+    'start': 3264,
+    'end': 3569,
+    },
+
+    {
+    'name': 'NSP6',
+    'start': 3570,
+    'end': 3859,
+    },
+
+    {
+    'name': 'NSP7',
+    'start': 3860,
+    'end': 3942,
+    },
+
+    {
+    'name': 'NSP8',
+    'start': 3943,
+    'end': 4140,
+    },
+
+    {
+    'name': 'NSP9',
+    'start': 4141,
+    'end': 4253,
+    },
+
+    {
+    'name': 'NSP10',
+    'start': 4254,
+    'end': 4392,
+    },
+
+    {
+    'name': 'NSP11',
+    'start': 4393,
+    'end': 4405,
+    },
+
+    {
+    'name': 'NSP12',
+    'start': 4393,
+    'end': 5324,
+    },
+
+    {
+    'name': 'NSP13',
+    'start': 5325,
+    'end': 5925,
+    },
+
+    {
+    'name': 'NSP14',
+    'start': 5926,
+    'end': 6452,
+    },
+
+    {
+    'name': 'NSP15',
+    'start': 6453,
+    'end': 6798,
+    },
+
+    {
+    'name': 'NSP16',
+    'start': 6799,
+    'end': 7096,
+    },
+
+]
+
+ORF9a_COVERAGE = [
+    {
+    'name': 'IDR1-NTD-IDR2',
+    'start': 1,
+    'end': 248,
+    },
+
+    {
+    'name': 'NTD-SR',
+    'start': 44,
+    'end': 212,
+    },
+
+    {
+    'name': 'NTD',
+    'start': 44,
+    'end': 180,
+    },
+
+    {
+    'name': 'CTD',
+    'start': 247,
+    'end': 364,
+    },
+]
+
 def findGeneric(pattern, dirToLook=THORN_DATA_DIR):
     data = {}
     cmd = ["find", os.path.join(dirToLook, "pdb"), "-wholename", pattern]
