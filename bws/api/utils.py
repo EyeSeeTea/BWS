@@ -102,6 +102,12 @@ ORF1ab_COVERAGE = [
     },
 
     {
+    'name': 'NSP3 SUD-MC',
+    'start': 1367,
+    'end': 1561,
+    },
+
+    {
     'name': 'NSP3 Ubl2',
     'start': 1565,
     'end': 1620,
@@ -207,25 +213,25 @@ ORF1ab_COVERAGE = [
 
 ORF9a_COVERAGE = [
     {
-    'name': 'IDR1-NTD-IDR2',
+    'name': 'Nucleoprotein IDR1-NTD-IDR2',
     'start': 1,
     'end': 248,
     },
 
     {
-    'name': 'NTD-SR',
+    'name': 'Nucleoprotein NTD-SR',
     'start': 44,
     'end': 212,
     },
 
     {
-    'name': 'NTD',
+    'name': 'Nucleoprotein NTD',
     'start': 44,
     'end': 180,
     },
 
     {
-    'name': 'CTD',
+    'name': 'Nucleoprotein CTD',
     'start': 247,
     'end': 364,
     },
