@@ -2627,6 +2627,21 @@ def readInputFile(filename):
     df = pd.read_csv(filename, sep=';')
     return df
 
+def initUniProtEntry(filepath):
+    # Create dataframe from file
+    df = readInputFile(filepath)
+
+    for index, row in df.iterrows():
+        uniprotentry = updateUniProtEntry(
+            db_accession=row['db_accession'],
+            db_code=row['db_code'], #TODO: hablar con JR y ver si esto es el nombre que aparece junto al id. EJ: P0DTD1 · R1AB_SARS2
+            )
+
+
+# ========== ========== ========== ========== ========== ========== ==========
+
+
+
 def preprocessColumnNames(df):
     df.rename(columns={
         'Nsp1': 'NSP1 GD',
