@@ -2619,3 +2619,170 @@ class IDRUtils(object):
                                     ligand=LigandEntityEntry,
                                     assay=AssayEntityEntry,
                                 )
+
+
+# ========== ========== ========== ========== ========== ========== ==========
+
+def readInputFile(filename):
+    df = pd.read_csv(filename, sep=';')
+    return df
+
+def preprocessColumnNames(df):
+    df.rename(columns={
+        'Nsp1': 'NSP1 GD',
+        'Nsp2 CTD': 'NSP2 CtDR',
+        'Nsp15his': 'NSP15',
+        'Nsp3a': 'NSP3 UBl1',
+        'Nsp3b_599': 'NSP3 MacroDomain',
+        'Nsp3c SUD M C': 'NSP3 SUD-MC',
+        'Nsp3c SUD N': 'NSP3 SUD-N',
+        'nsp3d': 'NSP3 PLPro',
+        'Nsp3e': 'NSP3 NAB',
+        'Nsp3y': 'NSP3 Y3',
+        'Nsp5 WT': 'NSP5',
+        'Nsp7': 'NSP7',
+        'Nsp8': 'NSP8',
+        'Nsp9': 'NSP9',
+        'Nsp10': 'NSP10',
+        'Nsp10_Nsp16': 'NSP10-NSP16',
+        'Nsp14_Nsp10': 'NSP10-NSP14',
+        'ORF9a-CTD': 'Nucleoprotein CTD',
+        'ORF9a-IDR-NRD-SR': 'Nucleoprotein IDR1-NTD-IDR2',
+        'ORF9a-NTD': 'Nucleoprotein NTD',
+        'ORF9a-NTD-SR': 'Nucleoprotein NTD-SR',
+        'ORF9b': 'ORF9b',
+    }, 
+    inplace=True)
+
+    return df
+
+def updateFeatureModelEntity(name, featureType, description, pdbentry, uniprotentry, ligandentity, ptmentity, domainentity, externalLink, details):
+    obj = None
+    try:
+        obj, created = FeatureModelEntity.objects.update_or_create(
+            name=name,
+            featureType=featureType,
+            description=description,
+            defaults={
+                'pdbentry': pdbentry,
+                'uniprotentry': uniprotentry,
+                'externalLink': externalLink,
+                'ligandentity': ligandentity,
+                'ptmentity': ptmentity,
+                'domainentity': domainentity,
+                'externalLink': externalLink,
+                'details': details,
+            })
+        if created:
+            logger.debug('Created new %s: %s', FeatureModelEntity.__name__, obj)
+            print('Created new', FeatureModelEntity.__name__, obj)
+        else:
+            logger.debug('Updated%s: %s', FeatureModelEntity.__name__, obj)
+            print('Updated', FeatureModelEntity.__name__, obj)
+    except Exception as exc:
+        logger.exception(exc)
+        print(exc, os.strerror)
+    return obj
+
+def updatePTMEntity(name, description, start, end):
+    obj = None
+    try:
+        obj, created = PTMEntity.objects.update_or_create(
+            name=name,
+            description=description,
+            start=start,
+            end=end,
+            )
+        if created:
+            logger.debug('Created new %s: %s', PTMEntity.__name__, obj)
+            print('Created new', PTMEntity.__name__, obj)
+        else:
+            logger.debug('Updated%s: %s', PTMEntity.__name__, obj)
+            print('Updated', PTMEntity.__name__, obj)
+    except Exception as exc:
+        logger.exception(exc)
+        print(exc, os.strerror)
+    return obj
+
+def updateDomainEntity(name, description, start, end):
+    obj = None
+    try:
+        obj, created = DomainEntity.objects.update_or_create(
+            name=name,
+            description=description,
+            start=start,
+            end=end,
+            )
+        if created:
+            logger.debug('Created new %s: %s', DomainEntity.__name__, obj)
+            print('Created new', DomainEntity.__name__, obj)
+        else:
+            logger.debug('Updated%s: %s', DomainEntity.__name__, obj)
+            print('Updated', DomainEntity.__name__, obj)
+    except Exception as exc:
+        logger.exception(exc)
+        print(exc, os.strerror)
+    return obj
+
+def getInchikeyList():
+    pass
+
+def update_NMR_binding(filepath):
+    """
+    Update NMR data from local csv file containing all binding and not binding ligands to COVID-19 proteins.
+    """
+    # Create dataframe from file
+    NMRdf = readInputFile(filepath)
+
+    # Remove columns related to nsp3b·GS-441524, GHMnsp5 and GSnsp5, and remane the rest
+    NMRdf.drop(columns=['Nsp3b+NoR', 'Nsp5', 'Nsp5_Mpro']) #TODO: cambiar estas lineas al archivo de preprocessing?
+    NMRdf = preprocessColumnNames(NMRdf)
+
+    # Create FeatureType
+
+    for column in NMRdf.columns[8:]:
+        pass
+
+
+
+    # logger.debug("- update isolde refinements: %s", inputfile)
+    # print("- update isolde refinements:", inputfile)
+
+    # entries = []
+    # print("- parse Isolde entry list:", inputfile)
+    # logger.debug("- parse Isolde entry list: %s", inputfile)
+    # parseIsoldeEntryList(inputfile, entries)
+
+    # print("- get Isolde refinement data")
+    # logger.debug("- get Isolde refinement data")
+    # getIsoldeRefinementData(entries)
+
+    # print("-- save Isolde data (JSON):", CSTF_LOCAL_PATH, ISOLDE_JSON_FNAME)
+    # logger.debug("-- save Isolde data (JSON): %s %s",
+    #              CSTF_LOCAL_PATH, ISOLDE_JSON_FNAME)
+    # save_json(entries, CSTF_LOCAL_PATH, ISOLDE_JSON_FNAME)
+
+    # print("-- get Isolde refined model")
+    # logger.debug("-- get Isolde refined model")
+    # getIsoldeRefinedModel(entries)
+
+    # print("-- get all files in Isolde data folder")
+    # logger.debug("-- get all files in Isolde data folder")
+    # getAllIsoldeDataFiles(entries, [".txt", ".mtz", ".cif"])
+
+    # print("-- update DB Isolde data")
+    # logger.debug("-- update DB Isolde data")
+    # for entry in entries:
+    #     if 'filename' in entry:
+    #         for refModel in entry['refmodels']:
+    #             pdbObj = findPdbEntry(entry['pdbId'].upper())
+    #             if pdbObj:
+    #                 updateRefinedModel(
+    #                     emdbObj=None,
+    #                     pdbObj=pdbObj,
+    #                     sourceObj=findRefinedModelSource(refModel['source']),
+    #                     methodObj=findRefinedModelMethod(refModel['method']),
+    #                     filename=entry['filename'],
+    #                     externalLink=refModel['externalLink'],
+    #                     queryLink=refModel['queryLink'],
+    #                     details=refModel['details'])
