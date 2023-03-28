@@ -1658,11 +1658,11 @@ def updateFeatureType(name, description, dataSource, externalLink):
             dataSource=dataSource,
             externalLink=externalLink)
         if created:
-            logger.debug('Created new %s: %s', FeatureEntity.__name__, obj)
-            print('Created new', FeatureEntity.__name__, obj)
+            logger.debug('Created new %s: %s', FeatureType.__name__, obj)
+            print('Created new', FeatureType.__name__, obj)
         else:
-            logger.debug('Updated %s: %s', FeatureEntity.__name__, obj)
-            print('Updated', FeatureEntity.__name__, obj)
+            logger.debug('Updated %s: %s', FeatureType.__name__, obj)
+            print('Updated', FeatureType.__name__, obj)
     except Exception as exc:
         logger.exception(exc)
         print(exc, os.strerror)
