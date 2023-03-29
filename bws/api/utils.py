@@ -2655,9 +2655,6 @@ def getUniProtEntry(db_accession, db_code):
         if created:
             logger.debug('Created new %s: %s', UniProtEntry.__name__, obj)
             print('Created new', UniProtEntry.__name__, obj)
-        else:
-            logger.debug('Updated%s: %s', UniProtEntry.__name__, obj)
-            print('Updated', UniProtEntry.__name__, obj)
 
     except Exception as exc:
         logger.exception(exc)
