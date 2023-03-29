@@ -2704,6 +2704,46 @@ def initPTMEntity(filepath):
             uniprotentry=uniprotentry,
             )
 
+def updateDomainEntity(name, description, start, end, uniprotentry):
+    obj = None
+    try:
+        obj, created = DomainEntity.objects.update_or_create(
+            name=name,
+            description=description,
+            start=start,
+            end=end,
+            uniprotentry=uniprotentry,
+            )
+        if created:
+            logger.debug('Created new %s: %s', DomainEntity.__name__, obj)
+            print('Created new', DomainEntity.__name__, obj)
+        else:
+            logger.debug('Updated%s: %s', DomainEntity.__name__, obj)
+            print('Updated', DomainEntity.__name__, obj)
+    except Exception as exc:
+        logger.exception(exc)
+        print(exc, os.strerror)
+    return obj
+
+def initDomainEntity(filepath):
+    # Create dataframe from file
+    df = readInputFile(filepath)
+
+    # Create DomainEntity for each row
+    for index, row in df.iterrows():
+
+        # Get UniProtEntry
+        uniprotentry = getUniProtEntry(row['uniprotentry'], row['uniprotcode'])
+
+        # Create DomainEntity
+        domainentity = updateDomainEntity(
+            name=row['name'],
+            description=row['description'], 
+            start=row['start'],
+            end=row['end'],
+            uniprotentry=uniprotentry,
+            )
+
 
 # ========== ========== ========== ========== ========== ========== ==========
 
@@ -2760,26 +2800,6 @@ def updateFeatureModelEntity(name, featureType, description, pdbentry, uniproten
         else:
             logger.debug('Updated%s: %s', FeatureModelEntity.__name__, obj)
             print('Updated', FeatureModelEntity.__name__, obj)
-    except Exception as exc:
-        logger.exception(exc)
-        print(exc, os.strerror)
-    return obj
-
-def updateDomainEntity(name, description, start, end):
-    obj = None
-    try:
-        obj, created = DomainEntity.objects.update_or_create(
-            name=name,
-            description=description,
-            start=start,
-            end=end,
-            )
-        if created:
-            logger.debug('Created new %s: %s', DomainEntity.__name__, obj)
-            print('Created new', DomainEntity.__name__, obj)
-        else:
-            logger.debug('Updated%s: %s', DomainEntity.__name__, obj)
-            print('Updated', DomainEntity.__name__, obj)
     except Exception as exc:
         logger.exception(exc)
         print(exc, os.strerror)
