@@ -2631,6 +2631,7 @@ def initUniProtEntry(filepath):
     # Create dataframe from file
     df = readInputFile(filepath)
 
+    # Create UniProtEntry for each row
     for index, row in df.iterrows():
         uniprotentry = updateUniProtEntry(
             db_accession=row['db_accession'],
@@ -2638,8 +2639,73 @@ def initUniProtEntry(filepath):
             )
 
 
-# ========== ========== ========== ========== ========== ========== ==========
+def getUniProtEntry(db_accession, db_code):
+    """
+    Get UniProtEntry or create in case it does not exist
+    """
 
+    obj = None
+    try:
+        obj, created = UniProtEntry.objects.get_or_create(
+            dbId=db_accession,
+            defaults={
+                'name': db_code,
+                'externalLink': URL_UNIPROT + db_accession,
+            })
+        if created:
+            logger.debug('Created new %s: %s', UniProtEntry.__name__, obj)
+            print('Created new', UniProtEntry.__name__, obj)
+        else:
+            logger.debug('Updated%s: %s', UniProtEntry.__name__, obj)
+            print('Updated', UniProtEntry.__name__, obj)
+
+    except Exception as exc:
+        logger.exception(exc)
+        print(exc, os.strerror)
+    return obj
+
+def updatePTMEntity(name, description, start, end, uniprotentry):
+    obj = None
+    try:
+        obj, created = PTMEntity.objects.update_or_create(
+            name=name,
+            description=description,
+            start=start,
+            end=end,
+            uniprotentry=uniprotentry,
+            )
+        if created:
+            logger.debug('Created new %s: %s', PTMEntity.__name__, obj)
+            print('Created new', PTMEntity.__name__, obj)
+        else:
+            logger.debug('Updated%s: %s', PTMEntity.__name__, obj)
+            print('Updated', PTMEntity.__name__, obj)
+    except Exception as exc:
+        logger.exception(exc)
+        print(exc, os.strerror)
+    return obj
+
+def initPTMEntity(filepath):
+    # Create dataframe from file
+    df = readInputFile(filepath)
+
+    # Create PTMEntity for each row
+    for index, row in df.iterrows():
+
+        # Get UniProtEntry
+        uniprotentry = getUniProtEntry(row['uniprotentry'], row['uniprotcode'])
+
+        # Create PTMEntity
+        ptmentity = updatePTMEntity(
+            name=row['name'],
+            description=row['description'], 
+            start=row['start'],
+            end=row['end'],
+            uniprotentry=uniprotentry,
+            )
+
+
+# ========== ========== ========== ========== ========== ========== ==========
 
 
 def preprocessColumnNames(df):
@@ -2694,26 +2760,6 @@ def updateFeatureModelEntity(name, featureType, description, pdbentry, uniproten
         else:
             logger.debug('Updated%s: %s', FeatureModelEntity.__name__, obj)
             print('Updated', FeatureModelEntity.__name__, obj)
-    except Exception as exc:
-        logger.exception(exc)
-        print(exc, os.strerror)
-    return obj
-
-def updatePTMEntity(name, description, start, end):
-    obj = None
-    try:
-        obj, created = PTMEntity.objects.update_or_create(
-            name=name,
-            description=description,
-            start=start,
-            end=end,
-            )
-        if created:
-            logger.debug('Created new %s: %s', PTMEntity.__name__, obj)
-            print('Created new', PTMEntity.__name__, obj)
-        else:
-            logger.debug('Updated%s: %s', PTMEntity.__name__, obj)
-            print('Updated', PTMEntity.__name__, obj)
     except Exception as exc:
         logger.exception(exc)
         print(exc, os.strerror)
