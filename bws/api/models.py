@@ -456,7 +456,7 @@ class PTMEntity(models.Model):
     name = models.CharField(max_length=255, blank=False,
                             null=False, default='')
     description = models.CharField(
-        max_length=255, blank=True, null=True, default='')
+        max_length=5000, blank=True, null=True, default='')
     start = models.IntegerField()
     end = models.IntegerField()
     uniprotentry = models.ForeignKey(UniProtEntry,
@@ -472,7 +472,7 @@ class DomainEntity(models.Model):
     name = models.CharField(max_length=255, blank=False,
                             null=False, default='')
     description = models.CharField(
-        max_length=255, blank=True, null=True, default='')
+        max_length=5000, blank=True, null=True, default='')
     start = models.IntegerField()
     end = models.IntegerField()
     uniprotentry = models.ForeignKey(UniProtEntry,
@@ -560,7 +560,7 @@ class ScreenEntity(models.Model):
     dbId = models.CharField(max_length=50, blank=False,
                             default='', primary_key=True)
     name = models.CharField(max_length=255, blank=False, default='')
-    description = models.CharField(max_length=255, blank=True, default='')
+    description = models.CharField(max_length=5000, blank=True, default='')
     screenTypes = models.ManyToManyField(OntologyTerm, related_name='type_term_screens')
     technologyTypes = models.ManyToManyField(OntologyTerm, related_name='technology_term_screens')
     imagingMethods = models.ManyToManyField(OntologyTerm, related_name='imaging_term_screens')
