@@ -15,11 +15,11 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            'file_name', nargs=1, type=str,
+            'file_path', nargs=1, type=str,
             help='<Required> CSV file path, i.e.: /data/C19-NMR-C/C19-NMR-C_pre-processed_data.csv')
 
     def handle(self, *args, **options):
         filepath = options['file_path'][0]
-        print("Reading data from ", filepath)
-        update_NMR_binding(filepath)#!!!!!!!!!!!!!!!!!!!!!!
+        print("Reading NMR binding data from ", filepath)
+        update_NMR_binding(filepath)
         print("Done.")

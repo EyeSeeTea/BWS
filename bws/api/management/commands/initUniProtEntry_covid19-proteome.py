@@ -15,7 +15,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            'file_name', nargs=1, type=str,
+            'file_path', nargs=1, type=str,
             help='<Required> CSV file path, i.e.: /data/SARS-CoV-2/UniProtEntry_covid19-proteome.csv')
 
     def handle(self, *args, **options):
