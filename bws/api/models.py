@@ -504,14 +504,14 @@ class FeatureEntity(models.Model):
     description = models.CharField(max_length=5000, blank=True, null=True)
     pdbentry = models.ForeignKey(PdbEntry,
                                  related_name='%(class)s_features', null=True, blank=True, on_delete=models.CASCADE)
-    uniprotentry = models.ManyToManyField(UniProtEntry,
-                                 related_name='%(class)s_features', blank=True)
-    ligandentity = models.ManyToManyField(LigandEntity,
-                                 related_name='%(class)s_features', blank=True)
-    ptmentity = models.ManyToManyField(PTMEntity,
-                                 related_name='%(class)s_features', blank=True)
-    domainentity = models.ManyToManyField(DomainEntity,
-                                 related_name='%(class)s_features', blank=True)
+    uniprotentry = models.ForeignKey(UniProtEntry,
+                                 related_name='%(class)s_features', null=True, blank=True, on_delete=models.CASCADE)
+    ligandentity = models.ForeignKey(LigandEntity,
+                                 related_name='%(class)s_features', null=True, blank=True, on_delete=models.CASCADE)
+    ptmentity = models.ForeignKey(PTMEntity,
+                                 related_name='%(class)s_features', null=True, blank=True, on_delete=models.CASCADE)
+    domainentity = models.ForeignKey(DomainEntity,
+                                 related_name='%(class)s_features', null=True, blank=True, on_delete=models.CASCADE)
     externalLink = models.URLField(max_length=200, default='', blank=True)
 
     class Meta:
