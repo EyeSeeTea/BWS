@@ -2855,6 +2855,7 @@ def updateFeatureModelEntity(name, featureType, description, pdbentry, uniproten
 def createFeatureModelEntityByDataType(dataType, featureType, ligandentity, column, row):
     
     # Check if "·" tag is in column name. If yes, add it to FeatureModelentity as details 
+    details = ''
     if '·' in column:
         column_list = column.split('·')
         column = column_list[0]
