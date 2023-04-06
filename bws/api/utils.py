@@ -2638,7 +2638,6 @@ def initUniProtEntry(filepath):
             db_code=row['db_code'], #TODO: hablar con JR y ver si esto es el nombre que aparece junto al id. EJ: P0DTD1 · R1AB_SARS2
             )
 
-
 def getUniProtEntry(db_accession, db_code):
     """
     Get UniProtEntry or create in case it does not exist
@@ -2655,6 +2654,30 @@ def getUniProtEntry(db_accession, db_code):
         if created:
             logger.debug('Created new %s: %s', UniProtEntry.__name__, obj)
             print('Created new', UniProtEntry.__name__, obj)
+
+    except Exception as exc:
+        logger.exception(exc)
+        print(exc, os.strerror)
+    return obj
+
+def getPTMEntity(name, description, start, end, uniprotentry):
+    """
+    Get PTMEntity or create in case it does not exist
+    """
+
+    obj = None
+    try:
+        obj, created = PTMEntity.objects.get_or_create(
+            name=name,
+            defaults={
+                'description': description,
+                'start': start,
+                'end': end,
+                'uniprotentry': uniprotentry,
+            })
+        if created:
+            logger.debug('Created new %s: %s', PTMEntity.__name__, obj)
+            print('Created new', PTMEntity.__name__, obj)
 
     except Exception as exc:
         logger.exception(exc)
@@ -2700,6 +2723,30 @@ def initPTMEntity(filepath):
             end=row['end'],
             uniprotentry=uniprotentry,
             )
+
+def getDomainEntity(name, description, start, end, uniprotentry):
+    """
+    Get DomainEntity or create in case it does not exist
+    """
+
+    obj = None
+    try:
+        obj, created = DomainEntity.objects.get_or_create(
+            name=name,
+            defaults={
+                'description': description,
+                'start': start,
+                'end': end,
+                'uniprotentry': uniprotentry,
+            })
+        if created:
+            logger.debug('Created new %s: %s', DomainEntity.__name__, obj)
+            print('Created new', DomainEntity.__name__, obj)
+
+    except Exception as exc:
+        logger.exception(exc)
+        print(exc, os.strerror)
+    return obj
 
 def updateDomainEntity(name, description, start, end, uniprotentry):
     obj = None
@@ -2768,7 +2815,7 @@ def preprocessColumnNames(df):
         'ORF9a-IDR-NRD-SR': 'Nucleoprotein IDR1-NTD-IDR2',
         'ORF9a-NTD': 'Nucleoprotein NTD',
         'ORF9a-NTD-SR': 'Nucleoprotein NTD-SR',
-        'ORF9b': 'ORF9b',
+        'ORF9b': 'P0DTD2',
     }, 
     inplace=True)
 
@@ -2802,8 +2849,98 @@ def updateFeatureModelEntity(name, featureType, description, pdbentry, uniproten
         print(exc, os.strerror)
     return obj
 
-def getInchikeyList():
-    pass
+def createFeatureModelEntityByDataType(dataType, featureType, ligandentity, column, row):
+
+    if dataType == 'ptm':
+        # Get or create PTMEntity
+        ptmentity = getPTMEntity(column, '', '', '', '',)
+
+        # Create FeatureModelEntity
+        updateFeatureModelEntity(
+        name='%s %s %s' % (ligandentity.name, row, ptmentity.name), 
+        featureType=featureType, 
+        description='%s evidence for %s to %s' % (row, ligandentity.name, ptmentity.name), 
+        pdbentry=None, 
+        uniprotentry=None, 
+        ligandentity=ligandentity, 
+        ptmentity=ptmentity, 
+        domainentity=None, 
+        externalLink='', 
+        details=''
+        )
+
+    elif dataType == 'domain':
+        # Get or create DomainEntity
+        domainentity = getDomainEntity(column, '', '', '', '',)
+
+        # Create FeatureModelEntity
+        updateFeatureModelEntity(
+        name='%s %s %s' % (ligandentity.name, row, domainentity.name), 
+        featureType=featureType, 
+        description='%s evidence for %s to %s' % (row, ligandentity.name, domainentity.name), 
+        pdbentry=None, 
+        uniprotentry=None, 
+        ligandentity=ligandentity, 
+        ptmentity=None, 
+        domainentity=domainentity, 
+        externalLink='', 
+        details=''
+        )
+
+    elif dataType == 'protein':
+        # Get or create UniProtEntry
+        proteinentity = getUniProtEntry(column, '',)
+
+        # Create FeatureModelEntity
+        updateFeatureModelEntity(
+        name='%s %s %s' % (ligandentity.name, row, proteinentity.name), 
+        featureType=featureType, 
+        description='%s evidence for %s to %s' % (row, ligandentity.name, proteinentity.name), 
+        pdbentry=None, 
+        uniprotentry=proteinentity, 
+        ligandentity=ligandentity, 
+        ptmentity=None, 
+        domainentity=None, 
+        externalLink='', 
+        details=''
+        )
+
+    else:
+        print('Data Type not identified: %s' % (dataType)) 
+
+def createFeatureEntityByDf(df, dataType, featureTypeBinding, featureTypeNotBinding):
+
+    for column in df.columns[8:]: # Iterate through ptm/domain columns
+        for index, row in df[column].iteritems(): # Iterate through each row within the ptm/domain columns
+            
+            # Identify value for each column row and assign a different featureType depending on it
+            if row == 'Binding':
+                featureType = featureTypeBinding
+            elif row == 'Not Binding':
+                featureType = featureTypeNotBinding
+            else:
+                print('Data Type not identified for: ', column, df.iloc[index]['Ligand_ID'])
+
+            # Get or create LigandEntity entry
+            ligandentity = getLigandEntity(
+                dbId=None, 
+                ligandType=None, 
+                name=df.iloc[index]['Ligand_ID'], 
+                formula=df.iloc[index]['Formula'], 
+                formula_weight=None, 
+                details=None, 
+                altNames=None,
+                pubChemCompoundId=df.iloc[index]['PubChemID'], 
+                systematicNames=None, 
+                IUPACInChI=None, 
+                IUPACInChIkey=df.iloc[index]['InChIKey'], 
+                isomericSMILES=None, 
+                canonicalSMILES=df.iloc[index]['SMILES']
+                )
+
+            # Get PTM, Domain and Uniprot entities and create FeatureModelEntity
+            createFeatureModelEntityByDataType(dataType, featureType, ligandentity, column, row)
+
 
 def update_NMR_binding(filepath):
     """
@@ -2816,51 +2953,37 @@ def update_NMR_binding(filepath):
     NMRdf.drop(columns=['Nsp3b+NoR', 'Nsp5', 'Nsp5_Mpro']) #TODO: cambiar estas lineas al archivo de preprocessing?
     NMRdf = preprocessColumnNames(NMRdf)
 
-    # Create FeatureType
+    # Split NMR dataframe into different dataframes depending on data model
+    PTMdf = NMRdf['Ligand_ID', 'Formula', 'SMILES', 'InChIKey', 'PubChemID', 
+                  'NSP15', 'NSP5', 'NSP7', 'NSP8', 'NSP9', 'NSP10']
+    domaindf = NMRdf['Ligand_ID', 'Formula', 'SMILES', 'InChIKey', 'PubChemID'
+                     'NSP1 GD', 'NSP2 CtDR', 'NSP3 UBl1', 'NSP3 MacroDomain', 
+                     'NSP3 SUD-MC', 'NSP3 SUD-N', 'NSP3 PLPro', 'NSP3 NAB', 
+                     'NSP3 Y3', 'Nucleoprotein CTD', 'Nucleoprotein IDR1-NTD-IDR2', 
+                     'Nucleoprotein NTD', 'Nucleoprotein NTD-SR']
+    complexdf = NMRdf['Ligand_ID', 'Formula', 'SMILES', 'InChIKey', 'PubChemID', 
+                      'NSP10-NSP16', 'NSP10-NSP14']
+    protdf = NMRdf['Ligand_ID', 'Formula', 'SMILES', 'InChIKey', 'PubChemID', 'ORF9b']
 
-    for column in NMRdf.columns[8:]:
-        pass
+    #TODO: Duplicate each of the columns related to complexes so that we can store the info for both proteins
+    #TODO: tag the special columns (such as nsp5+GS (monomeric), nsp5+GHM (monomeric) so that the interface can see the tag and create a subsection for that type of info)
+    # Update or create FeatureType for binding and not binding results
+    featureTypeBinding = updateFeatureType(
+        name = 'NMR Binding',
+        description = 'List of binding fragments from an NMR screening study in which a well-defined fragment library was used to identify hits against SCoV2 proteins.',
+        dataSource = 'The COVID19-NMR Consortium',
+        externalLink = 'https://onlinelibrary.wiley.com/doi/10.1002/anie.202205858',
+    )
 
+    featureTypeNotBinding = updateFeatureType(
+        name = 'NMR Not-Binding',
+        description = 'List of not-binding fragments from an NMR screening study in which a well-defined fragment library was used to identify hits against SCoV2 proteins.',
+        dataSource = 'The COVID19-NMR Consortium',
+        externalLink = 'https://onlinelibrary.wiley.com/doi/10.1002/anie.202205858',
+    )
 
-
-    # logger.debug("- update isolde refinements: %s", inputfile)
-    # print("- update isolde refinements:", inputfile)
-
-    # entries = []
-    # print("- parse Isolde entry list:", inputfile)
-    # logger.debug("- parse Isolde entry list: %s", inputfile)
-    # parseIsoldeEntryList(inputfile, entries)
-
-    # print("- get Isolde refinement data")
-    # logger.debug("- get Isolde refinement data")
-    # getIsoldeRefinementData(entries)
-
-    # print("-- save Isolde data (JSON):", CSTF_LOCAL_PATH, ISOLDE_JSON_FNAME)
-    # logger.debug("-- save Isolde data (JSON): %s %s",
-    #              CSTF_LOCAL_PATH, ISOLDE_JSON_FNAME)
-    # save_json(entries, CSTF_LOCAL_PATH, ISOLDE_JSON_FNAME)
-
-    # print("-- get Isolde refined model")
-    # logger.debug("-- get Isolde refined model")
-    # getIsoldeRefinedModel(entries)
-
-    # print("-- get all files in Isolde data folder")
-    # logger.debug("-- get all files in Isolde data folder")
-    # getAllIsoldeDataFiles(entries, [".txt", ".mtz", ".cif"])
-
-    # print("-- update DB Isolde data")
-    # logger.debug("-- update DB Isolde data")
-    # for entry in entries:
-    #     if 'filename' in entry:
-    #         for refModel in entry['refmodels']:
-    #             pdbObj = findPdbEntry(entry['pdbId'].upper())
-    #             if pdbObj:
-    #                 updateRefinedModel(
-    #                     emdbObj=None,
-    #                     pdbObj=pdbObj,
-    #                     sourceObj=findRefinedModelSource(refModel['source']),
-    #                     methodObj=findRefinedModelMethod(refModel['method']),
-    #                     filename=entry['filename'],
-    #                     externalLink=refModel['externalLink'],
-    #                     queryLink=refModel['queryLink'],
-    #                     details=refModel['details'])
+    # Create featureEntity using PTMdf, domaindf and protdf
+    createFeatureEntityByDf(PTMdf, 'ptm', featureTypeBinding, featureTypeNotBinding)
+    createFeatureEntityByDf(domaindf, 'domain', featureTypeBinding, featureTypeNotBinding)
+    createFeatureEntityByDf(protdf, 'protein', featureTypeBinding, featureTypeNotBinding)
+        
