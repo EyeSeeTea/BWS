@@ -2923,7 +2923,7 @@ def createFeatureModelEntityByDataType(dataType, featureType, ligandentity, colu
 def createFeatureEntityByDf(df, dataType, featureTypeBinding, featureTypeNotBinding):
 
     for column in df.columns[8:]: # Iterate through ptm/domain columns
-        for index, row in df[column].iteritems(): # Iterate through each row within the ptm/domain columns
+        for index, row in df[column].items(): # Iterate through each row within the ptm/domain columns
             
             # Identify value for each column row and assign a different featureType depending on it
             if row == 'Binding':
