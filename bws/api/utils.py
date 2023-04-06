@@ -2797,8 +2797,11 @@ def preprocessColumnNames(df):
         'Nsp1': 'NSP1 GD',
         'Nsp2 CTD': 'NSP2 CtDR',
         'Nsp15his': 'NSP15',
+        'Nsp5_Mpro': 'NSP5·GS',
+        'Nsp5': 'NSP5·GHM',
         'Nsp3a': 'NSP3 UBl1',
         'Nsp3b_599': 'NSP3 MacroDomain',
+        'Nsp3b+NoR': 'NSP3 MacroDomain·GS-441524',
         'Nsp3c SUD M C': 'NSP3 SUD-MC',
         'Nsp3c SUD N': 'NSP3 SUD-N',
         'nsp3d': 'NSP3 PLPro',
@@ -2809,8 +2812,8 @@ def preprocessColumnNames(df):
         'Nsp8': 'NSP8',
         'Nsp9': 'NSP9',
         'Nsp10': 'NSP10',
-        'Nsp10_Nsp16': 'NSP10-NSP16',
-        'Nsp14_Nsp10': 'NSP10-NSP14',
+        'Nsp10_Nsp16': 'NSP10·NSP16',
+        'Nsp14_Nsp10': 'NSP10·NSP14',
         'ORF9a-CTD': 'Nucleoprotein CTD',
         'ORF9a-IDR-NRD-SR': 'Nucleoprotein IDR1-NTD-IDR2',
         'ORF9a-NTD': 'Nucleoprotein NTD',
@@ -2850,6 +2853,14 @@ def updateFeatureModelEntity(name, featureType, description, pdbentry, uniproten
     return obj
 
 def createFeatureModelEntityByDataType(dataType, featureType, ligandentity, column, row):
+    
+    # Check if "·" tag is in column name. If yes, add it to FeatureModelentity as details 
+    if '·' in column:
+        column_list = column.split('·')
+        column = column_list[0]
+        tag = column_list[1]
+
+        details = 'Entity modification: +' % (tag)
 
     if dataType == 'ptm':
         # Get or create PTMEntity
@@ -2866,7 +2877,7 @@ def createFeatureModelEntityByDataType(dataType, featureType, ligandentity, colu
         ptmentity=ptmentity, 
         domainentity=None, 
         externalLink='', 
-        details=''
+        details=details,
         )
 
     elif dataType == 'domain':
@@ -2884,7 +2895,7 @@ def createFeatureModelEntityByDataType(dataType, featureType, ligandentity, colu
         ptmentity=None, 
         domainentity=domainentity, 
         externalLink='', 
-        details=''
+        details=details,
         )
 
     elif dataType == 'protein':
@@ -2902,7 +2913,7 @@ def createFeatureModelEntityByDataType(dataType, featureType, ligandentity, colu
         ptmentity=None, 
         domainentity=None, 
         externalLink='', 
-        details=''
+        details=details,
         )
 
     else:
@@ -2949,24 +2960,24 @@ def update_NMR_binding(filepath):
     # Create dataframe from file
     NMRdf = readInputFile(filepath)
 
-    # Remove columns related to nsp3b·GS-441524, GHMnsp5 and GSnsp5, and remane the rest
-    NMRdf.drop(columns=['Nsp3b+NoR', 'Nsp5', 'Nsp5_Mpro']) #TODO: cambiar estas lineas al archivo de preprocessing?
+    # Rename all column names to fit db names
     NMRdf = preprocessColumnNames(NMRdf)
+
+    # Duplicate columns related to protein complexes and rename them
+    NMRdf['NSP16·NSP10'] = NMRdf.loc[:, 'NSP10·NSP16']
+    NMRdf['NSP14·NSP10'] = NMRdf.loc[:, 'NSP10·NSP14']
 
     # Split NMR dataframe into different dataframes depending on data model
     PTMdf = NMRdf['Ligand_ID', 'Formula', 'SMILES', 'InChIKey', 'PubChemID', 
-                  'NSP15', 'NSP5', 'NSP7', 'NSP8', 'NSP9', 'NSP10']
+                  'NSP15', 'NSP5', 'NSP7', 'NSP8', 'NSP9', 'NSP10', 'NSP10·NSP16', 
+                  'NSP16·NSP10', 'NSP10·NSP14', 'NSP14·NSP10']
     domaindf = NMRdf['Ligand_ID', 'Formula', 'SMILES', 'InChIKey', 'PubChemID'
                      'NSP1 GD', 'NSP2 CtDR', 'NSP3 UBl1', 'NSP3 MacroDomain', 
                      'NSP3 SUD-MC', 'NSP3 SUD-N', 'NSP3 PLPro', 'NSP3 NAB', 
                      'NSP3 Y3', 'Nucleoprotein CTD', 'Nucleoprotein IDR1-NTD-IDR2', 
                      'Nucleoprotein NTD', 'Nucleoprotein NTD-SR']
-    complexdf = NMRdf['Ligand_ID', 'Formula', 'SMILES', 'InChIKey', 'PubChemID', 
-                      'NSP10-NSP16', 'NSP10-NSP14']
     protdf = NMRdf['Ligand_ID', 'Formula', 'SMILES', 'InChIKey', 'PubChemID', 'ORF9b']
 
-    #TODO: Duplicate each of the columns related to complexes so that we can store the info for both proteins
-    #TODO: tag the special columns (such as nsp5+GS (monomeric), nsp5+GHM (monomeric) so that the interface can see the tag and create a subsection for that type of info)
     # Update or create FeatureType for binding and not binding results
     featureTypeBinding = updateFeatureType(
         name = 'NMR Binding',
