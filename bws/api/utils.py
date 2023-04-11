@@ -2968,6 +2968,9 @@ def update_NMR_binding(filepath):
     NMRdf['NSP16·NSP10'] = NMRdf.loc[:, 'NSP10·NSP16']
     NMRdf['NSP14·NSP10'] = NMRdf.loc[:, 'NSP10·NSP14']
 
+    # Drop ligands with no InChIKey 
+    NMRdf.dropna(inplace=True)
+
     # Split NMR dataframe into different dataframes depending on data model
     PTMdf = NMRdf[['Ligand_ID', 'Formula', 'SMILES', 'InChIKey', 'PubChemID', 'NSP15', 'NSP5', 'NSP7', 'NSP8', 'NSP9', 'NSP10', 'NSP10·NSP16', 'NSP16·NSP10', 'NSP10·NSP14', 'NSP14·NSP10']]
     domaindf = NMRdf[['Ligand_ID', 'Formula', 'SMILES', 'InChIKey', 'PubChemID', 'NSP1 GD', 'NSP2 CtDR', 'NSP3 UBl1', 'NSP3 MacroDomain', 'NSP3 SUD-MC', 'NSP3 SUD-N', 'NSP3 PLPro', 'NSP3 NAB', 'NSP3 Y3', 'Nucleoprotein CTD', 'Nucleoprotein IDR1-NTD-IDR2', 'Nucleoprotein NTD', 'Nucleoprotein NTD-SR']]
