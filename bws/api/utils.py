@@ -2861,7 +2861,7 @@ def createFeatureModelEntityByDataType(dataType, featureType, ligandentity, colu
         column = column_list[0]
         tag = column_list[1]
 
-        details = 'Entity modification: +' % (tag)
+        details = 'Entity modification: +%s' % (tag)
 
     if dataType == 'ptm':
         # Get or create PTMEntity
