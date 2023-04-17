@@ -21,6 +21,17 @@ DEV
  Connection to the running container "bws_web_1" in DEV
 - docker exec -it bws_web_1 /bin/bash
 
+Connection to running db container "bws_db_1" in DEV
+- docker exec -it bws_db_1 mysql -uroot -p
+  Provide DB_ROOT_PASSWD
+
+MySQL Docker Container commands:
+- USE DB_NAME
+- show tables;
+- SELECT * FROM table_name;
+- SELECT * FROM table_name WHERE column_name = value;
+- SELECT * FROM table_name WHERE column_name LIKE '%word%';
+
 Run custom command. E.g: updateDB_fromIDRAssay for assay idr0094-ellinger-sarscov2
 - docker exec -it bws_web_1 /bin/bash
 - python manage.py updateDB_fromIDRAssay /data/IDR/idr0094-ellinger-sarscov2
