@@ -2776,7 +2776,7 @@ def preprocessColumnNames(df):
 
     return df
 
-def updateFeatureModelEntity(name, featureType, description, pdbentry, uniprotentry, ligandentity, ptmentity, domainentity, externalLink, details):#TODO: remove ptm y domain
+def updateFeatureModelEntity(name, featureType, description, pdbentry, uniprotentry, ligandentity, externalLink, details):
     obj = None
     try:
         obj, created = FeatureModelEntity.objects.update_or_create(
@@ -2788,8 +2788,6 @@ def updateFeatureModelEntity(name, featureType, description, pdbentry, uniproten
                 'uniprotentry': uniprotentry,
                 'externalLink': externalLink,
                 'ligandentity': ligandentity,
-                'ptmentity': ptmentity,
-                'domainentity': domainentity,
                 'externalLink': externalLink,
                 'details': details,
             })
