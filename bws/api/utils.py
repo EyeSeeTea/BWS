@@ -2833,10 +2833,41 @@ def updateFeatureRegionEntity(name, featureType, description, pdbentry, uniprote
     return obj
 
 
-def createFeatureEntityByDf(df, dataType, featureTypeBinding, featureTypeNotBinding): #Continue this function adding tag and protein dataType parts from createFeatureModelEntityByDataType
+def update_NMR_binding(filepath):
+    """
+    Update NMR data from local csv file containing all binding and not binding ligands to COVID-19 proteins.
+    """
+    # Create dataframe from file
+    NMRdf = readInputFile(filepath)
 
-    for column in df.columns[5:]: # Iterate through ptm/domain columns
-        for index, row in df[column].items(): # Iterate through each row within the ptm/domain columns
+    # Rename all column names to fit db names
+    NMRdf = preprocessColumnNames(NMRdf)
+
+    # Duplicate columns related to protein complexes and rename them
+    NMRdf['NSP16·NSP10'] = NMRdf.loc[:, 'NSP10·NSP16']
+    NMRdf['NSP14·NSP10'] = NMRdf.loc[:, 'NSP10·NSP14']
+
+    # Drop ligands with no InChIKey 
+    NMRdf2 = NMRdf.dropna(axis=0).reset_index(drop=True)
+
+    # Update or create FeatureType for binding and not binding results #TODO: pass this to a csv and create a custom command to import it
+    featureTypeBinding = updateFeatureType(
+        name = 'NMR Binding',
+        description = 'List of binding fragments from an NMR screening study in which a well-defined fragment library was used to identify hits against SCoV2 proteins.',
+        dataSource = 'The COVID19-NMR Consortium',
+        externalLink = 'https://onlinelibrary.wiley.com/doi/10.1002/anie.202205858',
+    )
+
+    featureTypeNotBinding = updateFeatureType(
+        name = 'NMR Not-Binding',
+        description = 'List of not-binding fragments from an NMR screening study in which a well-defined fragment library was used to identify hits against SCoV2 proteins.',
+        dataSource = 'The COVID19-NMR Consortium',
+        externalLink = 'https://onlinelibrary.wiley.com/doi/10.1002/anie.202205858',
+    )
+
+    # Iterate through NMR dataframe and create LigandEntity and FeatureRegionEntity
+    for column in NMRdf2.columns[5:]: # columns equal protein entities
+        for index, row in NMRdf2[column].items(): # rows equal binding or not binding results
             
             # Identify value for each column row and assign a different featureType depending on it
             if row == 'Binding':
@@ -2844,23 +2875,23 @@ def createFeatureEntityByDf(df, dataType, featureTypeBinding, featureTypeNotBind
             elif row == 'Not Binding':
                 featureType = featureTypeNotBinding
             else:
-                print('Data Type not identified for: ', column, df.iloc[index]['Ligand_ID'])
+                print('Data Type not identified for: ', column, NMRdf2.iloc[index]['Ligand_ID'])
 
             # Get or create LigandEntity entry
             ligandentity = getLigandEntity(
                 dbId=None, 
                 ligandType=None, 
-                name=df.iloc[index]['Ligand_ID'], 
-                formula=df.iloc[index]['Formula'], 
+                name=NMRdf2.iloc[index]['Ligand_ID'], 
+                formula=NMRdf2.iloc[index]['Formula'], 
                 formula_weight=None, 
                 details=None, 
                 altNames=None,
-                pubChemCompoundId=df.iloc[index]['PubChemID'], 
+                pubChemCompoundId=NMRdf2.iloc[index]['PubChemID'], 
                 systematicNames=None, 
                 IUPACInChI=None, 
-                IUPACInChIkey=df.iloc[index]['InChIKey'], 
+                IUPACInChIkey=NMRdf2.iloc[index]['InChIKey'], 
                 isomericSMILES=None, 
-                canonicalSMILES=df.iloc[index]['SMILES']
+                canonicalSMILES=NMRdf2.iloc[index]['SMILES']
                 )
 
 
@@ -2869,7 +2900,6 @@ def createFeatureEntityByDf(df, dataType, featureTypeBinding, featureTypeNotBind
                 complex = column.split('·')
                 item1 = complex[0]
                 item2 = complex[1]
-
 
                 # Find obj index in nmr list of objs given entity name and set name and description for complex-realted columns
                 entityIndx = findIndexInObjList(nmrentity_list, 'name', item1)
@@ -2900,54 +2930,9 @@ def createFeatureEntityByDf(df, dataType, featureTypeBinding, featureTypeNotBind
             pdbentry=None, 
             uniprotentry=uniprotentry, 
             ligandentity=ligandentity, 
-            # ptmentity=None, 
-            # domainentity=None, 
             externalLink='', 
             start=start,
             end=end,
             )
 
-
-
-def update_NMR_binding(filepath):
-    """
-    Update NMR data from local csv file containing all binding and not binding ligands to COVID-19 proteins.
-    """
-    # Create dataframe from file
-    NMRdf = readInputFile(filepath)
-
-    # Rename all column names to fit db names
-    NMRdf = preprocessColumnNames(NMRdf)
-
-    # Duplicate columns related to protein complexes and rename them
-    NMRdf['NSP16·NSP10'] = NMRdf.loc[:, 'NSP10·NSP16']
-    NMRdf['NSP14·NSP10'] = NMRdf.loc[:, 'NSP10·NSP14']
-
-    # Drop ligands with no InChIKey 
-    NMRdf2 = NMRdf.dropna(axis=0).reset_index(drop=True)
-
-    # Split NMR dataframe into different dataframes depending on data model #TODO: remove this lines?
-    PTMdf = NMRdf2[['Ligand_ID', 'Formula', 'SMILES', 'InChIKey', 'PubChemID', 'NSP15', 'NSP5', 'NSP7', 'NSP8', 'NSP9', 'NSP10', 'NSP10·NSP16', 'NSP16·NSP10', 'NSP10·NSP14', 'NSP14·NSP10']]
-    domaindf = NMRdf2[['Ligand_ID', 'Formula', 'SMILES', 'InChIKey', 'PubChemID', 'NSP1 GD', 'NSP2 CtDR', 'NSP3 UBl1', 'NSP3 MacroDomain', 'NSP3 SUD-MC', 'NSP3 SUD-N', 'NSP3 PLPro', 'NSP3 NAB', 'NSP3 Y3', 'Nucleoprotein CTD', 'Nucleoprotein IDR1-NTD-IDR2', 'Nucleoprotein NTD', 'Nucleoprotein NTD-SR']]
-    protdf = NMRdf2[['Ligand_ID', 'Formula', 'SMILES', 'InChIKey', 'PubChemID', 'P0DTD2']]
-
-    # Update or create FeatureType for binding and not binding results #TODO: pass this to a csv and create a custom command to import it
-    featureTypeBinding = updateFeatureType(
-        name = 'NMR Binding',
-        description = 'List of binding fragments from an NMR screening study in which a well-defined fragment library was used to identify hits against SCoV2 proteins.',
-        dataSource = 'The COVID19-NMR Consortium',
-        externalLink = 'https://onlinelibrary.wiley.com/doi/10.1002/anie.202205858',
-    )
-
-    featureTypeNotBinding = updateFeatureType(
-        name = 'NMR Not-Binding',
-        description = 'List of not-binding fragments from an NMR screening study in which a well-defined fragment library was used to identify hits against SCoV2 proteins.',
-        dataSource = 'The COVID19-NMR Consortium',
-        externalLink = 'https://onlinelibrary.wiley.com/doi/10.1002/anie.202205858',
-    )
-
-    # Create featureEntity using PTMdf, domaindf and protdf #TODO: remove this lines?
-    createFeatureEntityByDf(PTMdf, 'ptm', featureTypeBinding, featureTypeNotBinding)
-    createFeatureEntityByDf(domaindf, 'domain', featureTypeBinding, featureTypeNotBinding)
-    createFeatureEntityByDf(protdf, 'protein', featureTypeBinding, featureTypeNotBinding)
         
