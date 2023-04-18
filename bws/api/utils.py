@@ -2667,45 +2667,6 @@ def getUniProtEntry(db_accession, db_code):
     return obj
 
 
-def initPTMEntity(filepath):
-    # Create dataframe from file
-    df = readInputFile(filepath)
-
-    # Create PTMEntity for each row
-    for index, row in df.iterrows():
-
-        # Get UniProtEntry
-        uniprotentry = getUniProtEntry(row['uniprotentry'], row['uniprotcode'])
-
-        # Create PTMEntity
-        ptmentity = updatePTMEntity(
-            name=row['name'],
-            description=row['description'], 
-            start=row['start'],
-            end=row['end'],
-            uniprotentry=uniprotentry,
-            )
-
-def initDomainEntity(filepath):
-    # Create dataframe from file
-    df = readInputFile(filepath)
-
-    # Create DomainEntity for each row
-    for index, row in df.iterrows():
-
-        # Get UniProtEntry
-        uniprotentry = getUniProtEntry(row['uniprotentry'], row['uniprotcode'])
-
-        # Create DomainEntity
-        domainentity = updateDomainEntity(
-            name=row['name'],
-            description=row['description'], 
-            start=row['start'],
-            end=row['end'],
-            uniprotentry=uniprotentry,
-            )
-
-
 # ========== ========== ========== ========== ========== ========== ==========
 
 
