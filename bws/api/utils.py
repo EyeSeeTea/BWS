@@ -40,208 +40,274 @@ REGEX_ONTOLOGY_ID = re.compile('(\w*)_\d*')
 PUBCHEM_WS_URL = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/'
 OLS_WS_URL = 'https://www.ebi.ac.uk/ols/%s/ontologies/%s/terms?iri=%s%s'
 
-#TODO: add description (with verbose version of the nsp/domain) and uniprot id
-#TODO: integrate both dict in onely one dict (with uniprot_acc we will know for wich protein is that data)??
 #TODO: create a json to import this data?
 
-ORF1ab_COVERAGE = [
+nmrentity_list = [
     {
     'name': 'NSP1',
-    'verbose_name': '',
+    'verbose_name': 'Non-structural protein 1',
     'start': 1,
     'end': 180,
-    'uniprot_acc': '',
+    'uniprot_acc': 'P0DTD1',
     },
 
     {
     'name': 'NSP1 GD',
+    'verbose_name': 'Globular domain of Non-structural protein 1',
     'start': 12,
     'end': 127,
+    'uniprot_acc': 'P0DTD1',
     },
 
     {
     'name': 'NSP2',
+    'verbose_name': 'Non-structural protein 2',
     'start': 181,
     'end': 818,
+    'uniprot_acc': 'P0DTD1',
     },
 
     {
     'name': 'NSP2 CtDR',
+    'verbose_name': 'C-terminal domain of Non-structural protein 2',
     'start': 690,
     'end': 818,
+    'uniprot_acc': 'P0DTD1',
     },
 
     {
     'name': 'NSP3',
+    'verbose_name': 'Non-structural protein 3',
     'start': 819,
     'end': 2763,
+    'uniprot_acc': 'P0DTD1',
     },
 
     {
     'name': 'NSP3 UBl1',
+    'verbose_name': 'Ubiquitin-like domain 1 of Non-structural protein 3',
     'start': 821,
     'end': 929,
+    'uniprot_acc': 'P0DTD1',
     },
 
     {
     'name': 'NSP3 MacroDomain',
+    'verbose_name': 'MacroDomain I of Non-structural protein 3 (Mac1)',
     'start': 1025,
     'end': 1194,
+    'uniprot_acc': 'P0DTD1',
     },
 
     {
     'name': 'NSP3 SUD-N',
+    'verbose_name': 'SARS-unique domain N of Non-structural protein 3 (Mac2)',
     'start': 1231,
     'end': 1359,
+    'uniprot_acc': 'P0DTD1',
     },
 
     {
     'name': 'NSP3 SUD-M',
+    'verbose_name': 'SARS-unique domain M of Non-structural protein 3 (Mac3)',
     'start': 1367,
     'end': 1494,
+    'uniprot_acc': 'P0DTD1',
     },
 
     {
     'name': 'NSP3 SUD-C',
+    'verbose_name': 'SARS-unique domain C of Non-structural protein 3 (DPUP)',
     'start': 1496,
     'end': 1561,
+    'uniprot_acc': 'P0DTD1',
     },
 
     {
     'name': 'NSP3 SUD-MC',
+    'verbose_name': 'SARS-unique domain M and C of Non-structural protein 3 (Mac3 and DPUP)',
     'start': 1367,
     'end': 1561,
+    'uniprot_acc': 'P0DTD1',
     },
 
     {
     'name': 'NSP3 Ubl2',
+    'verbose_name': 'Ubiquitin-like domain 2 of Non-structural protein 3',
     'start': 1565,
     'end': 1620,
+    'uniprot_acc': 'P0DTD1',
     },
 
     {
     'name': 'NSP3 PLPro',
+    'verbose_name': 'Papain-like proteinase domain of Non-structural protein 3',
     'start': 1634,
     'end': 1898,
+    'uniprot_acc': 'P0DTD1',
     },
 
     {
     'name': 'NSP3 NAB',
+    'verbose_name': 'Nucleic acid binding domain of Non-structural protein 3',
     'start': 1911,
     'end': 2021,
+    'uniprot_acc': 'P0DTD1',
     },
 
     {
     'name': 'NSP3 Y3',
+    'verbose_name': 'Y3 domain of Non-structural protein 3',
     'start': 2660,
     'end': 2763,
+    'uniprot_acc': 'P0DTD1',
     },
 
     {
     'name': 'NSP4',
+    'verbose_name': 'Non-structural protein 4',
     'start': 2764,
     'end': 3263,
+    'uniprot_acc': 'P0DTD1',
     },
 
     {
     'name': 'NSP5',
+    'verbose_name': 'Non-structural protein 5',
     'start': 3264,
     'end': 3569,
+    'uniprot_acc': 'P0DTD1',
     },
 
     {
     'name': 'NSP6',
+    'verbose_name': 'Non-structural protein 6',
     'start': 3570,
     'end': 3859,
+    'uniprot_acc': 'P0DTD1',
     },
 
     {
     'name': 'NSP7',
+    'verbose_name': 'Non-structural protein 7',
     'start': 3860,
     'end': 3942,
+    'uniprot_acc': 'P0DTD1',
     },
 
     {
     'name': 'NSP8',
+    'verbose_name': 'Non-structural protein 8',
     'start': 3943,
     'end': 4140,
+    'uniprot_acc': 'P0DTD1',
     },
 
     {
     'name': 'NSP9',
+    'verbose_name': 'Non-structural protein 9',
     'start': 4141,
     'end': 4253,
+    'uniprot_acc': 'P0DTD1',
     },
 
     {
     'name': 'NSP10',
+    'verbose_name': 'Non-structural protein 10',
     'start': 4254,
     'end': 4392,
+    'uniprot_acc': 'P0DTD1',
     },
 
     {
     'name': 'NSP11',
+    'verbose_name': 'Non-structural protein 11',
     'start': 4393,
     'end': 4405,
+    'uniprot_acc': 'P0DTD1',
     },
 
     {
     'name': 'NSP12',
+    'verbose_name': 'Non-structural protein 12',
     'start': 4393,
     'end': 5324,
+    'uniprot_acc': 'P0DTD1',
     },
 
     {
     'name': 'NSP13',
+    'verbose_name': 'Non-structural protein 13',
     'start': 5325,
     'end': 5925,
+    'uniprot_acc': 'P0DTD1',
     },
 
     {
     'name': 'NSP14',
+    'verbose_name': 'Non-structural protein 14',
     'start': 5926,
     'end': 6452,
+    'uniprot_acc': 'P0DTD1',
     },
 
     {
     'name': 'NSP15',
+    'verbose_name': 'Non-structural protein 15',
     'start': 6453,
     'end': 6798,
+    'uniprot_acc': 'P0DTD1',
     },
 
     {
     'name': 'NSP16',
+    'verbose_name': 'Non-structural protein 16',
     'start': 6799,
     'end': 7096,
+    'uniprot_acc': 'P0DTD1',
     },
 
-]
-
-ORF9a_COVERAGE = [
     {
     'name': 'Nucleoprotein IDR1-NTD-IDR2',
+    'verbose_name': 'Intrinsically Disordered Region (IDR) of Nucleoprotein',
     'start': 1,
     'end': 248,
+    'uniprot_acc': 'P0DTC9',
     },
 
     {
     'name': 'Nucleoprotein NTD-SR',
+    'verbose_name': 'Rich Region (SR) of Nucleoprotein N-terminal domain',
     'start': 44,
     'end': 212,
+    'uniprot_acc': 'P0DTC9',
     },
 
     {
     'name': 'Nucleoprotein NTD',
+    'verbose_name': 'N-terminal domain of Nucleoprotein',
     'start': 44,
     'end': 180,
+    'uniprot_acc': 'P0DTC9',
     },
 
     {
     'name': 'Nucleoprotein CTD',
+    'verbose_name': 'C-terminal domain of Nucleoprotein',
     'start': 247,
     'end': 364,
+    'uniprot_acc': 'P0DTC9',
+    },
+
+    {
+    'name': 'ORF9b',
+    'verbose_name': 'ORF9b protein',
+    'start': 1,
+    'end': 97,
+    'uniprot_acc': 'P0DTD2',
     },
 ]
+
 
 def findGeneric(pattern, dirToLook=THORN_DATA_DIR):
     data = {}
@@ -2641,7 +2707,7 @@ def initUniProtEntry(filepath):
     for index, row in df.iterrows():
         uniprotentry = updateUniProtEntry(
             db_accession=row['db_accession'],
-            db_code=row['db_code'], #TODO: hablar con JR y ver si esto es el nombre que aparece junto al id. EJ: P0DTD1 · R1AB_SARS2
+            db_code=row['db_code'],
             )
 
 def getUniProtEntry(db_accession, db_code):
@@ -2669,6 +2735,14 @@ def getUniProtEntry(db_accession, db_code):
 
 # ========== ========== ========== ========== ========== ========== ==========
 
+def findIndexInObjList(objList, key, value):
+    '''
+    Find index of a specific object in a list of objects given a key/value pair
+    '''
+    for obj in objList:
+        if obj[key] == value:
+            return objList.index(obj)
+        
 
 def preprocessColumnNames(df):
     df.rename(columns={
@@ -2696,13 +2770,13 @@ def preprocessColumnNames(df):
         'ORF9a-IDR-NRD-SR': 'Nucleoprotein IDR1-NTD-IDR2',
         'ORF9a-NTD': 'Nucleoprotein NTD',
         'ORF9a-NTD-SR': 'Nucleoprotein NTD-SR',
-        'ORF9b': 'P0DTD2',
+        'ORF9b': 'ORF9b',
     }, 
     inplace=True)
 
     return df
 
-def updateFeatureModelEntity(name, featureType, description, pdbentry, uniprotentry, ligandentity, ptmentity, domainentity, externalLink, details):
+def updateFeatureModelEntity(name, featureType, description, pdbentry, uniprotentry, ligandentity, ptmentity, domainentity, externalLink, details):#TODO: remove ptm y domain
     obj = None
     try:
         obj, created = FeatureModelEntity.objects.update_or_create(
@@ -2730,75 +2804,36 @@ def updateFeatureModelEntity(name, featureType, description, pdbentry, uniproten
         print(exc, os.strerror)
     return obj
 
-def createFeatureModelEntityByDataType(dataType, featureType, ligandentity, column, row):
-    
-    # Check if "·" tag is in column name. If yes, add it to FeatureModelentity as details 
-    details = ''
-    if '·' in column:
-        column_list = column.split('·')
-        column = column_list[0]
-        tag = column_list[1]
 
-        details = 'Entity modification: +%s' % (tag)
+def updateFeatureRegionEntity(name, featureType, description, pdbentry, uniprotentry, ligandentity, externalLink, start, end):
+    obj = None
+    try:
+        obj, created = FeatureRegionEntity.objects.update_or_create(
+            name=name,
+            featureType=featureType,
+            description=description,
+            defaults={
+                'pdbentry': pdbentry,
+                'uniprotentry': uniprotentry,
+                'externalLink': externalLink,
+                'ligandentity': ligandentity,
+                'externalLink': externalLink,
+                'start': start,
+                'end': end,
+            })
+        if created:
+            logger.debug('Created new %s: %s', FeatureRegionEntity.__name__, obj)
+            print('Created new', FeatureRegionEntity.__name__, obj)
+        else:
+            logger.debug('Updated%s: %s', FeatureRegionEntity.__name__, obj)
+            print('Updated', FeatureRegionEntity.__name__, obj)
+    except Exception as exc:
+        logger.exception(exc)
+        print(exc, os.strerror)
+    return obj
 
-    if dataType == 'ptm':
-        # Get or create PTMEntity
-        ptmentity = getPTMEntity(column, '', '', '', '',)
 
-        # Create FeatureModelEntity
-        updateFeatureModelEntity(
-        name='%s %s %s' % (ligandentity.name, row, ptmentity.name), 
-        featureType=featureType, 
-        description='%s evidence for %s to %s' % (row, ligandentity.name, ptmentity.name), 
-        pdbentry=None, 
-        uniprotentry=None, 
-        ligandentity=ligandentity, 
-        ptmentity=ptmentity, 
-        domainentity=None, 
-        externalLink='', 
-        details=details,
-        )
-
-    elif dataType == 'domain':
-        # Get or create DomainEntity
-        domainentity = getDomainEntity(column, '', '', '', '',)
-
-        # Create FeatureModelEntity
-        updateFeatureModelEntity(
-        name='%s %s %s' % (ligandentity.name, row, domainentity.name), 
-        featureType=featureType, 
-        description='%s evidence for %s to %s' % (row, ligandentity.name, domainentity.name), 
-        pdbentry=None, 
-        uniprotentry=None, 
-        ligandentity=ligandentity, 
-        ptmentity=None, 
-        domainentity=domainentity, 
-        externalLink='', 
-        details=details,
-        )
-
-    elif dataType == 'protein':
-        # Get or create UniProtEntry
-        proteinentity = getUniProtEntry(column, '',)
-
-        # Create FeatureModelEntity
-        updateFeatureModelEntity(
-        name='%s %s %s' % (ligandentity.name, row, proteinentity.name), 
-        featureType=featureType, 
-        description='%s evidence for %s to %s' % (row, ligandentity.name, proteinentity.name), 
-        pdbentry=None, 
-        uniprotentry=proteinentity, 
-        ligandentity=ligandentity, 
-        ptmentity=None, 
-        domainentity=None, 
-        externalLink='', 
-        details=details,
-        )
-
-    else:
-        print('Data Type not identified: %s' % (dataType)) 
-
-def createFeatureEntityByDf(df, dataType, featureTypeBinding, featureTypeNotBinding):
+def createFeatureEntityByDf(df, dataType, featureTypeBinding, featureTypeNotBinding): #Continue this function adding tag and protein dataType parts from createFeatureModelEntityByDataType
 
     for column in df.columns[5:]: # Iterate through ptm/domain columns
         for index, row in df[column].items(): # Iterate through each row within the ptm/domain columns
@@ -2828,8 +2863,50 @@ def createFeatureEntityByDf(df, dataType, featureTypeBinding, featureTypeNotBind
                 canonicalSMILES=df.iloc[index]['SMILES']
                 )
 
-            # Get PTM, Domain and Uniprot entities and create FeatureModelEntity
-            createFeatureModelEntityByDataType(dataType, featureType, ligandentity, column, row)
+
+            # Set FeatureRegionEntity name, description depending on column content
+            if '·' in column: # For protein complexes
+                complex = column.split('·')
+                item1 = complex[0]
+                item2 = complex[1]
+
+
+                # Find obj index in nmr list of objs given entity name and set name and description for complex-realted columns
+                entityIndx = findIndexInObjList(nmrentity_list, 'name', item1)
+
+                name = '%s %s %s·%s' % (ligandentity.name, row, nmrentity_list[entityIndx]['name'], item2)
+                description = '%s evidence for %s to %s in complex with %s' % (row, ligandentity.name, nmrentity_list[entityIndx]['verbose_name'], item2)
+
+            else:
+                # Find obj index in nmr list of objs given entity name and set name and description for non-complex-realted columns
+                entityIndx = findIndexInObjList(nmrentity_list, 'name', column)
+
+                name = '%s %s %s' % (ligandentity.name, row, nmrentity_list[entityIndx]['name'])
+                description = '%s evidence for %s to %s' % (row, ligandentity.name, nmrentity_list[entityIndx]['verbose_name'])
+
+            # Set FeatureRegionEntity start and end
+            start= nmrentity_list[entityIndx]['start']
+            end = nmrentity_list[entityIndx]['end']
+
+            # Get UniProt id from modelentity_list to get UniProtEntry
+            uniprot_acc = nmrentity_list[entityIndx]['uniprot_acc']
+            uniprotentry = getUniProtEntry(uniprot_acc, '',)
+
+            # Create FeatureRegionEntity
+            updateFeatureRegionEntity(
+            name=name, 
+            featureType=featureType, 
+            description=description, 
+            pdbentry=None, 
+            uniprotentry=uniprotentry, 
+            ligandentity=ligandentity, 
+            # ptmentity=None, 
+            # domainentity=None, 
+            externalLink='', 
+            start=start,
+            end=end,
+            )
+
 
 
 def update_NMR_binding(filepath):
@@ -2849,12 +2926,12 @@ def update_NMR_binding(filepath):
     # Drop ligands with no InChIKey 
     NMRdf2 = NMRdf.dropna(axis=0).reset_index(drop=True)
 
-    # Split NMR dataframe into different dataframes depending on data model
+    # Split NMR dataframe into different dataframes depending on data model #TODO: remove this lines?
     PTMdf = NMRdf2[['Ligand_ID', 'Formula', 'SMILES', 'InChIKey', 'PubChemID', 'NSP15', 'NSP5', 'NSP7', 'NSP8', 'NSP9', 'NSP10', 'NSP10·NSP16', 'NSP16·NSP10', 'NSP10·NSP14', 'NSP14·NSP10']]
     domaindf = NMRdf2[['Ligand_ID', 'Formula', 'SMILES', 'InChIKey', 'PubChemID', 'NSP1 GD', 'NSP2 CtDR', 'NSP3 UBl1', 'NSP3 MacroDomain', 'NSP3 SUD-MC', 'NSP3 SUD-N', 'NSP3 PLPro', 'NSP3 NAB', 'NSP3 Y3', 'Nucleoprotein CTD', 'Nucleoprotein IDR1-NTD-IDR2', 'Nucleoprotein NTD', 'Nucleoprotein NTD-SR']]
     protdf = NMRdf2[['Ligand_ID', 'Formula', 'SMILES', 'InChIKey', 'PubChemID', 'P0DTD2']]
 
-    # Update or create FeatureType for binding and not binding results
+    # Update or create FeatureType for binding and not binding results #TODO: pass this to a csv and create a custom command to import it
     featureTypeBinding = updateFeatureType(
         name = 'NMR Binding',
         description = 'List of binding fragments from an NMR screening study in which a well-defined fragment library was used to identify hits against SCoV2 proteins.',
@@ -2869,7 +2946,7 @@ def update_NMR_binding(filepath):
         externalLink = 'https://onlinelibrary.wiley.com/doi/10.1002/anie.202205858',
     )
 
-    # Create featureEntity using PTMdf, domaindf and protdf
+    # Create featureEntity using PTMdf, domaindf and protdf #TODO: remove this lines?
     createFeatureEntityByDf(PTMdf, 'ptm', featureTypeBinding, featureTypeNotBinding)
     createFeatureEntityByDf(domaindf, 'domain', featureTypeBinding, featureTypeNotBinding)
     createFeatureEntityByDf(protdf, 'protein', featureTypeBinding, featureTypeNotBinding)
