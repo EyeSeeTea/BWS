@@ -448,38 +448,38 @@ class PdbEntryDetails(models.Model):
 
     refdoc = models.ManyToManyField(Publication)
     
-class PTMEntity(models.Model):
-    '''
-    Protein entities that arise from other proteins' post-translational modifications (PTMs) and/or 
-    processing events and do not have UniProt id associated.
-    '''
-    name = models.CharField(max_length=255, blank=False,
-                            null=False, default='')
-    description = models.CharField(
-        max_length=5000, blank=True, null=True, default='')
-    start = models.IntegerField()
-    end = models.IntegerField()
-    uniprotentry = models.ForeignKey(UniProtEntry,
-                              related_name='PTMs', on_delete=models.CASCADE)
+# class PTMEntity(models.Model):
+#     '''
+#     Protein entities that arise from other proteins' post-translational modifications (PTMs) and/or 
+#     processing events and do not have UniProt id associated.
+#     '''
+#     name = models.CharField(max_length=255, blank=False,
+#                             null=False, default='')
+#     description = models.CharField(
+#         max_length=5000, blank=True, null=True, default='')
+#     start = models.IntegerField()
+#     end = models.IntegerField()
+#     uniprotentry = models.ForeignKey(UniProtEntry,
+#                               related_name='PTMs', on_delete=models.CASCADE)
 
-    def __str__(self):
-        return '%s' % (self.name)
+#     def __str__(self):
+#         return '%s' % (self.name)
     
-class DomainEntity(models.Model):
-    '''
-    Domain or region of interest for a specific protein
-    '''
-    name = models.CharField(max_length=255, blank=False,
-                            null=False, default='')
-    description = models.CharField(
-        max_length=5000, blank=True, null=True, default='')
-    start = models.IntegerField()
-    end = models.IntegerField()
-    uniprotentry = models.ForeignKey(UniProtEntry,
-                              related_name='domains_regions', on_delete=models.CASCADE)
+# class DomainEntity(models.Model):
+#     '''
+#     Domain or region of interest for a specific protein
+#     '''
+#     name = models.CharField(max_length=255, blank=False,
+#                             null=False, default='')
+#     description = models.CharField(
+#         max_length=5000, blank=True, null=True, default='')
+#     start = models.IntegerField()
+#     end = models.IntegerField()
+#     uniprotentry = models.ForeignKey(UniProtEntry,
+#                               related_name='domains_regions', on_delete=models.CASCADE)
 
-    def __str__(self):
-        return '%s' % (self.name)
+#     def __str__(self):
+#         return '%s' % (self.name)
     
 class FeatureType(models.Model):
     '''
@@ -508,10 +508,10 @@ class FeatureEntity(models.Model):
                                  related_name='%(class)s_features', null=True, blank=True, on_delete=models.CASCADE)
     ligandentity = models.ForeignKey(LigandEntity,
                                  related_name='%(class)s_features', null=True, blank=True, on_delete=models.CASCADE)
-    ptmentity = models.ForeignKey(PTMEntity,
-                                 related_name='%(class)s_features', null=True, blank=True, on_delete=models.CASCADE)
-    domainentity = models.ForeignKey(DomainEntity,
-                                 related_name='%(class)s_features', null=True, blank=True, on_delete=models.CASCADE)
+    # ptmentity = models.ForeignKey(PTMEntity,
+    #                              related_name='%(class)s_features', null=True, blank=True, on_delete=models.CASCADE)
+    # domainentity = models.ForeignKey(DomainEntity,
+    #                              related_name='%(class)s_features', null=True, blank=True, on_delete=models.CASCADE)
     externalLink = models.URLField(max_length=200, default='', blank=True)
 
     class Meta:
