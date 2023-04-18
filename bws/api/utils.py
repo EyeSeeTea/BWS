@@ -40,11 +40,17 @@ REGEX_ONTOLOGY_ID = re.compile('(\w*)_\d*')
 PUBCHEM_WS_URL = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/'
 OLS_WS_URL = 'https://www.ebi.ac.uk/ols/%s/ontologies/%s/terms?iri=%s%s'
 
+#TODO: add description (with verbose version of the nsp/domain) and uniprot id
+#TODO: integrate both dict in onely one dict (with uniprot_acc we will know for wich protein is that data)??
+#TODO: create a json to import this data?
+
 ORF1ab_COVERAGE = [
     {
     'name': 'NSP1',
+    'verbose_name': '',
     'start': 1,
     'end': 180,
+    'uniprot_acc': '',
     },
 
     {
@@ -2660,50 +2666,6 @@ def getUniProtEntry(db_accession, db_code):
         print(exc, os.strerror)
     return obj
 
-def getPTMEntity(name, description, start, end, uniprotentry):
-    """
-    Get PTMEntity or create in case it does not exist
-    """
-
-    obj = None
-    try:
-        obj, created = PTMEntity.objects.get_or_create(
-            name=name,
-            defaults={
-                'description': description,
-                'start': start,
-                'end': end,
-                'uniprotentry': uniprotentry,
-            })
-        if created:
-            logger.debug('Created new %s: %s', PTMEntity.__name__, obj)
-            print('Created new', PTMEntity.__name__, obj)
-
-    except Exception as exc:
-        logger.exception(exc)
-        print(exc, os.strerror)
-    return obj
-
-def updatePTMEntity(name, description, start, end, uniprotentry):
-    obj = None
-    try:
-        obj, created = PTMEntity.objects.update_or_create(
-            name=name,
-            description=description,
-            start=start,
-            end=end,
-            uniprotentry=uniprotentry,
-            )
-        if created:
-            logger.debug('Created new %s: %s', PTMEntity.__name__, obj)
-            print('Created new', PTMEntity.__name__, obj)
-        else:
-            logger.debug('Updated%s: %s', PTMEntity.__name__, obj)
-            print('Updated', PTMEntity.__name__, obj)
-    except Exception as exc:
-        logger.exception(exc)
-        print(exc, os.strerror)
-    return obj
 
 def initPTMEntity(filepath):
     # Create dataframe from file
@@ -2723,51 +2685,6 @@ def initPTMEntity(filepath):
             end=row['end'],
             uniprotentry=uniprotentry,
             )
-
-def getDomainEntity(name, description, start, end, uniprotentry):
-    """
-    Get DomainEntity or create in case it does not exist
-    """
-
-    obj = None
-    try:
-        obj, created = DomainEntity.objects.get_or_create(
-            name=name,
-            defaults={
-                'description': description,
-                'start': start,
-                'end': end,
-                'uniprotentry': uniprotentry,
-            })
-        if created:
-            logger.debug('Created new %s: %s', DomainEntity.__name__, obj)
-            print('Created new', DomainEntity.__name__, obj)
-
-    except Exception as exc:
-        logger.exception(exc)
-        print(exc, os.strerror)
-    return obj
-
-def updateDomainEntity(name, description, start, end, uniprotentry):
-    obj = None
-    try:
-        obj, created = DomainEntity.objects.update_or_create(
-            name=name,
-            description=description,
-            start=start,
-            end=end,
-            uniprotentry=uniprotentry,
-            )
-        if created:
-            logger.debug('Created new %s: %s', DomainEntity.__name__, obj)
-            print('Created new', DomainEntity.__name__, obj)
-        else:
-            logger.debug('Updated%s: %s', DomainEntity.__name__, obj)
-            print('Updated', DomainEntity.__name__, obj)
-    except Exception as exc:
-        logger.exception(exc)
-        print(exc, os.strerror)
-    return obj
 
 def initDomainEntity(filepath):
     # Create dataframe from file
