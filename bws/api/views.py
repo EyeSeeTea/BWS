@@ -1,6 +1,7 @@
 import glob
 import re
 import json
+import csv
 import logging
 import requests
 from django.http import HttpResponse, HttpResponseNotFound
@@ -15,6 +16,7 @@ from django_filters import FilterSet, ModelChoiceFilter
 from rest_framework.filters import OrderingFilter, SearchFilter
 from django_filters import rest_framework as filters
 from rest_framework.renderers import JSONRenderer
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +27,7 @@ BLOCRES_FNAME_TEMPLATE = "%(pdb_id)s.blocres.aa.pdb"
 MAPQ_FNAME_TEMPLATE = "%(pdb_id)s.mapq.aa.pdb"
 DAQ_FNAME_TEMPLATE = "%(pdb_id)s.daq.aa.pdb"
 FSCQ_TEMPLATE = "%(pdb_id)s.fscq.aa.pdb"
+LOCALRES_HISTORY_FILE = 'emv_localResolution_stats.csv'
 ANN_TYPES_DICT = {
     "localResolution": {
         "deepres": DEEP_RES_FNAME_TEMPLATE,
@@ -53,7 +56,7 @@ ANN_TYPES_MIN_VAL = {
 
 def not_found_resp(query_id):
     logger.debug("Not found %s", query_id)
-    content = {"request": query_id, "detail": "Annotation Entry Not Found"}
+    content = {"request": query_id, "detail": "Entry Not Found"}
     return Response(content, status=status.HTTP_404_NOT_FOUND)
 
 
@@ -486,8 +489,8 @@ class EmvDataView(APIView):
         """
         data_files = []
         entries = []
-        data_files = _getEmvDataFiles(
-            path="%s/%s" % (EMDB_DATA_DIR, 'emd-*'), pattern='*emv_*.json')
+        data_files = _getEmvDataFiles(path="%s/%s" % (EMDB_DATA_DIR, 'emd-*'),
+                                      pattern='*emv_*.json')
         for file in data_files:
             entries.append(_getJsonEMVEntry(file))
         if entries:
@@ -501,14 +504,14 @@ class EmvDataByMethodView(APIView):
     def get(self, request, **kwargs):
         """
         Get a list of all EMV entries by method
-        method : stats | deepres | monores | blocres | mapq | fscq | daq
+        method : deepres | monores | blocres | mapq | fscq | daq
         """
         data_files = []
         entries = []
         if 'method' in self.kwargs:
             method = self.kwargs['method']
-        data_files = _getEmvDataFiles(
-            path="%s/%s" % (EMDB_DATA_DIR, 'emd-*'), pattern="*emv_*%s.json" % (method,))
+        data_files = _getEmvDataFiles(path="%s/%s" % (EMDB_DATA_DIR, 'emd-*'),
+                                      pattern="*emv_*%s.json" % (method, ))
         for file in data_files:
             entries.append(_getJsonEMVEntry(file))
         if entries:
@@ -534,10 +537,10 @@ class EmvDataByIDView(APIView):
             db_id = self.kwargs['db_id'].lower()
             if db_id.startswith('emd-'):
                 path = "%s/%s" % (EMDB_DATA_DIR, db_id)
-                pattern = "%s*_emv_*.json" % (db_id,)
+                pattern = "%s*_emv_*.json" % (db_id, )
             else:
                 path = "%s/%s" % (EMDB_DATA_DIR, 'emd-*')
-                pattern = "*%s_emv_*.json" % (db_id,)
+                pattern = "*%s_emv_*.json" % (db_id, )
         data_files = _getEmvDataFiles(path, pattern)
         for file in data_files:
             entries.append(_getJsonEMVEntry(file))
@@ -557,7 +560,7 @@ class EmvDataByIdMethodView(APIView):
         """
         Get a JSON file with EMV data for an entry by DB ID and method
         db_id : PDB | EMDB
-        method : stats | deepres | monores | blocres | mapq | fscq | daq
+        method : deepres | monores | blocres | mapq | fscq | daq
         """
         data_files = []
         if 'method' in self.kwargs:
@@ -566,10 +569,13 @@ class EmvDataByIdMethodView(APIView):
             db_id = self.kwargs['db_id'].lower()
             if db_id.startswith('emd-'):
                 path = "%s/%s" % (EMDB_DATA_DIR, db_id)
-                pattern = "*%s.json" % (method,)
+                pattern = "*%s.json" % (method, )
             else:
                 path = "%s/%s" % (EMDB_DATA_DIR, 'emd-*')
-                pattern = "*%s_emv_%s.json" % (db_id, method,)
+                pattern = "*%s_emv_%s.json" % (
+                    db_id,
+                    method,
+                )
         data_files = _getEmvDataFiles(path, pattern)
         # there should be only one file for entry/method
         if len(data_files) != 1:
@@ -583,3 +589,158 @@ class EmvDataByIdMethodView(APIView):
         with open(fileName, 'r') as jfile:
             resp = json.load(jfile)
         return Response(resp)
+
+
+def _getConsensusData(db_id):
+    # <EMDB-ID>_emv_localresolution_stats.json
+    fileName = os.path.join(
+        EMDB_DATA_DIR, db_id, "%s_emv_%s.json" % (
+            db_id,
+            'localresolution_stats',
+        ))
+    try:
+        with open(fileName, 'r') as jfile:
+            jdata = json.load(jfile)
+    except (Exception) as exc:
+        logger.exception(exc)
+        raise Exception(exc)
+    return jdata
+
+
+class EmvDataLocalresConsensus(APIView):
+
+    def get(self, request, **kwargs):
+        """
+        Get the consensus of all EMV local resolution methods by DB ID
+        db_id : PDB | EMDB
+        """
+        try:
+            if 'db_id' in self.kwargs:
+                db_id = self.kwargs['db_id'].lower()
+            jdata = _getConsensusData(db_id)
+            return Response(jdata, status=status.HTTP_200_OK)
+        except (Exception) as exc:
+            logger.exception(exc)
+            return not_found_resp(db_id)
+
+
+def _getLocalResDBRank(resolution):
+    """
+        Find the position (rank) in the local resolution stats file by resolution
+    """
+    dataFile = os.path.join(EMDB_DATA_DIR, 'statistics',
+                                   LOCALRES_HISTORY_FILE)
+    resolutionList = []
+    try:
+        with open(dataFile) as csv_file:
+            csv_reader = csv.reader(csv_file, delimiter='\t')
+            for row in csv_reader:
+                resolutionList.append(float(row[1]))
+    except (Exception) as exc:
+        logger.exception(exc)
+        raise Exception("Could not find %s" % dataFile)
+
+    resolutionList.sort()
+    position = 0
+    for item in resolutionList:
+        if resolution < item:
+            break
+        else:
+            position = position + 1
+    return int(position / len(resolutionList) * 100)
+
+
+class EmvDataLocalresRank(APIView):
+
+    def get(self, request, **kwargs):
+        """
+        Get position of query entry respect all entries in DB ordered by the consensus of all localresolution EMV
+        db_id : PDB | EMDB
+        """
+        try:
+            if 'db_id' in self.kwargs:
+                db_id = self.kwargs['db_id'].lower()
+            jdata = _getConsensusData(db_id)
+            resolution = jdata['data']['metrics']['resolutionMedian']
+            rank = _getLocalResDBRank(resolution)
+        except (Exception) as exc:
+            logger.exception(exc)
+            return (not_found_resp(db_id))
+
+        content = {
+            "resource": "EMV-LocalResolution-DB_Rank",
+            "method_type": "Local Resolution",
+            "software_version": "0.7.0",
+            "entry": {
+                "date": datetime.today().strftime("%Y-%m-%d"),
+                "volume_map": "%s" % (db_id),
+            },
+            "data": {
+                "resolution": resolution,
+                "rank": rank
+            }
+        }
+        return Response(content, status=status.HTTP_200_OK)
+
+
+class OntologyViewSet(viewsets.ModelViewSet):
+    """
+    This viewset automatically provides `list` and `detail` actions.
+    """
+    queryset = Ontology.objects.all()
+    serializer_class = OntologySerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    filter_backends = (filters.DjangoFilterBackend, SearchFilter,
+                       OrderingFilter)
+
+class OntologyTermViewSet(viewsets.ReadOnlyModelViewSet):
+
+    serializer_class = OntologyTermSerializer
+
+    def get_queryset(self, **kwargs):
+        
+        ont_id = self.kwargs['ont_id']
+
+        # If term_id is specified in url, filter ontology terms
+        try:
+            term_id = self.kwargs['term_id']
+            queryset = OntologyTerm.objects.filter(
+                source__dbId=ont_id).filter(dbId=term_id)
+            return queryset
+        # If not, provide all ontology terms
+        except KeyError:
+            queryset = OntologyTerm.objects.filter(
+                source__dbId=ont_id)
+            return queryset
+
+class AllOntologyTermViewSet(viewsets.ReadOnlyModelViewSet):
+
+    serializer_class = OntologyTermSerializer
+
+    def get_queryset(self, **kwargs):
+        
+        # If term_id is specified in url, filter ontology terms
+        try:
+            term_id = self.kwargs['term_id']
+            queryset = OntologyTerm.objects.filter(dbId=term_id)
+            return queryset
+        # If not, provide all ontology terms
+        except KeyError:
+            queryset = OntologyTerm.objects.all()
+            return queryset
+
+class OrganismViewSet(viewsets.ReadOnlyModelViewSet):
+
+    serializer_class = OrganismSerializer
+
+    def get_queryset(self, **kwargs):
+        
+        # If ncbi_taxonomy_id is specified in url, filter Organisms
+        try:
+            ncbi_taxonomy_id = self.kwargs['ncbi_taxonomy_id']
+            queryset = Organism.objects.filter(ncbi_taxonomy_id=ncbi_taxonomy_id)
+            return queryset
+        # If not, provide all Organisms
+        except KeyError:
+            queryset = Organism.objects.all()
+            return queryset
