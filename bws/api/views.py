@@ -629,7 +629,7 @@ def _getLocalResDBRank(resolution):
         Find the position (rank) in the local resolution stats file by resolution
     """
     dataFile = os.path.join(EMDB_DATA_DIR, 'statistics',
-                                   LOCALRES_HISTORY_FILE)
+                            LOCALRES_HISTORY_FILE)
     resolutionList = []
     try:
         with open(dataFile) as csv_file:
@@ -693,12 +693,13 @@ class OntologyViewSet(viewsets.ModelViewSet):
     filter_backends = (filters.DjangoFilterBackend, SearchFilter,
                        OrderingFilter)
 
+
 class OntologyTermViewSet(viewsets.ReadOnlyModelViewSet):
 
     serializer_class = OntologyTermSerializer
 
     def get_queryset(self, **kwargs):
-        
+
         ont_id = self.kwargs['ont_id']
 
         # If term_id is specified in url, filter ontology terms
@@ -713,12 +714,13 @@ class OntologyTermViewSet(viewsets.ReadOnlyModelViewSet):
                 source__dbId=ont_id)
             return queryset
 
+
 class AllOntologyTermViewSet(viewsets.ReadOnlyModelViewSet):
 
     serializer_class = OntologyTermSerializer
 
     def get_queryset(self, **kwargs):
-        
+
         # If term_id is specified in url, filter ontology terms
         try:
             term_id = self.kwargs['term_id']
@@ -729,18 +731,45 @@ class AllOntologyTermViewSet(viewsets.ReadOnlyModelViewSet):
             queryset = OntologyTerm.objects.all()
             return queryset
 
+
 class OrganismViewSet(viewsets.ReadOnlyModelViewSet):
 
     serializer_class = OrganismSerializer
 
     def get_queryset(self, **kwargs):
-        
+
         # If ncbi_taxonomy_id is specified in url, filter Organisms
         try:
             ncbi_taxonomy_id = self.kwargs['ncbi_taxonomy_id']
-            queryset = Organism.objects.filter(ncbi_taxonomy_id=ncbi_taxonomy_id)
+            queryset = Organism.objects.filter(
+                ncbi_taxonomy_id=ncbi_taxonomy_id)
             return queryset
         # If not, provide all Organisms
         except KeyError:
             queryset = Organism.objects.all()
             return queryset
+
+
+class GetApiVersion(APIView):
+    """
+    Get API version
+    """
+
+    def get(self, request, format=None):
+        """
+        Get full info on API version
+        """
+        appVersionMajor = getattr(settings, "APP_VERSION_MAJOR", "")
+        appVersionMinor = getattr(settings, "APP_VERSION_MINOR", "")
+        appVersionPatch = getattr(settings, "APP_VERSION_PATCH", "")
+        appEnvironment = getattr(settings, "ENVIRONMENT", "")
+        resp = {
+            'API_Version': appVersionMajor + '.' + appVersionMinor + '.' + appVersionPatch + '-' + appEnvironment,
+            'Type': 'Semantic Versioning 2.0.0',
+            'Major': appVersionMajor,
+            'Minor': appVersionMinor,
+            'Patch': appVersionPatch,
+            'Environment': appEnvironment
+        }
+
+        return Response(resp)

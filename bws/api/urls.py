@@ -21,6 +21,9 @@ router.register(r'pdbligands', views.PdbLigandViewSet)
 urlpatterns = [
     path('', include(router.urls)),
 
+    # Get version
+    re_path(r'^version/$', views.GetApiVersion.as_view()),
+
     # EM Validation annotations for 3DBionotes - Protvista
     re_path(r'^pdbAnnotFromMap/all/(?P<pdb_id>\d\w{3})/(?P<chain_id>\w{1})/?(?P<modified_model>(pdb-redo|isolde))?/$',
             views.PdbEntryAllAnnFromMapView.as_view()),

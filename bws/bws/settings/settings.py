@@ -173,9 +173,16 @@ LOGGING = {
     },
 }
 
+# Semantic Versioning 2.0.0
+# update with every release
+APP_VERSION_MAJOR = '0'
+APP_VERSION_MINOR = '4'
+APP_VERSION_PATCH = '0'
+ENVIRONMENT =  'DEV' if DEBUG else 'PROD'
+
 REST_FRAMEWORK = {
     # update before going into production
-    'DEFAULT_VERSION': '0.3.0-PROD',
+    'DEFAULT_VERSION': '' +  APP_VERSION_MAJOR + '.' + APP_VERSION_MINOR + '.' + APP_VERSION_PATCH + '-' + ENVIRONMENT,
     # use this line to produce JSON only responses, globaly
     # 'DEFAULT_RENDERER_CLASSES': ['rest_framework.renderers.JSONRenderer',],
     'DEFAULT_RENDERER_CLASSES': ['rest_framework.renderers.JSONRenderer', 'rest_framework.renderers.BrowsableAPIRenderer',],
