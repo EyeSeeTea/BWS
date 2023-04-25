@@ -2916,7 +2916,7 @@ def update_NMR_binding(filepath):
                 entityIndx = findIndexInObjList(nmrentity_list, 'name', column)
 
                 name = '%s %s %s' % (ligandentity.name, row, nmrentity_list[entityIndx]['name'])
-                description = '%s evidence for %s to %s' % (row, ligandentity.name, nmrentity_list[entityIndx]['verbose_name'])
+                description = 'NMR-based detection of fragment %s %s to target %s.' % (ligandentity.name, row.lower(), nmrentity_list[entityIndx]['verbose_name'])
 
             # Set FeatureRegionEntity start and end
             start= nmrentity_list[entityIndx]['start']
