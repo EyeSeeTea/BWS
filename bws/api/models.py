@@ -534,6 +534,8 @@ class FeatureRegionEntity(FeatureEntity):
     start = models.IntegerField()
     end = models.IntegerField()
 
+    def __str__(self):
+        return '%s (FeatureRegionEntity)' % (self.name)
 
 class AssayEntity(FeatureModelEntity):
 
