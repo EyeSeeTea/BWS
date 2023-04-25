@@ -2864,7 +2864,7 @@ def update_NMR_binding(filepath):
     )
 
     # Iterate through NMR dataframe and create LigandEntity and FeatureRegionEntity
-    for column in NMRdf2.columns[5:]: # columns equal protein entities
+    for column in NMRdf2.columns[8:]: # columns equal protein entities
         for index, row in NMRdf2[column].items(): # rows equal binding or not binding results
             
             # Identify value for each column row and assign a different featureType depending on it
