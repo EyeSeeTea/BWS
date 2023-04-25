@@ -2903,7 +2903,13 @@ def update_NMR_binding(filepath):
                 entityIndx = findIndexInObjList(nmrentity_list, 'name', item1)
 
                 name = '%s %s %s·%s' % (ligandentity.name, row, nmrentity_list[entityIndx]['name'], item2)
-                description = '%s evidence for %s to %s in complex with %s' % (row, ligandentity.name, nmrentity_list[entityIndx]['verbose_name'], item2)
+
+                if item1 == 'NSP5':
+                    description = 'NMR-based detection of fragment %s %s to target %s with additional amino acids %s in the N-terminus (monomeric version of %s in solution)' % (ligandentity.name, row.lower(), nmrentity_list[entityIndx]['verbose_name'], item2, nmrentity_list[entityIndx]['name'])
+                elif item1 == 'NSP3 MacroDomain':
+                    description = 'NMR-based detection of fragment %s %s to target %s in complex with %s. (the active metabolite of the remdesivir)' % (ligandentity.name, row.lower(), nmrentity_list[entityIndx]['verbose_name'], item2)
+                else:
+                    description = 'NMR-based detection of fragment %s %s to target %s in complex with %s.' % (ligandentity.name, row.lower(), nmrentity_list[entityIndx]['verbose_name'], item2)
 
             else:
                 # Find obj index in nmr list of objs given entity name and set name and description for non-complex-realted columns
