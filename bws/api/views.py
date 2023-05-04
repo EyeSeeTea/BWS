@@ -679,8 +679,10 @@ class EmvDataLocalresRank(APIView):
             if 'db_id' in self.kwargs:
                 db_id = self.kwargs['db_id'].lower()
             jdata = _getConsensusData(db_id)
-            resolution = jdata['data']['metrics']['resolutionMedian']
-            rank = _getLocalResDBRank(resolution)
+            for metric in jdata['data']['metrics']:
+                if 'resolutionMedian' in metric:
+                    resolution = metric['resolutionMedian']
+                    rank = _getLocalResDBRank(resolution)
         except (Exception) as exc:
             logger.exception(exc)
             return (not_found_resp(db_id))
