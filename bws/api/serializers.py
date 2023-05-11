@@ -577,3 +577,27 @@ class PdbEntryExportSerializer(serializers.ModelSerializer):
                   'details',
                   'imageLink', 'externalLink', 'queryLink',
                   ]
+
+class FeatureTypeNMRSerializer(serializers.ModelSerializer):
+    featureregionentity_features  = serializers.SerializerMethodField()
+
+    class Meta:
+        model = FeatureType
+        fields = ['dataSource', 'name',
+                  'description', 'externalLink', 'featureregionentity_features']
+
+    def get_featureregionentity_features(self, obj):
+
+        # Get parameter from url
+        uniprot_id = self.context['request'].parser_context['kwargs'].get('uniprot_id', None)
+        ligand_id = self.context['request'].parser_context['kwargs'].get('ligand_id', None)
+
+        # Filter FeatureRegionEntity entries depending on the parameters specified in the url
+        if uniprot_id is not None and ligand_id is not None:
+            featurerionentity_features = obj.featureregionentity_features.filter(uniprotentry=uniprot_id).filter(ligandentity=ligand_id)
+        elif uniprot_id is not None:
+            featurerionentity_features = obj.featureregionentity_features.filter(uniprotentry=uniprot_id)
+        else:
+            featurerionentity_features = obj.featureregionentity_features.all() 
+            
+        return FeatureRegionEntitySerializer(featurerionentity_features, many=True).data

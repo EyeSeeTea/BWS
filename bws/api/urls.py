@@ -54,6 +54,13 @@ urlpatterns = [
     re_path(r'^ontologies/(?P<pk>\w[a-zA-Z]*)/$', views.OntologyViewSet.as_view({'get': 'retrieve'})),
     re_path(r'^ontologies/(?P<ont_id>\w[a-zA-Z]*)/terms/$', views.OntologyTermViewSet.as_view({'get': 'list'})),
     re_path(r'^ontologies/(?P<ont_id>\w[a-zA-Z]*)/terms/(?P<term_id>\w[a-zA-Z]*_\d*)$', views.OntologyTermViewSet.as_view({'get': 'list'})),
+
+    # NMR annotations end-points
+    re_path(r'^nmr/$', views.NMRViewSet.as_view({'get': 'list'})),
+    re_path(r'^nmr/(?P<uniprot_id>[OPQ][0-9][A-Z0-9]{3}[0-9]|[A-NR-Z][0-9]([A-Z][A-Z0-9]{2}[0-9]){1,2})/$', views.NMRViewSet.as_view({'get': 'list'})),
+    re_path(r'^nmr/(?P<uniprot_id>[OPQ][0-9][A-Z0-9]{3}[0-9]|[A-NR-Z][0-9]([A-Z][A-Z0-9]{2}[0-9]){1,2})/(?P<dataType>(binding|notbinding|docking))/$', views.NMRViewSet.as_view({'get': 'list'})),
+    re_path(r'^nmr/(?P<uniprot_id>[OPQ][0-9][A-Z0-9]{3}[0-9]|[A-NR-Z][0-9]([A-Z][A-Z0-9]{2}[0-9]){1,2})/(?P<dataType>(binding|notbinding|docking))/(?P<ligand_id>[0-9A-Z\-]+)/$', views.NMRViewSet.as_view({'get': 'list'})),
+
 ]
 
 

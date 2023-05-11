@@ -712,3 +712,36 @@ class OntologyTermViewSet(viewsets.ReadOnlyModelViewSet):
             queryset = OntologyTerm.objects.filter(
                 source__dbId=ont_id)
             return queryset
+
+class NMRViewSet(viewsets.ModelViewSet):
+    """
+    This viewset automatically provides `list` and `detail` actions.
+    """
+    #queryset = FeatureType.objects.filter(dataSource__exact='The COVID19-NMR Consortium')
+    serializer_class = FeatureTypeNMRSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    filter_backends = (filters.DjangoFilterBackend, SearchFilter,
+                       OrderingFilter)
+    
+    def get_queryset(self, **kwargs):
+
+        # Get dataType (binding|notbinding|docking) if it has been specified
+        dataType = self.kwargs.get('dataType', None)
+
+        # If dataType has been specified, filter then FeatureType entries by name and dataSource
+        if dataType is not None:
+           
+            if dataType == 'binding':
+                name = 'NMR Binding'
+            elif dataType == 'notbinding':
+                name = 'NMR Not-Binding'
+            elif dataType == 'docking':
+                name = 'NMR Docking'
+
+            queryset = FeatureType.objects.filter(dataSource__exact='The COVID19-NMR Consortium').filter(name=name)
+
+        #If not, filter FeatureType entries only by dataSource
+        else:
+            queryset = FeatureType.objects.filter(dataSource__exact='The COVID19-NMR Consortium')
+        
+        return queryset
