@@ -2348,6 +2348,9 @@ class IDRUtils(object):
         dc_colName = getColNameByKW(analysesDf.columns, 'data', 'comment')
         l_colName = getColNameByKW(analysesDf.columns, 'compound', 'key')
 
+        # Remove single quotes from relation column
+        analysesDf[r_colName] = analysesDf[r_colName].str.replace("'", "")
+
         # Parse metadata file using StudyParser
         MetadataFilePath = os.path.join(assayPath, metadataFile)
         studyParserObj = StudyParser(MetadataFilePath)
