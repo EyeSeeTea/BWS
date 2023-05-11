@@ -28,6 +28,11 @@ class DataFileSerializer(serializers.ModelSerializer):
 
 # ========== ========== ========== ========== ========== ========== ==========
 
+class FeatureRegionEntitySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FeatureRegionEntity
+        fields = ['name', 'description', 'externalLink', 'pdbentry', 'uniprotentry', 'ligandentity', 'start', 'end']
+
 class OntologySerializer(serializers.ModelSerializer):
     class Meta:
         model = Ontology
@@ -184,7 +189,7 @@ class AssayEntitySerializer(serializers.ModelSerializer):
         return AnalysesSerializer(many=True).to_representation(analyses_qs)
 
 
-class FeatureTypeSerializer(serializers.ModelSerializer):
+class FeatureTypeIDRSerializer(serializers.ModelSerializer):
     assays = serializers.SerializerMethodField()
 
     class Meta:
@@ -225,7 +230,7 @@ class LigandToImageDataSerializer(serializers.ModelSerializer):
 
     def get_imageData(self, obj):
 
-        # Update the queryset context with the ligand ID to pass it to the rest of serializers involved (FeatureTypeSerializer, AssayEntitySerializer, ScreenEntitySerializer, PlateEntitySerializer and WellEntitySerializer)
+        # Update the queryset context with the ligand ID to pass it to the rest of serializers involved (FeatureTypeIDRSerializer, AssayEntitySerializer, ScreenEntitySerializer, PlateEntitySerializer and WellEntitySerializer)
         context = self.context
         context.update({'ligand_entity': obj})
 
@@ -246,7 +251,7 @@ class LigandToImageDataSerializer(serializers.ModelSerializer):
             wellEntityId_list2
         ))
 
-        # Update the queryset context with the the list of tuples including ids associated to a ligand and pass it to the rest of serializers involved (FeatureTypeSerializer, AssayEntitySerializer, ScreenEntitySerializer, PlateEntitySerializer and WellEntitySerializer)
+        # Update the queryset context with the the list of tuples including ids associated to a ligand and pass it to the rest of serializers involved (FeatureTypeIDRSerializer, AssayEntitySerializer, ScreenEntitySerializer, PlateEntitySerializer and WellEntitySerializer)
         context.update({
             'zip_list': zip_list
         })
@@ -258,11 +263,11 @@ class LigandToImageDataSerializer(serializers.ModelSerializer):
 
         unique_featureTypeid_list = list(set(featureTypeid_list))
 
-        # Given the unique list of FeatureType IDs, get queryset including all FeatureType models and pass it to FeatureTypeSerializer
+        # Given the unique list of FeatureType IDs, get queryset including all FeatureType models and pass it to FeatureTypeIDRSerializer
         featureType_qs = FeatureType.objects.filter(
             pk__in=unique_featureTypeid_list)
 
-        return FeatureTypeSerializer(many=True, context=context).to_representation(featureType_qs)
+        return FeatureTypeIDRSerializer(many=True, context=context).to_representation(featureType_qs)
 
     # To avoid showing imageData field in final JSON file when there is no info associated to it (avoid "imgaData []")
     def to_representation(self, value):
@@ -367,7 +372,7 @@ class LigandEntitySerializer(serializers.ModelSerializer):
 
     def get_imageData(self, obj):
 
-        # Update the queryset context with the ligand ID to pass it to the rest of serializers involved (FeatureTypeSerializer, AssayEntitySerializer, ScreenEntitySerializer, PlateEntitySerializer and WellEntitySerializer)
+        # Update the queryset context with the ligand ID to pass it to the rest of serializers involved (FeatureTypeIDRSerializer, AssayEntitySerializer, ScreenEntitySerializer, PlateEntitySerializer and WellEntitySerializer)
         context = self.context
         context.update({'ligand_entity': obj})
 
@@ -389,7 +394,7 @@ class LigandEntitySerializer(serializers.ModelSerializer):
             wellEntityId_list2
         ))
 
-        # Update the queryset context with the the list of tuples including ids associated to a ligand and pass it to the rest of serializers involved (FeatureTypeSerializer, AssayEntitySerializer, ScreenEntitySerializer, PlateEntitySerializer and WellEntitySerializer)
+        # Update the queryset context with the the list of tuples including ids associated to a ligand and pass it to the rest of serializers involved (FeatureTypeIDRSerializer, AssayEntitySerializer, ScreenEntitySerializer, PlateEntitySerializer and WellEntitySerializer)
         context.update({
             'zip_list': zip_list
         })
@@ -401,11 +406,11 @@ class LigandEntitySerializer(serializers.ModelSerializer):
 
         unique_featureTypeid_list = list(set(featureTypeid_list))
 
-        # Given the unique list of FeatureType IDs, get queryset including all FeatureType models and pass it to FeatureTypeSerializer
+        # Given the unique list of FeatureType IDs, get queryset including all FeatureType models and pass it to FeatureTypeIDRSerializer
         featureType_qs = FeatureType.objects.filter(
             pk__in=unique_featureTypeid_list)
 
-        return FeatureTypeSerializer(many=True, context=context).to_representation(featureType_qs)
+        return FeatureTypeIDRSerializer(many=True, context=context).to_representation(featureType_qs)
 
     # To avoid showing imageData field in final JSON file when there is no info associated to it (avoid "imgaData []")
     def to_representation(self, value):
@@ -572,3 +577,27 @@ class PdbEntryExportSerializer(serializers.ModelSerializer):
                   'details',
                   'imageLink', 'externalLink', 'queryLink',
                   ]
+
+class FeatureTypeNMRSerializer(serializers.ModelSerializer):
+    featureregionentity_features  = serializers.SerializerMethodField()
+
+    class Meta:
+        model = FeatureType
+        fields = ['dataSource', 'name',
+                  'description', 'externalLink', 'featureregionentity_features']
+
+    def get_featureregionentity_features(self, obj):
+
+        # Get parameter from url
+        uniprot_id = self.context['request'].parser_context['kwargs'].get('uniprot_id', None)
+        ligand_id = self.context['request'].parser_context['kwargs'].get('ligand_id', None)
+
+        # Filter FeatureRegionEntity entries depending on the parameters specified in the url
+        if uniprot_id is not None and ligand_id is not None:
+            featurerionentity_features = obj.featureregionentity_features.filter(uniprotentry=uniprot_id).filter(ligandentity=ligand_id)
+        elif uniprot_id is not None:
+            featurerionentity_features = obj.featureregionentity_features.filter(uniprotentry=uniprot_id)
+        else:
+            featurerionentity_features = obj.featureregionentity_features.all() 
+            
+        return FeatureRegionEntitySerializer(featurerionentity_features, many=True).data
