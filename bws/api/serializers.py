@@ -28,10 +28,6 @@ class DataFileSerializer(serializers.ModelSerializer):
 
 # ========== ========== ========== ========== ========== ========== ==========
 
-class FeatureRegionEntitySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = FeatureRegionEntity
-        fields = ['name', 'description', 'externalLink', 'pdbentry', 'uniprotentry', 'ligandentity', 'start', 'end']
 
 class OntologySerializer(serializers.ModelSerializer):
     class Meta:
@@ -577,6 +573,14 @@ class PdbEntryExportSerializer(serializers.ModelSerializer):
                   'details',
                   'imageLink', 'externalLink', 'queryLink',
                   ]
+
+class FeatureRegionEntitySerializer(serializers.ModelSerializer):
+
+    ligandentity = LigandEntitySerializer(read_only=True)
+
+    class Meta:
+        model = FeatureRegionEntity
+        fields = ['name', 'description', 'externalLink', 'pdbentry', 'uniprotentry', 'ligandentity', 'start', 'end']
 
 class FeatureTypeNMRSerializer(serializers.ModelSerializer):
     featureregionentity_features  = serializers.SerializerMethodField()
