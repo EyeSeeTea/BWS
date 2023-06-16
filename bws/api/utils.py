@@ -2806,7 +2806,7 @@ def updateFeatureModelEntity(name, featureType, description, pdbentry, uniproten
     return obj
 
 
-def updateFeatureRegionEntity(name, featureType, description, pdbentry, uniprotentry, ligandentity, externalLink, start, end):
+def updateFeatureRegionEntity(name, featureType, description, pdbentry, uniprotentry, ligandentity, externalLink, start, end, details):
     obj = None
     try:
         obj, created = FeatureRegionEntity.objects.update_or_create(
@@ -2821,6 +2821,7 @@ def updateFeatureRegionEntity(name, featureType, description, pdbentry, uniprote
                 'externalLink': externalLink,
                 'start': start,
                 'end': end,
+                'details': details,
             })
         if created:
             logger.debug('Created new %s: %s', FeatureRegionEntity.__name__, obj)
@@ -2906,6 +2907,10 @@ def update_NMR_binding(filepath):
                 entityIndx = findIndexInObjList(nmrentity_list, 'name', item1)
 
                 name = '%s %s %s·%s' % (ligandentity.name, row, nmrentity_list[entityIndx]['name'], item2)
+                details = {
+                    'type': row.replace(' ', '').lower(),
+                    'entity': '%s·%s' % (nmrentity_list[entityIndx]['name'], item2),
+                    }
 
                 if item1 == 'NSP5':
                     description = 'NMR-based detection of fragment %s %s to target %s with additional amino acids %s in the N-terminus (monomeric version of %s in solution)' % (ligandentity.name, row.lower(), nmrentity_list[entityIndx]['verbose_name'], item2, nmrentity_list[entityIndx]['name'])
@@ -2915,11 +2920,15 @@ def update_NMR_binding(filepath):
                     description = 'NMR-based detection of fragment %s %s to target %s in complex with %s.' % (ligandentity.name, row.lower(), nmrentity_list[entityIndx]['verbose_name'], item2)
 
             else:
-                # Find obj index in nmr list of objs given entity name and set name and description for non-complex-realted columns
+                # Find obj index in nmr list of objs given entity name and set name, description and details for non-complex-realted columns
                 entityIndx = findIndexInObjList(nmrentity_list, 'name', column)
 
                 name = '%s %s %s' % (ligandentity.name, row, nmrentity_list[entityIndx]['name'])
                 description = 'NMR-based detection of fragment %s %s to target %s.' % (ligandentity.name, row.lower(), nmrentity_list[entityIndx]['verbose_name'])
+                details = {
+                    'type': row.replace(' ', '').lower(),
+                    'entity': nmrentity_list[entityIndx]['name'],
+                    }
 
             # Set FeatureRegionEntity start and end
             start= nmrentity_list[entityIndx]['start']
@@ -2940,6 +2949,7 @@ def update_NMR_binding(filepath):
             externalLink='', 
             start=start,
             end=end,
+            details=details,
             )
 
         

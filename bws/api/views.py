@@ -17,6 +17,7 @@ from rest_framework.filters import OrderingFilter, SearchFilter
 from django_filters import rest_framework as filters
 from rest_framework.renderers import JSONRenderer
 from datetime import datetime
+from urllib.parse import unquote
 
 logger = logging.getLogger(__name__)
 
@@ -804,31 +805,31 @@ class NMRViewSet(viewsets.ModelViewSet):
     """
     This viewset automatically provides `list` and `detail` actions.
     """
-    #queryset = FeatureType.objects.filter(dataSource__exact='The COVID19-NMR Consortium')
-    serializer_class = FeatureTypeNMRSerializer
+    serializer_class = FeatureRegionEntitySerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     filter_backends = (filters.DjangoFilterBackend, SearchFilter,
                        OrderingFilter)
     
     def get_queryset(self, **kwargs):
 
-        # Get dataType (binding|notbinding|docking) if it has been specified
+        # Get uniprot_id, dataType and ligand_id if they have been specified
+        uniprot_id = self.kwargs.get('uniprot_id', None)
         dataType = self.kwargs.get('dataType', None)
+        entityName = self.kwargs.get('entityName', None)
+        ligand_id = self.kwargs.get('ligand_id', None)
 
-        # If dataType has been specified, filter then FeatureType entries by name and dataSource
-        if dataType is not None:
-           
-            if dataType == 'binding':
-                name = 'NMR Binding'
-            elif dataType == 'notbinding':
-                name = 'NMR Not-Binding'
-            elif dataType == 'docking':
-                name = 'NMR Docking'
+        # Get NMR queryset
+        queryset = FeatureRegionEntity.objects.filter(featureType__dataSource__exact='The COVID19-NMR Consortium').order_by('id')
 
-            queryset = FeatureType.objects.filter(dataSource__exact='The COVID19-NMR Consortium').filter(name=name)
-
-        #If not, filter FeatureType entries only by dataSource
-        else:
-            queryset = FeatureType.objects.filter(dataSource__exact='The COVID19-NMR Consortium')
+        # Filter queryset depending on parameters specified in url
+        if uniprot_id:
+            queryset = queryset.filter(uniprotentry=uniprot_id)
+        if dataType:
+            queryset = queryset.filter(details__type=dataType)
+        if entityName:
+            entityName = unquote(entityName)
+            queryset = queryset.filter(details__entity=entityName)
+        if ligand_id:
+            queryset = queryset.filter(ligandentity=ligand_id)
         
         return queryset
