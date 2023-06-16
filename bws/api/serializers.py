@@ -574,34 +574,18 @@ class PdbEntryExportSerializer(serializers.ModelSerializer):
                   'imageLink', 'externalLink', 'queryLink',
                   ]
 
-class FeatureRegionEntitySerializer(serializers.ModelSerializer):
-
-    ligandentity = LigandEntitySerializer(read_only=True)
-
-    class Meta:
-        model = FeatureRegionEntity
-        fields = ['name', 'description', 'externalLink', 'pdbentry', 'uniprotentry', 'ligandentity', 'start', 'end']
-
 class FeatureTypeNMRSerializer(serializers.ModelSerializer):
-    featureregionentity_features  = serializers.SerializerMethodField()
 
     class Meta:
         model = FeatureType
         fields = ['dataSource', 'name',
-                  'description', 'externalLink', 'featureregionentity_features']
+                  'description', 'externalLink']
+        
+class FeatureRegionEntitySerializer(serializers.ModelSerializer):
 
-    def get_featureregionentity_features(self, obj):
+    ligandentity = LigandEntitySerializer(read_only=True)
+    featureType = FeatureTypeNMRSerializer(read_only=True)
 
-        # Get parameter from url
-        uniprot_id = self.context['request'].parser_context['kwargs'].get('uniprot_id', None)
-        ligand_id = self.context['request'].parser_context['kwargs'].get('ligand_id', None)
-
-        # Filter FeatureRegionEntity entries depending on the parameters specified in the url
-        if uniprot_id is not None and ligand_id is not None:
-            featurerionentity_features = obj.featureregionentity_features.filter(uniprotentry=uniprot_id).filter(ligandentity=ligand_id)
-        elif uniprot_id is not None:
-            featurerionentity_features = obj.featureregionentity_features.filter(uniprotentry=uniprot_id)
-        else:
-            featurerionentity_features = obj.featureregionentity_features.all() 
-            
-        return FeatureRegionEntitySerializer(featurerionentity_features, many=True).data
+    class Meta:
+        model = FeatureRegionEntity
+        fields = ['name', 'description', 'externalLink', 'pdbentry', 'uniprotentry', 'ligandentity', 'details', 'start', 'end', 'featureType']
