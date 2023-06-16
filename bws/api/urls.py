@@ -69,7 +69,8 @@ urlpatterns = [
     re_path(r'^nmr/$', views.NMRViewSet.as_view({'get': 'list'})),
     re_path(r'^nmr/(?P<uniprot_id>[OPQ][0-9][A-Z0-9]{3}[0-9]|[A-NR-Z][0-9]([A-Z][A-Z0-9]{2}[0-9]){1,2})/$', views.NMRViewSet.as_view({'get': 'list'})),
     re_path(r'^nmr/(?P<uniprot_id>[OPQ][0-9][A-Z0-9]{3}[0-9]|[A-NR-Z][0-9]([A-Z][A-Z0-9]{2}[0-9]){1,2})/(?P<dataType>(binding|notbinding|docking))/$', views.NMRViewSet.as_view({'get': 'list'})),
-    re_path(r'^nmr/(?P<uniprot_id>[OPQ][0-9][A-Z0-9]{3}[0-9]|[A-NR-Z][0-9]([A-Z][A-Z0-9]{2}[0-9]){1,2})/(?P<dataType>(binding|notbinding|docking))/(?P<ligand_id>[0-9A-Z\-]+)/$', views.NMRViewSet.as_view({'get': 'list'})),
+    re_path(r'^nmr/(?P<uniprot_id>[OPQ][0-9][A-Z0-9]{3}[0-9]|[A-NR-Z][0-9]([A-Z][A-Z0-9]{2}[0-9]){1,2})/(?P<dataType>(binding|notbinding|docking))/(?P<entityName>[A-Za-z0-9· -]+)/$', views.NMRViewSet.as_view({'get': 'list'})),
+    re_path(r'^nmr/(?P<uniprot_id>[OPQ][0-9][A-Z0-9]{3}[0-9]|[A-NR-Z][0-9]([A-Z][A-Z0-9]{2}[0-9]){1,2})/(?P<dataType>(binding|notbinding|docking))/(?P<entityName>[A-Za-z0-9· -]+)/(?P<ligand_id>[0-9A-Z\-]+)/$', views.NMRViewSet.as_view({'get': 'list'})),
 
 ]
 
