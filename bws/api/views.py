@@ -817,7 +817,7 @@ class NMRViewSet(viewsets.ModelViewSet):
         ligand_id = self.kwargs.get('ligand_id', None)
 
         # Get NMR queryset
-        queryset = FeatureRegionEntity.objects.filter(featureType__dataSource__exact='The COVID19-NMR Consortium')
+        queryset = FeatureRegionEntity.objects.filter(featureType__dataSource__exact='The COVID19-NMR Consortium').order_by('id')
 
         # Filter queryset depending on parameters specified in url
         if uniprot_id:
