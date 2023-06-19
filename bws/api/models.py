@@ -533,7 +533,7 @@ class FeatureRegionEntity(FeatureEntity):
     '''
     start = models.IntegerField()
     end = models.IntegerField()
-    details = models.JSONField()
+    details = models.JSONField(blank=True, null=True, default=list)
 
     def __str__(self):
         return '%s (FeatureRegionEntity)' % (self.name)
