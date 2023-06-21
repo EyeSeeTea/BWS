@@ -815,7 +815,6 @@ class NMRViewSet(viewsets.ModelViewSet):
         # Get uniprot_id, dataType and ligand_id if they have been specified
         uniprot_id = self.kwargs.get('uniprot_id', None)
         dataType = self.kwargs.get('dataType', None)
-        entityName = self.kwargs.get('entityName', None)
         ligand_id = self.kwargs.get('ligand_id', None)
 
         # Get NMR queryset
@@ -826,9 +825,6 @@ class NMRViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(uniprotentry=uniprot_id)
         if dataType:
             queryset = queryset.filter(details__type=dataType)
-        if entityName:
-            entityName = unquote(entityName)
-            queryset = queryset.filter(details__entity=entityName)
         if ligand_id:
             queryset = queryset.filter(ligandentity=ligand_id)
         
