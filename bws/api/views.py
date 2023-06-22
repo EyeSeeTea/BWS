@@ -812,20 +812,27 @@ class NMRViewSet(viewsets.ModelViewSet):
     
     def get_queryset(self, **kwargs):
 
-        # Get uniprot_id, dataType and ligand_id if they have been specified
+        # Get URL parameters uniprot_id, dataType and ligand_id if they have been specified
         uniprot_id = self.kwargs.get('uniprot_id', None)
         dataType = self.kwargs.get('dataType', None)
         ligand_id = self.kwargs.get('ligand_id', None)
 
+        # Get query parameters start and end
+        start = self.request.query_params.get('start', None)
+        end = self.request.query_params.get('end', None)
+
         # Get NMR queryset
         queryset = FeatureRegionEntity.objects.filter(featureType__dataSource__exact='The COVID19-NMR Consortium').order_by('id')
 
-        # Filter queryset depending on parameters specified in url
+        # Filter queryset depending on URL parameters 
         if uniprot_id:
             queryset = queryset.filter(uniprotentry=uniprot_id)
         if dataType:
             queryset = queryset.filter(details__type=dataType)
         if ligand_id:
             queryset = queryset.filter(ligandentity=ligand_id)
+        
+        if start and end:
+            queryset = queryset.filter(start__lte=end, end__gte=start)
         
         return queryset
