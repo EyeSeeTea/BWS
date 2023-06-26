@@ -17,7 +17,7 @@ from rest_framework.filters import OrderingFilter, SearchFilter
 from django_filters import rest_framework as filters
 from rest_framework.renderers import JSONRenderer
 from datetime import datetime
-from urllib.parse import unquote
+from django.shortcuts import get_object_or_404
 
 logger = logging.getLogger(__name__)
 
@@ -422,7 +422,6 @@ class PdbEntryViewSet(viewsets.ReadOnlyModelViewSet):
     """
     This viewset automatically provides `list` and `detail` actions.
     """
-    queryset = PdbEntry.objects.all()
     serializer_class = PdbEntryExportSerializer
     filter_backends = (filters.DjangoFilterBackend, SearchFilter,
                        OrderingFilter)
@@ -432,16 +431,29 @@ class PdbEntryViewSet(viewsets.ReadOnlyModelViewSet):
     ]
     ordering = ['-relDate']
 
+    def get_queryset(self):
+        return PdbEntry.objects.all()
+
+    def retrieve(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        obj = get_object_or_404(queryset, dbId__iexact=kwargs.get('pk'))
+        serializer = self.get_serializer(obj)
+        return Response(serializer.data)
 
 class LigandsSectionViewSet(viewsets.ReadOnlyModelViewSet):
-
     serializer_class = LigandEntitySerializer
 
     def get_queryset(self, **kwargs):
         pdb_id = self.kwargs['pdb_id']
-        queryset = LigandEntity.objects.filter(
-            pdbligands__pdbId=pdb_id).prefetch_related(
-                "well__plate__screen__assay")
+        
+        # Case Insensitive search on PdbToLigand
+        pdb_ligands = PdbToLigand.objects.filter(pdbId__dbId__iexact=pdb_id)
+
+        # Use PdbToLigand entries to filter LigandEntity
+        queryset = LigandEntity.objects.filter(pdbligands__in=pdb_ligands).prefetch_related(
+            "well__plate__screen__assay"
+        )
+
         return queryset
 
 
@@ -451,7 +463,12 @@ class EntitiesSectionViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self, **kwargs):
         pdb_id = self.kwargs['pdb_id']
-        queryset = ModelEntity.objects.filter(pdbentities__pdbId=pdb_id)
+
+        # Case Insensitive search on PdbToEntity
+        pdb_entities = PdbToEntity.objects.filter(pdbId__dbId__iexact=pdb_id)
+
+        # Use PdbToEntity entries to filter ModelEntity
+        queryset = ModelEntity.objects.filter(pdbentities__in=pdb_entities)
         return queryset
 
 
