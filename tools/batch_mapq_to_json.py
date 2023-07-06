@@ -10,8 +10,8 @@ import time
 import numpy
 import json
 
-DATA_PATH = "/Volumes/B13-JRM/Projects/base/BWS/data/q-score/emdb_qscores"
-JSON_DATA_PATH = "/Volumes/B13-JRM/Projects/base/BWS/data/q-score/json"
+DATA_PATH = "/data/q-score/emdb_qscores"
+JSON_DATA_PATH = "/data/q-score/json"
 MAPQ_FILE_PATTERN = "emd_*_pdb_*.cif"
 
 RESOURCE = "EMV-MapQ-Scores"
