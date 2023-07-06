@@ -440,12 +440,13 @@ class PdbEntryViewSet(viewsets.ReadOnlyModelViewSet):
         serializer = self.get_serializer(obj)
         return Response(serializer.data)
 
+
 class LigandsSectionViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = LigandEntitySerializer
 
     def get_queryset(self, **kwargs):
         pdb_id = self.kwargs['pdb_id']
-        
+
         # Case Insensitive search on PdbToLigand
         pdb_ligands = PdbToLigand.objects.filter(pdbId__dbId__iexact=pdb_id)
 
@@ -585,15 +586,21 @@ class EmvDataByIdMethodView(APIView):
             method = self.kwargs['method']
         if 'db_id' in self.kwargs:
             db_id = self.kwargs['db_id'].lower()
-            if db_id.startswith('emd-'):
-                path = "%s/%s" % (EMDB_DATA_DIR, db_id)
-                pattern = "*%s.json" % (method, )
+            if method == 'mapq':
+                # data source: Grigore Pintilie
+                path = os.path.join(LOCAL_DATA_DIR, 'q-score', 'json')
+                if db_id.startswith('emd-'):
+                    pattern = "%s*_emv_%s.json" % (db_id.replace("emd-", "emd_"), method,)
+                else:
+                    pattern = "*%s_emv_%s.json" % (db_id, method,)
             else:
-                path = "%s/%s" % (EMDB_DATA_DIR, 'emd-*')
-                pattern = "*%s_emv_%s.json" % (
-                    db_id,
-                    method,
-                )
+                if db_id.startswith('emd-'):
+                    path = "%s/%s" % (EMDB_DATA_DIR, db_id)
+                    pattern = "*%s.json" % (method, )
+                else:
+                    path = "%s/%s" % (EMDB_DATA_DIR, 'emd-*')
+                    pattern = "*%s_emv_%s.json" % (db_id, method,)
+
         data_files = _getEmvDataFiles(path, pattern)
         # there should be only one file for entry/method
         if len(data_files) != 1:
@@ -750,7 +757,8 @@ class OntologyTermViewSet(viewsets.ReadOnlyModelViewSet):
         except KeyError:
             queryset = OntologyTerm.objects.filter(source__dbId=ont_id)
             return queryset
-    
+
+
 class AllOntologyTermViewSet(viewsets.ReadOnlyModelViewSet):
 
     serializer_class = OntologyTermSerializer
@@ -816,7 +824,7 @@ class GetApiVersion(APIView):
         }
 
         return Response(resp)
-    
+
 
 class NMRViewSet(viewsets.ModelViewSet):
     """
@@ -826,7 +834,7 @@ class NMRViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     filter_backends = (filters.DjangoFilterBackend, SearchFilter,
                        OrderingFilter)
-    
+
     def get_queryset(self, **kwargs):
 
         # Get URL parameters uniprot_id, dataType and ligand_id if they have been specified
@@ -839,17 +847,18 @@ class NMRViewSet(viewsets.ModelViewSet):
         end = self.request.query_params.get('end', None)
 
         # Get NMR queryset
-        queryset = FeatureRegionEntity.objects.filter(featureType__dataSource__exact='The COVID19-NMR Consortium').order_by('id')
+        queryset = FeatureRegionEntity.objects.filter(
+            featureType__dataSource__exact='The COVID19-NMR Consortium').order_by('id')
 
-        # Filter queryset depending on URL parameters 
+        # Filter queryset depending on URL parameters
         if uniprot_id:
             queryset = queryset.filter(uniprotentry=uniprot_id)
         if dataType:
             queryset = queryset.filter(details__type=dataType)
         if ligand_id:
             queryset = queryset.filter(ligandentity=ligand_id)
-        
+
         if start and end:
             queryset = queryset.filter(start__lte=end, end__gte=start)
-        
+
         return queryset
