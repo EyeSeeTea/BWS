@@ -593,6 +593,13 @@ class EmvDataByIdMethodView(APIView):
                     pattern = "%s*_emv_%s.json" % (db_id.replace("emd-", "emd_"), method,)
                 else:
                     pattern = "*%s_emv_%s.json" % (db_id, method,)
+            if method == 'daq':
+                # data source: Daisuke Kihara
+                path = os.path.join(LOCAL_DATA_DIR, 'daq', 'json', '**')
+                if db_id.startswith('emd-'):
+                    pattern = "%s*_emv_%s.json" % (db_id, method,)
+                else:
+                    pattern = "*%s_emv_%s.json" % (db_id, method,)
             else:
                 if db_id.startswith('emd-'):
                     path = "%s/%s" % (EMDB_DATA_DIR, db_id)

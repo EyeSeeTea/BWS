@@ -50,13 +50,11 @@ def cif2json(emdb_entry, pdb_entry, input_file):
 
         current_chain = ""
         current_residue = 0
-        for lin in lines_data:
-            # if (lin.startswith('ATOM') or lin.startswith('HETATM')):
-            if (lin.startswith('ATOM')):
+        for line in lines_data:
+            if (line.startswith('ATOM') or line.startswith('HETATM')):
                 # read fields
                 # ATOM   1     N  N     . ARG A 1 28  ? 196.425 215.363 143.820 1.000 159.66 0.508586  ? 28  ARG A N     1
-                items = lin.split()
-                group_PDB, id, type_symbol, label_atom_id, label_alt_id, label_comp_id, label_asym_id, label_entity_id, label_seq_id, pdbx_PDB_ins_code, Cartn_x, Cartn_y, Cartn_z, occupancy, B_iso_or_equiv, q_score, pdbx_formal_charge, auth_seq_id, auth_comp_id, auth_asym_id, auth_atom_id, pdbx_PDB_model_num = lin.split(
+                group_PDB, id, type_symbol, label_atom_id, label_alt_id, label_comp_id, label_asym_id, label_entity_id, label_seq_id, pdbx_PDB_ins_code, Cartn_x, Cartn_y, Cartn_z, occupancy, B_iso_or_equiv, q_score, pdbx_formal_charge, auth_seq_id, auth_comp_id, auth_asym_id, auth_atom_id, pdbx_PDB_model_num = line.split(
                 )
                 if not is_number(q_score):
                     continue
@@ -84,7 +82,7 @@ def cif2json(emdb_entry, pdb_entry, input_file):
                     res_values.append(q_score)
 
                 # get chain
-                if current_chain != label_asym_id or lin == lines_data[-1]:
+                if current_chain != label_asym_id or line == lines_data[-1]:
                     if current_chain:
                         # save current chain
                         emv_data["chains"].append(chain_data)
