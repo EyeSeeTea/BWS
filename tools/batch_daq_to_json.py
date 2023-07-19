@@ -85,14 +85,13 @@ def pdb2json(emdb_entry, pdb_entry, chainId, input_file):
 
 
 def getEntryFiles(path):
-    logger.info('Get DAQ files from %s' % (path,))
+    logger.info('Get DAQ files from %s' % (path, ))
     entry_data_list = []
     entry_list = []
     try:
-        logger.info('Reading data folder:  %s %s' %
-                    (path, MAPQ_FILE_PATTERN))
+        logger.info('Reading data folder:  %s %s' % (path, MAPQ_FILE_PATTERN))
         search_path = os.path.join(path, "**", MAPQ_FILE_PATTERN)
-        logger.info('search_path  %s' % (search_path,))
+        logger.info('search_path  %s' % (search_path, ))
         data_files = glob.glob(search_path, recursive=True)
 
         for data_file in sorted(data_files):
@@ -126,11 +125,11 @@ def saveEmvData(emdbId, pdbId, emv_data):
     json_filename = emdbId + '_' + pdbId + '_emv_daq.json'
     dirPath = Path(JSON_DATA_PATH, pdbId[1:3])
     dirPath.mkdir(parents=True, exist_ok=True)
-    json_file = os.path.join(dirPath, json_filename)
+    json_file = dirPath.joinpath(json_filename)
 
     logger.info('Save EMV DAQ data %s %s %s %s' %
                 (emdbId, pdbId, dirPath, json_filename))
-    with open(json_file, "w+") as of:
+    with open(str(json_file), "w+") as of:
         of.write(json.dumps(emv_data, indent=2))
 
 
@@ -146,9 +145,11 @@ def getEmvDataHeader(emdbId, pdbId, proc_date):
     }
     source_data = {
         "method": "DAQ-Score Database - Kihara Lab",
-        "citation": "Nakamura, T., Wang, X., Terashi, G. et al. DAQ-Score Database: assessment of map-model compatibility for protein structure models from cryo-EM maps. Nat Methods 20, 775-776 (2023).",
+        "citation":
+        "Nakamura, T., Wang, X., Terashi, G. et al. DAQ-Score Database: assessment of map-model compatibility for protein structure models from cryo-EM maps. Nat Methods 20, 775-776 (2023).",
         "doi": "https://doi.org/10.1038/s41592-023-01876-1",
-        "source": "https://daqdb.kiharalab.org/search?query=%s" % emdbId.upper(),
+        "source":
+        "https://daqdb.kiharalab.org/search?query=%s" % emdbId.upper(),
     }
     entry_data["source"] = source_data
     emv_data["entry"] = entry_data
@@ -169,7 +170,7 @@ def getChainsData(data_files):
             "_")
         emdb_entry = "emd-" + emdb_entry_num
         logger.info('Processing %s %s %s %s' %
-                    (emdb_entry, pdb_entry, chainId,  data_file))
+                    (emdb_entry, pdb_entry, chainId, data_file))
 
         chains_data.append(pdb2json(emdb_entry, pdb_entry, chainId, data_file))
 
@@ -180,21 +181,30 @@ def main(argv):
 
     parser = argparse.ArgumentParser(
         description="Prepare DAQ data from pdb-atom file to JSON, batch mode")
+    parser.add_argument("-i",
+                        "--inputDir",
+                        help="input data directory",
+                        required=True)
     parser.add_argument(
-        "-i", "--inputDir", help="input data directory", required=True)
-    parser.add_argument(
-        "-l", "--logFile", help="log file. By default 'prepareJob.log' in a dedicated 'logs' folder.", required=False)
-    parser.add_argument(
-        "-t", "--test", help="perform a trial run with no changes made", required=False, action='store_true')
+        "-l",
+        "--logFile",
+        help=
+        "log file. By default 'prepareJob.log' in a dedicated 'logs' folder.",
+        required=False)
+    parser.add_argument("-t",
+                        "--test",
+                        help="perform a trial run with no changes made",
+                        required=False,
+                        action='store_true')
     args = parser.parse_args()
     if args.logFile:
         logFile = args.logFile
         logsDir = os.path.dirname(logFile)
         logFilename = os.path.basename(logFile)
     else:
-        logsDir = os.path.join(PATH_TOOLS_DIR, DIR_TOOLS_LOGS)
-        logFilename = os.path.join(
-            logsDir, os.path.splitext(Path(__file__).name)[0] + '.log')
+        logsDir = PATH_TOOLS_DIR.joinpath(DIR_TOOLS_LOGS)
+        logFilename = logsDir.joinpath(
+            os.path.splitext(Path(__file__).name)[0] + '.log')
     logger = logSetup(__name__, logsDir, logFilename)
 
     inputDir = args.inputDir
@@ -203,15 +213,15 @@ def main(argv):
         logger.warning(
             'Performing a trial run. No permanent changes will be made')
 
-    logger.info('Reading DAQ scores from %s' % (inputDir,))
+    logger.info('Reading DAQ scores from %s' % (inputDir, ))
     entry_list, entry_data_list = getEntryFiles(inputDir)
     for entry in entry_data_list:
         emdbId = entry["emdbId"]
         pdbId = entry["pdbId"]
         files = entry["files"]
 
-        proc_date = time.strftime(
-            '%Y-%m-%d', time.gmtime(os.path.getmtime(files[0])))
+        proc_date = time.strftime('%Y-%m-%d',
+                                  time.gmtime(os.path.getmtime(files[0])))
         emv_data = getEmvDataHeader(emdbId, pdbId, proc_date)
 
         chains_data = getChainsData(files)
