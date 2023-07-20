@@ -21,6 +21,9 @@ router.register(r'pdbligands', views.PdbLigandViewSet)
 urlpatterns = [
     path('', include(router.urls)),
 
+    # Get version
+    re_path(r'^version/$', views.GetApiVersion.as_view()),
+
     # EM Validation annotations for 3DBionotes - Protvista
     re_path(r'^pdbAnnotFromMap/all/(?P<pdb_id>\d\w{3})/(?P<chain_id>\w{1})/?(?P<modified_model>(pdb-redo|isolde))?/$',
             views.PdbEntryAllAnnFromMapView.as_view()),
@@ -43,7 +46,6 @@ urlpatterns = [
     re_path(r'^emv/$', views.EmvDataView.as_view()),
     re_path(r'^emv/(?P<db_id>(\d[a-zA-Z]\w{2}|[EMD]*[emd]*-\d{4,5}))/$', views.EmvDataByIDView.as_view()),
 
-
     re_path(r'^emv/(?P<method>(stats|deepres|monores|blocres|mapq|fscq|daq))/$', views.EmvDataByMethodView.as_view()),
     re_path(r'^emv/(?P<db_id>(\d[a-zA-Z]\w{2}|[EMD]*[emd]*-\d{4,5}))/(?P<method>(stats|deepres|monores|blocres|mapq|fscq|daq))/$', views.EmvDataByIdMethodView.as_view()),
     re_path(r'^emv/(?P<db_id>(\d[a-zA-Z]\w{2}|[EMD]*[emd]*-\d{4,5}))/localresolution/consensus/$', views.EmvDataLocalresConsensus.as_view()),
@@ -60,6 +62,14 @@ urlpatterns = [
     # Organisms related endpoint
     re_path(r'^organisms/$', views.OrganismViewSet.as_view({'get': 'list'})),
     re_path(r'^organisms/(?P<ncbi_taxonomy_id>\d*)/$', views.OrganismViewSet.as_view({'get': 'list'})),
+
+
+    # NMR annotations end-points
+    re_path(r'^nmr/$', views.NMRViewSet.as_view({'get': 'list'})),
+    re_path(r'^nmr/(?P<uniprot_id>[OPQ][0-9][A-Z0-9]{3}[0-9]|[A-NR-Z][0-9]([A-Z][A-Z0-9]{2}[0-9]){1,2})/$', views.NMRViewSet.as_view({'get': 'list'})),
+    re_path(r'^nmr/(?P<uniprot_id>[OPQ][0-9][A-Z0-9]{3}[0-9]|[A-NR-Z][0-9]([A-Z][A-Z0-9]{2}[0-9]){1,2})/(?P<dataType>(binding|notbinding|docking))/$', views.NMRViewSet.as_view({'get': 'list'})),
+    re_path(r'^nmr/(?P<uniprot_id>[OPQ][0-9][A-Z0-9]{3}[0-9]|[A-NR-Z][0-9]([A-Z][A-Z0-9]{2}[0-9]){1,2})/(?P<dataType>(binding|notbinding|docking))/(?P<ligand_id>[0-9A-Z\-]+)/$', views.NMRViewSet.as_view({'get': 'list'})),
+
 ]
 
 

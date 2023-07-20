@@ -17,6 +17,7 @@ from rest_framework.filters import OrderingFilter, SearchFilter
 from django_filters import rest_framework as filters
 from rest_framework.renderers import JSONRenderer
 from datetime import datetime
+from django.shortcuts import get_object_or_404
 
 logger = logging.getLogger(__name__)
 
@@ -421,7 +422,6 @@ class PdbEntryViewSet(viewsets.ReadOnlyModelViewSet):
     """
     This viewset automatically provides `list` and `detail` actions.
     """
-    queryset = PdbEntry.objects.all()
     serializer_class = PdbEntryExportSerializer
     filter_backends = (filters.DjangoFilterBackend, SearchFilter,
                        OrderingFilter)
@@ -431,16 +431,30 @@ class PdbEntryViewSet(viewsets.ReadOnlyModelViewSet):
     ]
     ordering = ['-relDate']
 
+    def get_queryset(self):
+        return PdbEntry.objects.all()
+
+    def retrieve(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        obj = get_object_or_404(queryset, dbId__iexact=kwargs.get('pk'))
+        serializer = self.get_serializer(obj)
+        return Response(serializer.data)
+
 
 class LigandsSectionViewSet(viewsets.ReadOnlyModelViewSet):
-
     serializer_class = LigandEntitySerializer
 
     def get_queryset(self, **kwargs):
         pdb_id = self.kwargs['pdb_id']
-        queryset = LigandEntity.objects.filter(
-            pdbligands__pdbId=pdb_id).prefetch_related(
-                "well__plate__screen__assay")
+
+        # Case Insensitive search on PdbToLigand
+        pdb_ligands = PdbToLigand.objects.filter(pdbId__dbId__iexact=pdb_id)
+
+        # Use PdbToLigand entries to filter LigandEntity
+        queryset = LigandEntity.objects.filter(pdbligands__in=pdb_ligands).prefetch_related(
+            "well__plate__screen__assay"
+        )
+
         return queryset
 
 
@@ -450,7 +464,12 @@ class EntitiesSectionViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self, **kwargs):
         pdb_id = self.kwargs['pdb_id']
-        queryset = ModelEntity.objects.filter(pdbentities__pdbId=pdb_id)
+
+        # Case Insensitive search on PdbToEntity
+        pdb_entities = PdbToEntity.objects.filter(pdbId__dbId__iexact=pdb_id)
+
+        # Use PdbToEntity entries to filter ModelEntity
+        queryset = ModelEntity.objects.filter(pdbentities__in=pdb_entities)
         return queryset
 
 
@@ -483,6 +502,8 @@ def _getJsonEMVEntry(file):
 
 class EmvDataView(APIView):
 
+    renderer_classes = [JSONRenderer]
+
     def get(self, request, **kwargs):
         """
         Get a list of all EMV entries
@@ -500,6 +521,8 @@ class EmvDataView(APIView):
 
 
 class EmvDataByMethodView(APIView):
+
+    renderer_classes = [JSONRenderer]
 
     def get(self, request, **kwargs):
         """
@@ -525,6 +548,8 @@ class EmvDataByMethodView(APIView):
 
 
 class EmvDataByIDView(APIView):
+
+    renderer_classes = [JSONRenderer]
 
     def get(self, request, **kwargs):
         """
@@ -556,6 +581,8 @@ class EmvDataByIDView(APIView):
 
 class EmvDataByIdMethodView(APIView):
 
+    renderer_classes = [JSONRenderer]
+
     def get(self, request, **kwargs):
         """
         Get a JSON file with EMV data for an entry by DB ID and method
@@ -567,15 +594,29 @@ class EmvDataByIdMethodView(APIView):
             method = self.kwargs['method']
         if 'db_id' in self.kwargs:
             db_id = self.kwargs['db_id'].lower()
-            if db_id.startswith('emd-'):
-                path = "%s/%s" % (EMDB_DATA_DIR, db_id)
-                pattern = "*%s.json" % (method, )
+            if method == 'mapq':
+                # data source: Grigore Pintilie
+                path = os.path.join(LOCAL_DATA_DIR, 'q-score', 'json')
+                if db_id.startswith('emd-'):
+                    pattern = "%s*_emv_%s.json" % (
+                        db_id.replace("emd-", "emd_"), method,)
+                else:
+                    pattern = "*%s_emv_%s.json" % (db_id, method,)
+            elif method == 'daq':
+                # data source: Daisuke Kihara
+                path = os.path.join(LOCAL_DATA_DIR, 'daq', 'json', '**')
+                if db_id.startswith('emd-'):
+                    pattern = "%s*_emv_%s.json" % (db_id, method,)
+                else:
+                    pattern = "*%s_emv_%s.json" % (db_id, method,)
             else:
-                path = "%s/%s" % (EMDB_DATA_DIR, 'emd-*')
-                pattern = "*%s_emv_%s.json" % (
-                    db_id,
-                    method,
-                )
+                if db_id.startswith('emd-'):
+                    path = "%s/%s" % (EMDB_DATA_DIR, db_id)
+                    pattern = "*%s.json" % (method, )
+                else:
+                    path = "%s/%s" % (EMDB_DATA_DIR, 'emd-*')
+                    pattern = "*%s_emv_%s.json" % (db_id, method,)
+
         data_files = _getEmvDataFiles(path, pattern)
         # there should be only one file for entry/method
         if len(data_files) != 1:
@@ -596,7 +637,7 @@ def _getConsensusData(db_id):
     fileName = os.path.join(
         EMDB_DATA_DIR, db_id, "%s_emv_%s.json" % (
             db_id,
-            'localresolution_stats',
+            'localresolution_cons',
         ))
     try:
         with open(fileName, 'r') as jfile:
@@ -609,6 +650,8 @@ def _getConsensusData(db_id):
 
 class EmvDataLocalresConsensus(APIView):
 
+    renderer_classes = [JSONRenderer]
+
     def get(self, request, **kwargs):
         """
         Get the consensus of all EMV local resolution methods by DB ID
@@ -618,7 +661,26 @@ class EmvDataLocalresConsensus(APIView):
             if 'db_id' in self.kwargs:
                 db_id = self.kwargs['db_id'].lower()
             jdata = _getConsensusData(db_id)
-            return Response(jdata, status=status.HTTP_200_OK)
+
+            jout = {
+                "resource": jdata['resource'],
+                "method_type": jdata["method_type"],
+                "software_version": jdata["software_version"],
+                "entry": jdata["entry"],
+                "data": {
+                    "sampling": jdata["data"]["sampling"],
+                    "threshold": 2,
+                },
+                "warnings": jdata["warnings"],
+                "errors": jdata["errors"]
+            }
+            metrics = []
+            for metric in jdata["data"]["metrics"]:
+                metric["unit"] = "Angstrom"
+                metrics.append(metric)
+            jout["data"]["metrics"] = metrics
+
+            return Response(jout, status=status.HTTP_200_OK)
         except (Exception) as exc:
             logger.exception(exc)
             return not_found_resp(db_id)
@@ -628,8 +690,7 @@ def _getLocalResDBRank(resolution):
     """
         Find the position (rank) in the local resolution stats file by resolution
     """
-    dataFile = os.path.join(EMDB_DATA_DIR, 'statistics',
-                                   LOCALRES_HISTORY_FILE)
+    dataFile = os.path.join(EMDB_DATA_DIR, 'statistics', LOCALRES_HISTORY_FILE)
     resolutionList = []
     try:
         with open(dataFile) as csv_file:
@@ -652,6 +713,8 @@ def _getLocalResDBRank(resolution):
 
 class EmvDataLocalresRank(APIView):
 
+    renderer_classes = [JSONRenderer]
+
     def get(self, request, **kwargs):
         """
         Get position of query entry respect all entries in DB ordered by the consensus of all localresolution EMV
@@ -661,8 +724,10 @@ class EmvDataLocalresRank(APIView):
             if 'db_id' in self.kwargs:
                 db_id = self.kwargs['db_id'].lower()
             jdata = _getConsensusData(db_id)
-            resolution = jdata['data']['metrics']['resolutionMedian']
-            rank = _getLocalResDBRank(resolution)
+            for metric in jdata['data']['metrics']:
+                if 'resolutionMedian' in metric:
+                    resolution = metric['resolutionMedian']
+                    rank = _getLocalResDBRank(resolution)
         except (Exception) as exc:
             logger.exception(exc)
             return (not_found_resp(db_id))
@@ -693,32 +758,33 @@ class OntologyViewSet(viewsets.ModelViewSet):
     filter_backends = (filters.DjangoFilterBackend, SearchFilter,
                        OrderingFilter)
 
+
 class OntologyTermViewSet(viewsets.ReadOnlyModelViewSet):
 
     serializer_class = OntologyTermSerializer
 
     def get_queryset(self, **kwargs):
-        
+
         ont_id = self.kwargs['ont_id']
 
         # If term_id is specified in url, filter ontology terms
         try:
             term_id = self.kwargs['term_id']
-            queryset = OntologyTerm.objects.filter(
-                source__dbId=ont_id).filter(dbId=term_id)
+            queryset = OntologyTerm.objects.filter(source__dbId=ont_id).filter(
+                dbId=term_id)
             return queryset
         # If not, provide all ontology terms
         except KeyError:
-            queryset = OntologyTerm.objects.filter(
-                source__dbId=ont_id)
+            queryset = OntologyTerm.objects.filter(source__dbId=ont_id)
             return queryset
+
 
 class AllOntologyTermViewSet(viewsets.ReadOnlyModelViewSet):
 
     serializer_class = OntologyTermSerializer
 
     def get_queryset(self, **kwargs):
-        
+
         # If term_id is specified in url, filter ontology terms
         try:
             term_id = self.kwargs['term_id']
@@ -729,18 +795,90 @@ class AllOntologyTermViewSet(viewsets.ReadOnlyModelViewSet):
             queryset = OntologyTerm.objects.all()
             return queryset
 
+
 class OrganismViewSet(viewsets.ReadOnlyModelViewSet):
 
     serializer_class = OrganismSerializer
 
     def get_queryset(self, **kwargs):
-        
+
         # If ncbi_taxonomy_id is specified in url, filter Organisms
         try:
             ncbi_taxonomy_id = self.kwargs['ncbi_taxonomy_id']
-            queryset = Organism.objects.filter(ncbi_taxonomy_id=ncbi_taxonomy_id)
+            queryset = Organism.objects.filter(
+                ncbi_taxonomy_id=ncbi_taxonomy_id)
             return queryset
         # If not, provide all Organisms
         except KeyError:
             queryset = Organism.objects.all()
             return queryset
+
+
+class GetApiVersion(APIView):
+    """
+    Get API version
+    """
+
+    def get(self, request, format=None):
+        """
+        Get full info on API version
+        """
+        appVersionMajor = getattr(settings, "APP_VERSION_MAJOR", "")
+        appVersionMinor = getattr(settings, "APP_VERSION_MINOR", "")
+        appVersionPatch = getattr(settings, "APP_VERSION_PATCH", "")
+        appEnvironment = getattr(settings, "ENVIRONMENT", "")
+        resp = {
+            'API_Version':
+            appVersionMajor + '.' + appVersionMinor + '.' + appVersionPatch +
+            '-' + appEnvironment,
+            'Type':
+            'Semantic Versioning 2.0.0',
+            'Major':
+            appVersionMajor,
+            'Minor':
+            appVersionMinor,
+            'Patch':
+            appVersionPatch,
+            'Environment':
+            appEnvironment
+        }
+
+        return Response(resp)
+
+
+class NMRViewSet(viewsets.ModelViewSet):
+    """
+    This viewset automatically provides `list` and `detail` actions.
+    """
+    serializer_class = FeatureRegionEntitySerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    filter_backends = (filters.DjangoFilterBackend, SearchFilter,
+                       OrderingFilter)
+
+    def get_queryset(self, **kwargs):
+
+        # Get URL parameters uniprot_id, dataType and ligand_id if they have been specified
+        uniprot_id = self.kwargs.get('uniprot_id', None)
+        dataType = self.kwargs.get('dataType', None)
+        ligand_id = self.kwargs.get('ligand_id', None)
+
+        # Get query parameters start and end
+        start = self.request.query_params.get('start', None)
+        end = self.request.query_params.get('end', None)
+
+        # Get NMR queryset
+        queryset = FeatureRegionEntity.objects.filter(
+            featureType__dataSource__exact='The COVID19-NMR Consortium').order_by('id')
+
+        # Filter queryset depending on URL parameters
+        if uniprot_id:
+            queryset = queryset.filter(uniprotentry=uniprot_id)
+        if dataType:
+            queryset = queryset.filter(details__type=dataType)
+        if ligand_id:
+            queryset = queryset.filter(ligandentity=ligand_id)
+
+        if start and end:
+            queryset = queryset.filter(start__lte=end, end__gte=start)
+
+        return queryset

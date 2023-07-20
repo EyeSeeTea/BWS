@@ -447,8 +447,40 @@ class PdbEntryDetails(models.Model):
                                related_name='details', on_delete=models.CASCADE)
 
     refdoc = models.ManyToManyField(Publication)
+    
+# class PTMEntity(models.Model):
+#     '''
+#     Protein entities that arise from other proteins' post-translational modifications (PTMs) and/or 
+#     processing events and do not have UniProt id associated.
+#     '''
+#     name = models.CharField(max_length=255, blank=False,
+#                             null=False, default='')
+#     description = models.CharField(
+#         max_length=5000, blank=True, null=True, default='')
+#     start = models.IntegerField()
+#     end = models.IntegerField()
+#     uniprotentry = models.ForeignKey(UniProtEntry,
+#                               related_name='PTMs', on_delete=models.CASCADE)
 
+#     def __str__(self):
+#         return '%s' % (self.name)
+    
+# class DomainEntity(models.Model):
+#     '''
+#     Domain or region of interest for a specific protein
+#     '''
+#     name = models.CharField(max_length=255, blank=False,
+#                             null=False, default='')
+#     description = models.CharField(
+#         max_length=5000, blank=True, null=True, default='')
+#     start = models.IntegerField()
+#     end = models.IntegerField()
+#     uniprotentry = models.ForeignKey(UniProtEntry,
+#                               related_name='domains_regions', on_delete=models.CASCADE)
 
+#     def __str__(self):
+#         return '%s' % (self.name)
+    
 class FeatureType(models.Model):
     '''
         Feature type
@@ -472,6 +504,14 @@ class FeatureEntity(models.Model):
     description = models.CharField(max_length=5000, blank=True, null=True)
     pdbentry = models.ForeignKey(PdbEntry,
                                  related_name='%(class)s_features', null=True, blank=True, on_delete=models.CASCADE)
+    uniprotentry = models.ForeignKey(UniProtEntry,
+                                 related_name='%(class)s_features', null=True, blank=True, on_delete=models.CASCADE)
+    ligandentity = models.ForeignKey(LigandEntity,
+                                 related_name='%(class)s_features', null=True, blank=True, on_delete=models.CASCADE)
+    # ptmentity = models.ForeignKey(PTMEntity,
+    #                              related_name='%(class)s_features', null=True, blank=True, on_delete=models.CASCADE)
+    # domainentity = models.ForeignKey(DomainEntity,
+    #                              related_name='%(class)s_features', null=True, blank=True, on_delete=models.CASCADE)
     externalLink = models.URLField(max_length=200, default='', blank=True)
 
     class Meta:
@@ -484,9 +524,8 @@ class FeatureModelEntity(FeatureEntity):
     '''
     details = models.CharField(max_length=255, blank=True, default='')
 
-    class Meta:
-        abstract = True
-
+    # class Meta:
+    #     abstract = True
 
 class FeatureRegionEntity(FeatureEntity):
     '''
@@ -494,7 +533,10 @@ class FeatureRegionEntity(FeatureEntity):
     '''
     start = models.IntegerField()
     end = models.IntegerField()
+    details = models.JSONField(blank=True, null=True, default=list)
 
+    def __str__(self):
+        return '%s (FeatureRegionEntity)' % (self.name)
 
 class AssayEntity(FeatureModelEntity):
 
@@ -521,7 +563,7 @@ class ScreenEntity(models.Model):
     dbId = models.CharField(max_length=50, blank=False,
                             default='', primary_key=True)
     name = models.CharField(max_length=255, blank=False, default='')
-    description = models.CharField(max_length=255, blank=True, default='')
+    description = models.CharField(max_length=5000, blank=True, default='')
     screenTypes = models.ManyToManyField(OntologyTerm, related_name='type_term_screens')
     technologyTypes = models.ManyToManyField(OntologyTerm, related_name='technology_term_screens')
     imagingMethods = models.ManyToManyField(OntologyTerm, related_name='imaging_term_screens')
