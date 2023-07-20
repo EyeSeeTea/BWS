@@ -575,6 +575,8 @@ class EmvDataByIDView(APIView):
 
 class EmvDataByIdMethodView(APIView):
 
+    renderer_classes = [JSONRenderer]
+
     def get(self, request, **kwargs):
         """
         Get a JSON file with EMV data for an entry by DB ID and method
