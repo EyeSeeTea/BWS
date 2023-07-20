@@ -502,6 +502,8 @@ def _getJsonEMVEntry(file):
 
 class EmvDataView(APIView):
 
+    renderer_classes = [JSONRenderer]
+
     def get(self, request, **kwargs):
         """
         Get a list of all EMV entries
@@ -519,6 +521,8 @@ class EmvDataView(APIView):
 
 
 class EmvDataByMethodView(APIView):
+
+    renderer_classes = [JSONRenderer]
 
     def get(self, request, **kwargs):
         """
@@ -544,6 +548,8 @@ class EmvDataByMethodView(APIView):
 
 
 class EmvDataByIDView(APIView):
+
+    renderer_classes = [JSONRenderer]
 
     def get(self, request, **kwargs):
         """
@@ -592,7 +598,8 @@ class EmvDataByIdMethodView(APIView):
                 # data source: Grigore Pintilie
                 path = os.path.join(LOCAL_DATA_DIR, 'q-score', 'json')
                 if db_id.startswith('emd-'):
-                    pattern = "%s*_emv_%s.json" % (db_id.replace("emd-", "emd_"), method,)
+                    pattern = "%s*_emv_%s.json" % (
+                        db_id.replace("emd-", "emd_"), method,)
                 else:
                     pattern = "*%s_emv_%s.json" % (db_id, method,)
             elif method == 'daq':
@@ -642,6 +649,8 @@ def _getConsensusData(db_id):
 
 
 class EmvDataLocalresConsensus(APIView):
+
+    renderer_classes = [JSONRenderer]
 
     def get(self, request, **kwargs):
         """
@@ -703,6 +712,8 @@ def _getLocalResDBRank(resolution):
 
 
 class EmvDataLocalresRank(APIView):
+
+    renderer_classes = [JSONRenderer]
 
     def get(self, request, **kwargs):
         """
