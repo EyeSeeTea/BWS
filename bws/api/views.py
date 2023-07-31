@@ -4,7 +4,7 @@ import json
 import csv
 import logging
 import requests
-from django.http import HttpResponse, HttpResponseNotFound
+from django.http import HttpResponse, HttpResponseNotFound, FileResponse
 from .serializers import *
 from .models import *
 from .utils import PdbEntryAnnFromMapsUtils
@@ -630,6 +630,85 @@ class EmvDataByIdMethodView(APIView):
         with open(fileName, 'r') as jfile:
             resp = json.load(jfile)
         return Response(resp)
+
+
+class EmvSourceDataByIdMethodView(APIView):
+
+    renderer_classes = [JSONRenderer]
+
+    def get(self, request, **kwargs):
+        """
+        Get a file with EMV source data for an entry by DB ID and method
+        db_id : PDB | EMDB
+        method : deepres | monores | blocres | mapq | fscq | daq
+        format : json | pdb | cif
+        """
+        fileformat = self.kwargs['fileformat'] if 'fileformat' in self.kwargs else ""
+        method = self.kwargs['method'] if 'method' in self.kwargs else ""
+        db_id = self.kwargs['db_id'].lower() if 'db_id' in self.kwargs else ""
+
+        path = os.path.join(LOCAL_DATA_DIR)
+        pattern = "*"
+        data_files = []
+
+        if method == 'mapq':
+            if fileformat == 'mmcif':
+                # original data from Grigore Pintilie
+                path = os.path.join(
+                    LOCAL_DATA_DIR, 'q-score', 'emdb_qscores')
+                if db_id.startswith('emd-'):
+                    pattern = "%s*.cif" % db_id.replace("emd-", "emd_")
+                else:
+                    pattern = "*pdb_%s.cif" % db_id
+
+            elif fileformat == 'json':
+                # reformated data from Grigore Pintilie
+                path = os.path.join(LOCAL_DATA_DIR, 'q-score', 'json')
+                if db_id.startswith('emd-'):
+                    pattern = "%s*_emv_%s.json" % (
+                        db_id.replace("emd-", "emd_"), method,)
+                else:
+                    pattern = "*%s_emv_%s.json" % (db_id, method,)
+
+        elif method == 'daq':
+            if fileformat == 'pdb':
+                # original data from Kihara Lab
+                path = os.path.join(LOCAL_DATA_DIR, 'daq',
+                                    'data_20230426', '**')
+                if db_id.startswith('emd-'):
+                    pattern = "%s*.pdb" % db_id.replace("emd-", "")
+                else:
+                    pattern = "*%s*.pdb" % db_id
+            elif fileformat == 'json':
+                # reformated data from Kihara Lab
+                path = os.path.join(LOCAL_DATA_DIR, 'daq', 'json', '**')
+                if db_id.startswith('emd-'):
+                    pattern = "%s*_emv_%s.json" % (db_id, method,)
+                else:
+                    pattern = "*%s_emv_%s.json" % (db_id, method,)
+
+        data_files = _getEmvDataFiles(path, pattern)
+        content = ""
+        data_files = [f for f in data_files if os.path.isfile(f)]
+        for data_file in data_files:
+            if data_file.endswith('json'):
+                with open(data_file, 'r') as jfile:
+                    resp = json.load(jfile)
+                return Response(resp)
+            else:
+                with open(data_file, 'r') as tfile:
+                    for line in tfile:
+                        content += line
+
+        if content:
+            response = HttpResponse(content, content_type='text/plain')
+            return response
+        else:
+            content = {
+                "request": "EMV: %s" % (request.path,),
+                "detail": "Entry not found",
+            }
+            return Response(content, status=status.HTTP_404_NOT_FOUND)
 
 
 def _getConsensusData(db_id):
