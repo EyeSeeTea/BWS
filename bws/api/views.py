@@ -18,6 +18,7 @@ from django_filters import rest_framework as filters
 from rest_framework.renderers import JSONRenderer
 from datetime import datetime
 from django.shortcuts import get_object_or_404
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -709,6 +710,70 @@ class EmvSourceDataByIdMethodView(APIView):
                 "detail": "Entry not found",
             }
             return Response(content, status=status.HTTP_404_NOT_FOUND)
+
+
+class EmvMapQDataAveragesView(APIView):
+
+    renderer_classes = [JSONRenderer]
+
+    def get(self, request, **kwargs):
+        """
+        Get Average Q-score and Estimated Resolution for EMV MapQ source data for an entry by DB ID
+        db_id : PDB | EMDB
+        method : mapq
+        """
+        db_id = self.kwargs['db_id'].lower() if 'db_id' in self.kwargs else ""
+
+        data_path = os.path.join(LOCAL_DATA_DIR, 'q-score')
+        data_filename = "emd_qscores.txt"
+        dataFile = os.path.join(data_path, data_filename)
+        resource = "EMV-MapQ-Averages"
+        method_type = "MapQ"
+        software_version = getattr(settings, "APP_VERSION_MAJOR", "") + '.' + getattr(
+            settings, "APP_VERSION_MINOR", "") + '.' + getattr(settings, "APP_VERSION_PATCH", "")
+        proc_date = time.strftime(
+            '%Y-%m-%d', time.gmtime(os.path.getmtime(dataFile)))
+        source_data = {
+            "method": "MapQ - Q-score - Grigore Pintilie",
+            "citation": "Pintilie, G. & Chiu, W. (2021). Validation, analysis and annotation of cryo-EM structures. Acta Cryst. D77, 1142–1152.",
+            "doi": "doi:10.1107/S2059798321006069"
+        }
+        content = None
+        try:
+            with open(dataFile) as csv_file:
+                csv_reader = csv.reader(csv_file, delimiter='\t')
+                for row in csv_reader:
+                    if db_id.startswith('emd'):
+                        entry_id = row[0].lower().replace('emd_', '')
+                    else:
+                        entry_id = row[1]
+
+                    if db_id.replace('emd-', '') == entry_id:
+                        content = {
+                            "resource": resource,
+                            "methodType": method_type,
+                            "softwareVersion": software_version,
+                            "entry": {
+                                "volumeMap": "EMD-%s" % row[0].replace('emd_', ''),
+                                "atomicModel": row[1],
+                                "date": proc_date,
+                                "source": source_data
+                            },
+                            "data": {
+                                "averageQScore": float(row[2]),
+                                "estimatedResolution": float(row[3])
+                            }
+                        }
+                        return Response(content, status=status.HTTP_200_OK)
+
+        except (Exception) as exc:
+            logger.exception(exc)
+
+        content = {
+            "request": "EMV: %s" % (request.path,),
+            "detail": "Entry not found",
+        }
+        return Response(content, status=status.HTTP_404_NOT_FOUND)
 
 
 def _getConsensusData(db_id):
