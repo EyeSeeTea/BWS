@@ -31,7 +31,7 @@ load_dotenv(os.path.join(BASE_DIR, '.env'))
 SECRET_KEY = 'SECRET_KEY'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ['*']
 
@@ -177,7 +177,7 @@ LOGGING = {
 # update with every release
 APP_VERSION_MAJOR = '0'
 APP_VERSION_MINOR = '4'
-APP_VERSION_PATCH = '2'
+APP_VERSION_PATCH = '3'
 
 ENVIRONMENT =  'DEV' if DEBUG else 'PROD'
 
