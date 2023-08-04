@@ -41,46 +41,59 @@ def pdb2json(emdb_entry, pdb_entry, chainId, input_file):
                 # read fields
                 # 0....v...10....v...20....v...30....v...40....v...50....v...60....v...70....v...80
                 # 0....v....|....v....|....v....|....v....|....v....|....v....|....v....|....v....|
-                # ATOM      1  N   ASN a   8      25.537   3.945 -10.152  1.00 -0.01           N
-                # ATOM      2  CA  ASN a   8      26.474   5.086 -10.154  1.00 -0.01           C
-                # ATOM      3  C   ASN a   8      26.925   5.322  -8.740  1.00 -0.01           C
-                # ATOM      4  O   ASN a   8      26.182   5.070  -7.789  1.00 -0.01           O
-                # ATOM      6  CG  ASN S  13      12.406  59.933  -5.158  1.00  0.40           C
-                # ATOM      7  OD1 ASN S  13      12.478  58.711  -5.318  1.00  0.40           O
-                # ATOM      8  ND2 ASN S  13      12.017  60.804  -6.138  1.00  0.40           N
-                # ATOM      9  N   THR S  14      14.666  63.074  -4.407  1.00  0.18           N
-                # ATOM     10  CA  THR S  14      15.054  64.129  -5.275  1.00  0.18           C
+                # ATOM      1  N   LYS a   3     137.151 284.625 191.025  1.00 -0.15           N  
+                # ATOM      2  CA  LYS a   3     137.054 283.137 191.000  1.00 -0.15           C  
+                # ATOM      3  C   LYS a   3     136.248 282.626 192.185  1.00 -0.15           C  
+                # ATOM      4  O   LYS a   3     135.725 281.512 192.154  1.00 -0.15           O  
+                # ATOM      5  CB  LYS a   3     138.450 282.511 191.066  1.00 -0.15           C  
+                # ATOM      6  CG  LYS a   3     139.408 283.009 190.010  1.00 -0.15           C  
+                # ATOM      7  CD  LYS a   3     139.016 282.529 188.633  1.00 -0.15           C  
+                # ATOM      8  CE  LYS a   3     139.452 283.537 187.603  1.00 -0.15           C  
+                # ATOM      9  NZ  LYS a   3     138.766 284.840 187.834  1.00 -0.15           N  
+                # ATOM     10  N   LEU a   4     136.140 283.444 193.226  1.00 -0.14           N  
+                # ATOM     11  CA  LEU a   4     135.431 283.021 194.422  1.00 -0.14           C  
+                # ATOM     12  C   LEU a   4     134.113 283.719 194.744  1.00 -0.14           C  
+                # ATOM     13  O   LEU a   4     133.072 283.068 194.814  1.00 -0.14           O  
+                # ATOM     14  CB  LEU a   4     136.364 283.126 195.631  1.00 -0.14           C  
+                # ATOM     15  CG  LEU a   4     137.712 282.402 195.524  1.00 -0.14           C  
+                # ATOM     16  CD1 LEU a   4     138.450 282.507 196.850  1.00 -0.14           C  
+                # ATOM     17  CD2 LEU a   4     137.498 280.941 195.148  1.00 -0.14           C  
+                # ATOM     18  N   THR a   5     134.143 285.032 194.945  1.00 -0.09           N  
+                # ATOM     19  CA  THR a   5     132.918 285.739 195.298  1.00 -0.09           C  
+                # ATOM     20  C   THR a   5     132.340 286.698 194.266  1.00 -0.09           C  
+                # ATOM     21  O   THR a   5     132.643 287.892 194.248  1.00 -0.09           O  
+                # ATOM     22  CB  THR a   5     133.091 286.495 196.624  1.00 -0.09           C  
+                # ATOM     23  OG1 THR a   5     134.251 287.331 196.544  1.00 -0.09           O  
+                # ATOM     24  CG2 THR a   5     133.244 285.512 197.776  1.00 -0.09           C  
+
                 group_PDB = line[:4]
                 atom_id = line[5:11]
                 atom_symbol = line[13:16]
-                label_comp_id = line[17:20]
-                label_asym_id = line[21:23]
-                label_seq_id = line[23:26]
+                label_comp_id = line[17:20] # residue name
+                label_asym_id = line[21:23] # chain name (provided by the author)
+                label_seq_id = line[23:26] # residue seq number (provided by the author)
                 Cartn_x = line[30:38]
                 Cartn_y = line[38:46]
                 Cartn_z = line[46:54]
                 occupancy = line[54:60]
-                daq_score = float(line[60:66])
+                daq_score = line[60:66] # DAQ score mean value for the whole residue
                 auth_atom_id = line[77:]
 
-                # get data
-                if current_residue != label_seq_id:
-                    if current_residue:
-                        # save current residue data
-                        res_values.append(daq_score)
-                        mean_score = numpy.mean(res_values)
-                        residue_data["scoreValue"] = ' {0:.4f}'.format(
-                            mean_score)
-                        chain_data["seqData"].append(residue_data)
-                    # start new residue data set
-                    res_values = []
-                    residue_data = {
-                        "resSeqName": label_comp_id,
-                        "resSeqNumber": label_seq_id,
-                    }
-                    current_residue = label_seq_id
-                else:
-                    res_values.append(daq_score)
+                # skip data for atoms in the same residue
+                if current_residue == label_seq_id:
+                    continue
+
+                residue_data = {
+                    "resSeqName": label_comp_id,
+                    "resSeqNumber": label_seq_id,
+                }
+                residue_data["scoreValue"] = daq_score
+                chain_data["seqData"].append(residue_data)
+                # use the name provided by the author for the chain
+                if chain_data["name"] != label_asym_id:
+                    chain_data["name"] = label_asym_id
+                current_residue = label_seq_id
+
     return chain_data
 
 
@@ -188,8 +201,7 @@ def main(argv):
     parser.add_argument(
         "-l",
         "--logFile",
-        help=
-        "log file. By default 'prepareJob.log' in a dedicated 'logs' folder.",
+        help="log file. By default 'prepareJob.log' in a dedicated 'logs' folder.",
         required=False)
     parser.add_argument("-t",
                         "--test",
