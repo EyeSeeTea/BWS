@@ -1069,54 +1069,55 @@ class EmvDataByIdDaqView(APIView):
         # search db_id in the index
         entries = self.searchDbId(
             db_id, entry_list, sort=False, reversed=False)
-        # get all versions
-        versions = []
-        for entry in entries:
-            version = entry[1][3].replace('v', '').replace('-', '.')
-            if version not in versions:
-                versions.append(version)
-        # get latest version
-        latest_version = max(versions)
-        # get files of the latest version only
-        data_files = []
-        for entry in entries:
-            version = entry[1][3].replace('v', '').replace('-', '.')
-            filename = entry[0]
-            if version == latest_version:
-                data_files.append(filename)
-        # get url to download data
-        # https://daqdb.kiharalab.org/data/aa/js/22458_7jsn_B_v2-0_w9.pdb
-        urls = []
-        for data_file in data_files:
-            two_letter_hash = data_file.split("_")[1][1:3]
-            urls.append("https://daqdb.kiharalab.org/data/aa/%s/%s_%s.pdb" %
-                        (two_letter_hash, data_file, WEEK,))
+        if entries:
+            # get all versions
+            versions = []
+            for entry in entries:
+                version = entry[1][3].replace('v', '').replace('-', '.')
+                if version not in versions:
+                    versions.append(version)
+            # get latest version
+            latest_version = max(versions)
+            # get files of the latest version only
+            data_files = []
+            for entry in entries:
+                version = entry[1][3].replace('v', '').replace('-', '.')
+                filename = entry[0]
+                if version == latest_version:
+                    data_files.append(filename)
+            # get url to download data
+            # https://daqdb.kiharalab.org/data/aa/js/22458_7jsn_B_v2-0_w9.pdb
+            urls = []
+            for data_file in data_files:
+                two_letter_hash = data_file.split("_")[1][1:3]
+                urls.append("https://daqdb.kiharalab.org/data/aa/%s/%s_%s.pdb" %
+                            (two_letter_hash, data_file, WEEK,))
 
-        if fileformat == 'pdb':
-            # original data from Kihara Lab
-            pdb_data = self.getSourceData(urls, format='pdb')
-            return HttpResponse(pdb_data, content_type='text/plain')
-        else:
-            # reformated data from Kihara Lab
-            # get JSON format
-            emv_data = {}
-            emdb_entry_num, pdb_entry, chainId, version = data_files[0].split(
-                "_")
-            emv_data = self.getEmvDataHeader(
-                'emd-' + emdb_entry_num, pdb_entry, latest_version, versions, datetime.today().strftime("%m_%Y"))
+            if fileformat == 'pdb':
+                # original data from Kihara Lab
+                pdb_data = self.getSourceData(urls, format='pdb')
+                return HttpResponse(pdb_data, content_type='text/plain')
+            else:
+                # reformated data from Kihara Lab
+                # get JSON format
+                emv_data = {}
+                emdb_entry_num, pdb_entry, chainId, version = data_files[0].split(
+                    "_")
+                emv_data = self.getEmvDataHeader(
+                    'emd-' + emdb_entry_num, pdb_entry, latest_version, versions, datetime.today().strftime("%m_%Y"))
 
-            # get data from source
-            chains_data = self.getSourceData(urls, format='json')
-            emv_data["chains"] = chains_data
+                # get data from source
+                chains_data = self.getSourceData(urls, format='json')
+                emv_data["chains"] = chains_data
 
-            if emv_data:
-                return Response(emv_data)
+                if emv_data:
+                    return Response(emv_data)
 
         content = {
             "request": "EMV: %s" % (request.path,),
             "detail": "Entry not found",
         }
-        return HttpResponseNotFound()
+        # return HttpResponseNotFound()
         return Response(content, status=status.HTTP_404_NOT_FOUND)
 
     def getSourceData(self, urls, format="json"):
