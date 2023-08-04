@@ -47,8 +47,16 @@ urlpatterns = [
     re_path(r'^emv/(?P<db_id>(\d[a-zA-Z]\w{2}|[EMD]*[emd]*-\d{4,5}))/$', views.EmvDataByIDView.as_view()),
 
     re_path(r'^emv/(?P<method>(stats|deepres|monores|blocres|mapq|fscq|daq))/$', views.EmvDataByMethodView.as_view()),
-    re_path(r'^emv/(?P<db_id>(\d[a-zA-Z]\w{2}|[EMD]*[emd]*-\d{4,5}))/(?P<method>(stats|deepres|monores|blocres|mapq|fscq|daq))/(?P<fileformat>(json|pdb|mmcif))/$', views.EmvSourceDataByIdMethodView.as_view()),
-    re_path(r'^emv/(?P<db_id>(\d[a-zA-Z]\w{2}|[EMD]*[emd]*-\d{4,5}))/(?P<method>(stats|deepres|monores|blocres|mapq|fscq|daq))/$', views.EmvDataByIdMethodView.as_view()),
+
+    # DAQ scores
+    re_path(r'^emv/(?P<db_id>(\d[a-zA-Z]\w{2}|[EMD]*[emd]*-\d{4,5}))/daq/$', views.EmvDataByIdDaqView.as_view()),
+    re_path(r'^emv/(?P<db_id>(\d[a-zA-Z]\w{2}|[EMD]*[emd]*-\d{4,5}))/daq/(?P<fileformat>(json|pdb))/$', views.EmvDataByIdDaqView.as_view()),
+    # TODO: add end-point for getting different versions
+    # re_path(r'^emv/(?P<db_id>(\d[a-zA-Z]\w{2}|[EMD]*[emd]*-\d{4,5}))/daq/(?P<version>)/$', views.EmvDataByIdDaqView.as_view()),
+    # re_path(r'^emv/(?P<db_id>(\d[a-zA-Z]\w{2}|[EMD]*[emd]*-\d{4,5}))/daq/(?P<version>)/(?P<fileformat>(json|pdb))/$', views.EmvDataByIdDaqView.as_view()),
+
+    re_path(r'^emv/(?P<db_id>(\d[a-zA-Z]\w{2}|[EMD]*[emd]*-\d{4,5}))/(?P<method>(stats|deepres|monores|blocres|mapq|fscq))/(?P<fileformat>(json|pdb|mmcif))/$', views.EmvSourceDataByIdMethodView.as_view()),
+    re_path(r'^emv/(?P<db_id>(\d[a-zA-Z]\w{2}|[EMD]*[emd]*-\d{4,5}))/(?P<method>(stats|deepres|monores|blocres|mapq|fscq))/$', views.EmvDataByIdMethodView.as_view()),
     # Average Q-score and estimated resolution
     re_path(r'^emv/(?P<db_id>(\d[a-zA-Z]\w{2}|[EMD]*[emd]*-\d{4,5}))/mapq/averages/$', views.EmvMapQDataAveragesView.as_view()),
 

@@ -1,3 +1,4 @@
+from pathlib import Path
 import glob
 import re
 import json
@@ -1026,3 +1027,225 @@ class NMRViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(start__lte=end, end__gte=start)
 
         return queryset
+
+
+# -----
+# DAQ
+# https://daqdb.kiharalab.org/download/current/entry_ids.txt
+# https://daqdb.kiharalab.org/data/aa/js/22458_7jsn_B_v1-1_w9.pdb
+WEEK = "w9"
+
+
+class EmvDataByIdDaqView(APIView):
+
+    renderer_classes = [JSONRenderer]
+
+    def get(self, request, **kwargs):
+        """
+        Get a file with EMV source data for an entry by DB ID and method
+        db_id : PDB | EMDB
+        method : daq
+        format : json
+        """
+        fileformat = self.kwargs['fileformat'] if 'fileformat' in self.kwargs else ""
+        db_id = self.kwargs['db_id'].lower() if 'db_id' in self.kwargs else ""
+        method = 'mapq'
+        data_files = []
+
+        # get the list of entries
+        # 22458_7jsn_A_v1-1
+        # 22458_7jsn_A_v2-0
+        # 22458_7jsn_B_v1-1
+        # 22458_7jsn_B_v2-0
+        # 22458_7jsn_C_v1-1
+        # 22458_7jsn_C_v2-0
+        # 22458_7jsn_D_v1-1
+        # 22458_7jsn_D_v2-0
+        # 22458_7jsn_E_v1-1
+        # 22458_7jsn_E_v2-0
+        # 22458_7jsn_F_v1-1
+        # 22458_7jsn_F_v2-0
+        entry_list = self.getDaqEntryList()
+        # search db_id in the index
+        entries = self.searchDbId(
+            db_id, entry_list, sort=False, reversed=False)
+        # get all versions
+        versions = []
+        for entry in entries:
+            version = entry[1][3].replace('v', '').replace('-', '.')
+            if version not in versions:
+                versions.append(version)
+        # get latest version
+        latest_version = max(versions)
+        # get files of the latest version only
+        data_files = []
+        for entry in entries:
+            version = entry[1][3].replace('v', '').replace('-', '.')
+            filename = entry[0]
+            if version == latest_version:
+                data_files.append(filename)
+        # get url to download data
+        # https://daqdb.kiharalab.org/data/aa/js/22458_7jsn_B_v2-0_w9.pdb
+        urls = []
+        for data_file in data_files:
+            two_letter_hash = data_file.split("_")[1][1:3]
+            urls.append("https://daqdb.kiharalab.org/data/aa/%s/%s_%s.pdb" %
+                        (two_letter_hash, data_file, WEEK,))
+
+        if fileformat == 'pdb':
+            # original data from Kihara Lab
+            pdb_data = self.getSourceData(urls, format='pdb')
+            return HttpResponse(pdb_data, content_type='text/plain')
+        else:
+            # reformated data from Kihara Lab
+            # get JSON format
+            emv_data = {}
+            emdb_entry_num, pdb_entry, chainId, version = data_files[0].split(
+                "_")
+            emv_data = self.getEmvDataHeader(
+                'emd-' + emdb_entry_num, pdb_entry, latest_version, versions, datetime.today().strftime("%m_%Y"))
+
+            # get data from source
+            chains_data = self.getSourceData(urls, format='json')
+            emv_data["chains"] = chains_data
+
+            if emv_data:
+                return Response(emv_data)
+
+        content = {
+            "request": "EMV: %s" % (request.path,),
+            "detail": "Entry not found",
+        }
+        return HttpResponseNotFound()
+        return Response(content, status=status.HTTP_404_NOT_FOUND)
+
+    def getSourceData(self, urls, format="json"):
+        pdb_data = ""
+        chains_data = []
+        for url in urls:
+            try:
+                resp = requests.get(url)
+                if resp.status_code == 200:
+                    if format == 'pdb':
+                        pdb_data += resp.text + '\n'
+                    if format == 'json':
+                        chains_data.append(self.pdb2json(resp.text))
+            except Exception as exc:
+                logger.exception(exc)
+
+        return pdb_data if pdb_data else chains_data
+
+    def getDaqEntryList(self):
+
+        url = "https://daqdb.kiharalab.org/download/current/entry_ids.txt"
+        try:
+            resp = requests.get(url)
+            if not resp.status_code == 200:
+                return []
+            return resp.text.splitlines()
+        except Exception as exc:
+            logger.exception(exc)
+
+    def searchDbId(self, db_id, entry_list, sort=True, reversed=True):
+        entries = []
+        for entry in entry_list:
+            if db_id.replace('emd-', '') in entry:
+                entries.append([entry, entry.split('_')])
+        # return entries
+        if sort:
+            return sorted(entries, key=lambda entry: entry[1][3], reverse=reversed)
+        else:
+            return entries
+
+    def pdb2json(self, input_data=""):
+
+        chain_data = {}
+        chain_data["name"] = ""
+        chain_data["seqData"] = []
+        current_residue = 0
+        for line in input_data.splitlines():
+            if (line.startswith('ATOM') or line.startswith('HETATM')):
+                # read fields
+                # 0....v...10....v...20....v...30....v...40....v...50....v...60....v...70....v...80
+                # 0....v....|....v....|....v....|....v....|....v....|....v....|....v....|....v....|
+                # ATOM      1  N   LYS a   3     137.151 284.625 191.025  1.00 -0.15           N
+                # ATOM      2  CA  LYS a   3     137.054 283.137 191.000  1.00 -0.15           C
+                # ATOM      3  C   LYS a   3     136.248 282.626 192.185  1.00 -0.15           C
+                # ATOM      4  O   LYS a   3     135.725 281.512 192.154  1.00 -0.15           O
+                # ATOM      5  CB  LYS a   3     138.450 282.511 191.066  1.00 -0.15           C
+                # ATOM      6  CG  LYS a   3     139.408 283.009 190.010  1.00 -0.15           C
+                # ATOM      7  CD  LYS a   3     139.016 282.529 188.633  1.00 -0.15           C
+                # ATOM      8  CE  LYS a   3     139.452 283.537 187.603  1.00 -0.15           C
+                # ATOM      9  NZ  LYS a   3     138.766 284.840 187.834  1.00 -0.15           N
+                # ATOM     10  N   LEU a   4     136.140 283.444 193.226  1.00 -0.14           N
+                # ATOM     11  CA  LEU a   4     135.431 283.021 194.422  1.00 -0.14           C
+                # ATOM     12  C   LEU a   4     134.113 283.719 194.744  1.00 -0.14           C
+                # ATOM     13  O   LEU a   4     133.072 283.068 194.814  1.00 -0.14           O
+                # ATOM     14  CB  LEU a   4     136.364 283.126 195.631  1.00 -0.14           C
+                # ATOM     15  CG  LEU a   4     137.712 282.402 195.524  1.00 -0.14           C
+                # ATOM     16  CD1 LEU a   4     138.450 282.507 196.850  1.00 -0.14           C
+                # ATOM     17  CD2 LEU a   4     137.498 280.941 195.148  1.00 -0.14           C
+                # ATOM     18  N   THR a   5     134.143 285.032 194.945  1.00 -0.09           N
+                # ATOM     19  CA  THR a   5     132.918 285.739 195.298  1.00 -0.09           C
+                # ATOM     20  C   THR a   5     132.340 286.698 194.266  1.00 -0.09           C
+                # ATOM     21  O   THR a   5     132.643 287.892 194.248  1.00 -0.09           O
+                # ATOM     22  CB  THR a   5     133.091 286.495 196.624  1.00 -0.09           C
+                # ATOM     23  OG1 THR a   5     134.251 287.331 196.544  1.00 -0.09           O
+                # ATOM     24  CG2 THR a   5     133.244 285.512 197.776  1.00 -0.09           C
+
+                group_PDB = line[:4]
+                atom_id = line[5:11]
+                atom_symbol = line[13:16]
+                label_comp_id = line[17:20]  # residue name
+                # chain name (provided by the author)
+                label_asym_id = line[21:23]
+                # residue seq number (provided by the author)
+                label_seq_id = line[23:26]
+                Cartn_x = line[30:38]
+                Cartn_y = line[38:46]
+                Cartn_z = line[46:54]
+                occupancy = line[54:60]
+                # DAQ score mean value for the whole residue
+                daq_score = line[60:66]
+                auth_atom_id = line[77:]
+
+                # skip data for atoms in the same residue
+                if current_residue == label_seq_id:
+                    continue
+
+                residue_data = {
+                    "resSeqName": label_comp_id,
+                    "resSeqNumber": label_seq_id,
+                }
+                residue_data["scoreValue"] = daq_score
+                chain_data["seqData"].append(residue_data)
+                # use the name provided by the author for the chain
+                chain_data["name"] = label_asym_id
+                current_residue = label_seq_id
+        return chain_data
+
+    def getEmvDataHeader(self, emdb_id, pdb_id, pdb_version, pdb_versions,  proc_date):
+        emv_data = {}
+        emv_data["resource"] = "EMV-DAQ-Scores"
+        entry_data = {
+            "volumeMap": emdb_id,
+            "atomicModel": pdb_id,
+            "pdbVersion": {"current": pdb_version,
+                           "available": pdb_versions},
+            "date": proc_date
+        }
+        source_data = {
+            "method": "DAQ-Score Database - Kihara Lab",
+            "citation":
+            "Nakamura, T., Wang, X., Terashi, G. et al. DAQ-Score Database: assessment of map-model compatibility for protein structure models from cryo-EM maps. Nat Methods 20, 775-776 (2023).",
+            "doi": "https://doi.org/10.1038/s41592-023-01876-1",
+            "source":
+            "https://daqdb.kiharalab.org/search?query=%s" % emdb_id.upper(),
+        }
+        entry_data["source"] = source_data
+        emv_data["entry"] = entry_data
+        emv_data["chains"] = []
+
+        logger.debug('EMV DAQ data header %s %s %s' %
+                     (emdb_id, pdb_id, emv_data))
+        return emv_data
