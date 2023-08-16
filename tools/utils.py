@@ -287,3 +287,11 @@ def downloadEMDB_halfMaps(emdb_id, path):
     else:
         logger.warning('File already exists %s' % outName)
     return outName
+
+
+def getFilename(path, withExt=False):
+    p = Path(path)
+    if withExt:
+        return p.name
+    else:
+        return p.stem
