@@ -34,6 +34,7 @@ def getEntryFiles(path, filename_pattern):
             data_filename = os.path.basename(data_file)
             logger.info('Found data file:  %s' % (data_filename))
             # emd_26003_pdb_7tmw.cif
+            data_filename = getFilename(data_file, withExt=False)
             emdb_prefix, emdb_entry_num, pdb_prefix, pdb_entry = data_filename.split(
                 "_")
             emdb_entry = "emd-" + emdb_entry_num
@@ -157,7 +158,7 @@ def getChainsData(data_files):
 def saveEmvData(emdbId, pdbId, emv_data):
 
     # emd-23530_7lv9_emv_aapq.json
-    json_filename = emdbId + '_' + pdbId + '_emv_mapq.json'
+    json_filename = emdbId.replace('-','_') + '_' + pdbId.lower() + '_emv_mapq.json'
     dirPath = Path(JSON_DATA_PATH)
     dirPath.mkdir(parents=True, exist_ok=True)
     json_file = dirPath.joinpath(json_filename)
