@@ -62,9 +62,10 @@ def getEmvDataHeader(emdbId, pdbId, proc_date):
     emv_data = {}
     emv_data["resource"] = RESOURCE
     entry_data = {
-        "atomicModel": emdbId,
+        "volumeMap": emdbId,
         "atomicModel": pdbId,
-        "date": proc_date
+        "date": proc_date,
+        "version": "0.4.9"
     }
     source_data = {
         "method": "MapQ - Q-score - Grigore Pintilie",
@@ -89,12 +90,19 @@ def pdb2json(emdb_entry, pdb_entry, data_file):
         current_chain = ""
         chain_data["seqData"] = []
         current_residue = 0
-        for line in lines_data:
+        res_values = []
+        residue_data = {}
+        for line in lines_data:            
             if (line.startswith('ATOM') or line.startswith('HETATM')):
                 # read fields
-                # 0....v...10....v...20....v...30....v...40....v...50....v...60....v...70....v...80
-                # 0....v....|....v....|....v....|....v....|....v....|....v....|....v....|....v....|
                 # ATOM 1    N N   . GLU A 1 399 ? 179.919 136.739 117.419 1.000 88.14  0.752039  0  400  GLU R N   1
+                # ATOM 2    C CA  . GLU A 1 399 ? 179.797 137.803 116.430 1.000 88.14  0.747516  0  400  GLU R CA  1
+                # ATOM 3    C C   . GLU A 1 399 ? 178.941 138.946 116.961 1.000 88.14  0.271305  0  400  GLU R C   1
+                # ATOM 4    O O   . GLU A 1 399 ? 179.058 140.084 116.507 1.000 88.14  0.162481  0  400  GLU R O   1
+                # ATOM 5    C CB  . GLU A 1 399 ? 179.204 137.261 115.129 1.000 88.14  0.228044  0  400  GLU R CB  1
+                # ATOM 6    C CG  . GLU A 1 399 ? 180.109 136.285 114.395 1.000 88.14  -0.228331 0  400  GLU R CG  1
+                # ATOM 7    C CD  . GLU A 1 399 ? 179.482 135.754 113.121 1.000 88.14  -0.145173 0  400  GLU R CD  1
+                # ATOM 8    O OE1 . GLU A 1 399 ? 178.294 136.049 112.874 1.000 88.14  -0.201531 0  400  GLU R OE1 1
                 # ATOM 9    O OE2 . GLU A 1 399 ? 180.178 135.042 112.367 1.000 88.14  -0.139837 -1 400  GLU R OE2 1
                 # ATOM 10   N N   . ASN A 1 400 ? 178.077 138.636 117.924 1.000 84.67  0.402624  0  401  ASN R N   1
                 group_PDB, id, type_symbol, label_atom_id, label_alt_id, \
@@ -103,19 +111,34 @@ def pdb2json(emdb_entry, pdb_entry, data_file):
                     score, pdbx_formal_charge, auth_seq_id, auth_comp_id, \
                     auth_asym_id, auth_atom_id, pdbx_PDB_model_num = line.split()
 
-                # skip data for atoms in the same residue
+                # get data
+                score = score if score != '?' else float(0)
+
                 if current_residue == auth_seq_id:
-                    continue
+                    res_values.append(float(score))
+                elif current_residue == 0:
+                    res_values.append(float(score))
+                    current_residue_name = auth_comp_id
+                    current_residue = auth_seq_id                    
+                else:
+                    # save residue data
+                    residue_data = {
+                        "resSeqName": current_residue_name,
+                        "resSeqNumber": current_residue,
+                        "scoreValue": ' {0:.4f}'.format(numpy.mean(res_values))
+                    }
+                    chain_data["seqData"].append(residue_data)
+                    # print("NEW", current_residue_name, current_residue, ' {0:.4f}'.format(numpy.mean(res_values)), res_values)
 
-                residue_data = {
-                    "resSeqName": auth_comp_id,
-                    "resSeqNumber": auth_seq_id,
-                    "scoreValue": score
-                }
-                chain_data["seqData"].append(residue_data)
-                current_residue = auth_seq_id
+                    # start new residue data set
+                    current_residue_name = auth_comp_id
+                    current_residue = auth_seq_id
+                    res_values = []
+                    res_values.append(float(score))
+                    current_residue = auth_seq_id
 
 
+                # TODO: chatch last residue of last chain
                 if current_chain != auth_asym_id:
                     if current_chain:
                         # save current chain data
@@ -125,13 +148,8 @@ def pdb2json(emdb_entry, pdb_entry, data_file):
                     chain_data = {}
                     chain_data["name"] = auth_asym_id
                     chain_data["seqData"] = []
-                    residue_data = {
-                        "resSeqName": auth_comp_id,
-                        "resSeqNumber": auth_seq_id,
-                        "scoreValue": score
-                    }
-                    chain_data["seqData"].append(residue_data)
                     current_chain = auth_asym_id
+
         chains_data.append(chain_data)
     return chains_data
 
@@ -150,7 +168,7 @@ def getChainsData(data_files):
         logger.info('Processing %s %s %s' %
                     (emdb_entry, pdb_entry, data_file))
 
-        chains_data.append(pdb2json(emdb_entry, pdb_entry, data_file))
+        chains_data = pdb2json(emdb_entry, pdb_entry, data_file)
 
     return chains_data
 
@@ -158,7 +176,7 @@ def getChainsData(data_files):
 def saveEmvData(emdbId, pdbId, emv_data):
 
     # emd-23530_7lv9_emv_aapq.json
-    json_filename = emdbId.replace('-','_') + '_' + pdbId.lower() + '_emv_mapq.json'
+    json_filename = emdbId.replace('-', '_') + '_' + pdbId.lower() + '_emv_mapq.json'
     dirPath = Path(JSON_DATA_PATH)
     dirPath.mkdir(parents=True, exist_ok=True)
     json_file = dirPath.joinpath(json_filename)
