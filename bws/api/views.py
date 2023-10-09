@@ -141,14 +141,6 @@ class PdbEntryAllAnnFromMapView(APIView, PdbEntryAnnFromMapsUtils):
 
 
 #  ######################################################################
-class EntryViewSet(viewsets.ModelViewSet):
-    """
-    This viewset automatically provides `list` and `detail` actions.
-    """
-    queryset = Entry.objects.all()
-    serializer_class = EntrySerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
-
 
 class RefinedModelMethodViewSet(viewsets.ModelViewSet):
     """
@@ -364,15 +356,6 @@ class FunPDBeEntryByPDBMethodView(APIView):
 
         return Response(status=status.HTTP_404_NOT_FOUND)
 
-
-class LigandToImageDataViewSet(viewsets.ModelViewSet):
-    """
-    This viewset automatically provides list of all ligand entries and "imageData" associated to them.
-    """
-    queryset = LigandEntity.objects.prefetch_related(
-        "well__plate__screen__assay")
-    serializer_class = LigandToImageDataSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
 
 class SampleEntitySet(viewsets.ModelViewSet):

@@ -10,13 +10,6 @@ class DataFileNestedSerializer(serializers.ModelSerializer):
         fields = ['filename', 'unique_id']
 
 
-class EntrySerializer(serializers.ModelSerializer):
-    files = DataFileNestedSerializer(many=True, read_only=True)
-
-    class Meta:
-        model = Entry
-        fields = ['entryId', 'path', 'files', 'entryType']
-
 
 class DataFileSerializer(serializers.ModelSerializer):
     data = DataFileNestedSerializer(many=True, read_only=True)
@@ -212,65 +205,6 @@ class FeatureTypeIDRSerializer(serializers.ModelSerializer):
             assay_qs = AssayEntity.objects.filter(dbId__in=unique_assayid_list)
 
             return AssayEntitySerializer(many=True,  context=context).to_representation(assay_qs)
-
-
-class LigandToImageDataSerializer(serializers.ModelSerializer):
-
-    imageData = serializers.SerializerMethodField()
-
-    class Meta:
-        model = LigandEntity
-        fields = ['IUPACInChIkey', 'name', 'ligandType', 'formula', 'formula_weight', 'details', 'altNames',
-                  'dbId', 'pubChemCompoundId', 'imageLink', 'externalLink', 'imageData']
-        depth = 6
-
-    def get_imageData(self, obj):
-
-        # Update the queryset context with the ligand ID to pass it to the rest of serializers involved (FeatureTypeIDRSerializer, AssayEntitySerializer, ScreenEntitySerializer, PlateEntitySerializer and WellEntitySerializer)
-        context = self.context
-        context.update({'ligand_entity': obj})
-
-        # Given the wells associated to a specific ligand, get the tuple of all ids associated to each well (FeatureType, AssayEntity, ScreenEntity and PlateEntity ids)
-        featureTypeId_list2, assayEntityId_list2, screenEntityId_list2, plateEntityId_list2, wellEntityId_list2 = [], [], [], [], []
-        for well in obj.well.all():
-            featureTypeId_list2.append(well.plate.screen.assay.featureType_id)
-            assayEntityId_list2.append(well.plate.screen.assay_id)
-            screenEntityId_list2.append(well.plate.screen_id)
-            plateEntityId_list2.append(well.plate_id)
-            wellEntityId_list2.append(well.dbId)
-
-        zip_list = list(zip(
-            featureTypeId_list2,
-            assayEntityId_list2,
-            screenEntityId_list2,
-            plateEntityId_list2,
-            wellEntityId_list2
-        ))
-
-        # Update the queryset context with the the list of tuples including ids associated to a ligand and pass it to the rest of serializers involved (FeatureTypeIDRSerializer, AssayEntitySerializer, ScreenEntitySerializer, PlateEntitySerializer and WellEntitySerializer)
-        context.update({
-            'zip_list': zip_list
-        })
-
-        # Get the unique list of all FeatureType IDs associated to each LigandEntity
-        featureTypeid_list = []
-        for well in zip_list:
-            featureTypeid_list.append(well[0])
-
-        unique_featureTypeid_list = list(set(featureTypeid_list))
-
-        # Given the unique list of FeatureType IDs, get queryset including all FeatureType models and pass it to FeatureTypeIDRSerializer
-        featureType_qs = FeatureType.objects.filter(
-            pk__in=unique_featureTypeid_list)
-
-        return FeatureTypeIDRSerializer(many=True, context=context).to_representation(featureType_qs)
-
-    # To avoid showing imageData field in final JSON file when there is no info associated to it (avoid "imgaData []")
-    def to_representation(self, value):
-        repr_dict = super(serializers.ModelSerializer,
-                          self).to_representation(value)
-        return OrderedDict((k, v) for k, v in repr_dict.items()
-                           if v not in [None, [], '', {}])
 
 
 class RefinedModelMethodSerializer(serializers.ModelSerializer):
