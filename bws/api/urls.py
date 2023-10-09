@@ -47,7 +47,7 @@ urlpatterns = [
 
     # DAQ scores
     re_path(r'^emv/(?P<db_id>(\d[a-zA-Z]\w{2}|[EMD]*[emd]*-\d{4,5}))/daq/$', views.EmvDataByIdDaqView.as_view()),
-    re_path(r'^emv/(?P<db_id>(\d[a-zA-Z]\w{2}|[EMD]*[emd]*-\d{4,5}))/daq/(?P<fileformat>(json|pdb))/$', views.EmvDataByIdDaqView.as_view()),
+    re_path(r'^emv/(?P<db_id>(\d[a-zA-Z]\w{2}|[EMD]*[emd]*-\d{4,5}))/daq/(?P<fileformat>(json|pdb|mmcif))/$', views.EmvDataByIdDaqView.as_view()),
     # TODO: add end-point for getting different versions
     # re_path(r'^emv/(?P<db_id>(\d[a-zA-Z]\w{2}|[EMD]*[emd]*-\d{4,5}))/daq/(?P<version>)/$', views.EmvDataByIdDaqView.as_view()),
     # re_path(r'^emv/(?P<db_id>(\d[a-zA-Z]\w{2}|[EMD]*[emd]*-\d{4,5}))/daq/(?P<version>)/(?P<fileformat>(json|pdb))/$', views.EmvDataByIdDaqView.as_view()),

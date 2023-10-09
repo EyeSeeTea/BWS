@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from pathlib import Path
 import glob
 import re
@@ -5,7 +6,7 @@ import json
 import csv
 import logging
 import requests
-from django.http import HttpResponse, HttpResponseNotFound, FileResponse
+from django.http import HttpResponse, HttpResponseNotFound
 from .serializers import *
 from .models import *
 from .utils import PdbEntryAnnFromMapsUtils
@@ -1032,9 +1033,8 @@ class EmvDataByIdDaqView(APIView):
         """
         fileformat = self.kwargs['fileformat'] if 'fileformat' in self.kwargs else ""
         db_id = self.kwargs['db_id'].lower() if 'db_id' in self.kwargs else ""
-        method = 'mapq'
+        method = 'daq'
         data_files = []
-
         # get the list of entries
         # 22458_7jsn_A_v1-1
         # 22458_7jsn_A_v2-0
@@ -1053,6 +1053,8 @@ class EmvDataByIdDaqView(APIView):
         entries = self.searchDbId(
             db_id, entry_list, sort=False, reversed=False)
         if entries:
+            emdb_id = 'EMD-' + entries[0][1][0]
+            pdb_id = entries[0][1][1]
             # get all versions
             versions = []
             for entry in entries:
@@ -1062,6 +1064,7 @@ class EmvDataByIdDaqView(APIView):
             # get latest version
             latest_version = max(versions)
             # get files of the latest version only
+            # TODO: cache these files to optimize performance
             data_files = []
             for entry in entries:
                 version = entry[1][3].replace('v', '').replace('-', '.')
@@ -1072,7 +1075,7 @@ class EmvDataByIdDaqView(APIView):
             # https://daqdb.kiharalab.org/data/aa/js/22458_7jsn_B_v2-0_w9.pdb
             urls = []
             for data_file in data_files:
-                two_letter_hash = data_file.split("_")[1][1:3]
+                two_letter_hash = pdb_id[1:3]
                 urls.append("https://daqdb.kiharalab.org/data/aa/%s/%s_%s.pdb" %
                             (two_letter_hash, data_file, WEEK,))
 
@@ -1080,6 +1083,13 @@ class EmvDataByIdDaqView(APIView):
                 # original data from Kihara Lab
                 pdb_data = self.getSourceData(urls, format='pdb')
                 return HttpResponse(pdb_data, content_type='text/plain')
+            elif fileformat == 'mmcif':
+                # reformated data from Kihara Lab
+                # get mmCif format
+                pdb_data = self.getSourceData(urls, format='pdb')
+                cif_header = self.getCifHeader(pdb_id)
+                cif_data = cif_header + '\n' + pdb_data + '\n' + '#'
+                return HttpResponse(cif_data, content_type='text/plain')
             else:
                 # reformated data from Kihara Lab
                 # get JSON format
@@ -1100,7 +1110,6 @@ class EmvDataByIdDaqView(APIView):
             "request": "EMV: %s" % (request.path,),
             "detail": "Entry not found",
         }
-        # return HttpResponseNotFound()
         return Response(content, status=status.HTTP_404_NOT_FOUND)
 
     def getSourceData(self, urls, format="json"):
@@ -1122,18 +1131,50 @@ class EmvDataByIdDaqView(APIView):
     def getDaqEntryList(self):
 
         url = "https://daqdb.kiharalab.org/download/current/entry_ids.txt"
+        cache_path = "/tmp/bws/daq"
+        cache_filename = "entry_ids.txt.cache"
+        business_days = 7
+        ndays = datetime.now().timestamp() - business_days * 86400
+        # check recent cached file exists
+        cache_file = Path(cache_path, cache_filename)
+        try:
+            logger.debug("Get the cache file %s" + str(cache_file))
+            if cache_file.exists():
+                logger.debug("Found the cache file %s" + str(cache_file))
+                stat_result = cache_file.stat()
+                modified = datetime.fromtimestamp(stat_result.st_mtime, tz=timezone.utc)
+                logger.debug("The cache file is newer than %s days: %s" % (str(business_days), modified))
+                if ndays < stat_result.st_mtime:
+                    logger.debug("Read cache file")
+                    with cache_file.open() as cf:
+                        text_content = cf.readlines()
+                    return text_content
+                logger.debug("The cache file is older than %s days: %s" % (str(business_days), modified))
+        except Exception as exc:
+            logger.exception(exc)
+
+        # get the list from source
         try:
             resp = requests.get(url)
             if not resp.status_code == 200:
                 return []
-            return resp.text.splitlines()
+            text_content = resp.text.splitlines()
+            # save a cache
+            logger.debug("Create cache path if not exists %s" % str(cache_path))
+            Path(cache_path).mkdir(parents=True, exist_ok=True)
+            logger.debug("Save the cache file %s" % cache_file)
+            with cache_file.open( mode='w') as cf:
+                for line in text_content:
+                    cf.write(line + os.linesep)
+            return text_content
         except Exception as exc:
             logger.exception(exc)
 
     def searchDbId(self, db_id, entry_list, sort=True, reversed=True):
         entries = []
         for entry in entry_list:
-            if db_id.replace('emd-', '') in entry:
+            entry = entry.replace(os.linesep, '')
+            if db_id.replace('emd-', '') in entry.strip():
                 entries.append([entry, entry.split('_')])
         # return entries
         if sort:
@@ -1177,14 +1218,16 @@ class EmvDataByIdDaqView(APIView):
                 # ATOM     23  OG1 THR a   5     134.251 287.331 196.544  1.00 -0.09           O
                 # ATOM     24  CG2 THR a   5     133.244 285.512 197.776  1.00 -0.09           C
 
-                group_PDB = line[:4]
-                atom_id = line[5:11]
-                atom_symbol = line[13:16]
-                label_comp_id = line[17:20]  # residue name
-                # chain name (provided by the author)
-                label_asym_id = line[21:23]
-                # residue seq number (provided by the author)
-                label_seq_id = line[23:26]
+                # Split the line
+                group_PDB = line[:6]
+                atom_id = line[6:11]
+                atom_symbol = line[12:16]
+                # residue name (DAQ is using the ones provided by the author)
+                label_comp_id = line[17:20]
+                # chain name (DAQ is using the ones provided by the author)
+                label_asym_id = line[21]
+                # residue seq number (DAQ is using the ones provided by the author)
+                label_seq_id = line[22:26]
                 Cartn_x = line[30:38]
                 Cartn_y = line[38:46]
                 Cartn_z = line[46:54]
@@ -1233,3 +1276,30 @@ class EmvDataByIdDaqView(APIView):
         logger.debug('EMV DAQ data header %s %s %s' %
                      (emdb_id, pdb_id, emv_data))
         return emv_data
+
+    def getCifHeader(self, pdb_id):
+        """
+        Not completly standar header
+        just the definition of the fields available in DAQ files
+        """
+        header = 'data_' + pdb_id
+        header += '\n' + '#'
+        header += '\n' + '_entry.id ' + pdb_id
+        header += '\n' + '#'
+
+        loop = 'loop_'
+        loop += '\n' + '_atom_site.group_PDB'
+        loop += '\n' + '_atom_site.id'
+        loop += '\n' + '_atom_site.label_atom_id'
+        loop += '\n' + '_atom_site.label_comp_id'
+        loop += '\n' + '_atom_site.label_asym_id'
+        loop += '\n' + '_atom_site.label_seq_id'
+        loop += '\n' + '_atom_site.Cartn_x'
+        loop += '\n' + '_atom_site.Cartn_y'
+        loop += '\n' + '_atom_site.Cartn_z'
+        loop += '\n' + '_atom_site.occupancy'
+        loop += '\n' + '_atom_site.Q-score'
+        loop += '\n' + '_atom_site.type_symbol'
+
+        header += '\n' + loop
+        return header
