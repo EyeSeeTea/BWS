@@ -15,6 +15,7 @@ INSTALLATION:
 
 DEV
 - docker-compose up --build / docker compose up --build
+- docker-compose up --build --force-recreate / - docker compose up --build --force-recreate
 - docker-compose up -d / docker compose up -d
 - docker-compose down / docker compose down
 

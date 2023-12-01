@@ -1001,7 +1001,7 @@ class NMRViewSet(viewsets.ModelViewSet):
 
         # Filter queryset depending on URL parameters
         if uniprot_id:
-            queryset = queryset.filter(uniprotentry=uniprot_id)
+            queryset = queryset.filter(uniprotentry=uniprot_id).order_by('details__type')
         if dataType:
             queryset = queryset.filter(details__type=dataType)
         if ligand_id:
@@ -1012,6 +1012,46 @@ class NMRViewSet(viewsets.ModelViewSet):
 
         return queryset
 
+class NMRTargetsViewSet(APIView):
+    """
+    This viewset automatically provides `list` and `detail` actions.
+    """
+
+    def get(self, request, uniprot_id=False):
+
+        # Get NMR target queryset
+        queryset = FeatureRegionEntity.objects.filter(
+            featureType__dataSource__exact='The COVID19-NMR Consortium').order_by('id').values('details')
+        
+        # Get entry details for all NMR entries
+        results = []
+        for entry in queryset:
+            entity = entry['details']['entity']
+            start = entry['details']['start']
+            end = entry['details']['end']
+            uniprot_acc = entry['details']['uniprot_acc']
+
+            targetDict = {
+                'entity': entity,
+                'start': start,
+                'end': end,
+                'uniprot_acc': uniprot_acc,
+            }
+            results.append(targetDict)
+
+        # Filter unique entries depending on entity name
+        unique_dict = {item['entity']: item for item in results}
+
+        # Get unique entry list
+        unique_results = list(unique_dict.values())
+
+        # Filter unique entry list if uniprot id is provided
+        if uniprot_id:
+            unique_results = [dic for dic in unique_results if dic.get('uniprot_acc') == uniprot_id]
+
+        count = len(unique_results)
+
+        return Response({'count': count, 'results': unique_results})
 
 # -----
 # DAQ
