@@ -1001,7 +1001,7 @@ class NMRViewSet(viewsets.ModelViewSet):
 
         # Filter queryset depending on URL parameters
         if uniprot_id:
-            queryset = queryset.filter(uniprotentry=uniprot_id)
+            queryset = queryset.filter(uniprotentry=uniprot_id).order_by('details__type')
         if dataType:
             queryset = queryset.filter(details__type=dataType)
         if ligand_id:
