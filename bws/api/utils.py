@@ -2906,10 +2906,19 @@ def update_NMR_binding(filepath):
                 # Find obj index in nmr list of objs given entity name and set name and description for complex-realted columns
                 entityIndx = findIndexInObjList(nmrentity_list, 'name', item1)
 
+                # Set FeatureRegionEntity start and end
+                start = nmrentity_list[entityIndx]['start']
+                end = nmrentity_list[entityIndx]['end']
+                # Get UniProt id from modelentity_list
+                uniprot_acc = nmrentity_list[entityIndx]['uniprot_acc']
+
                 name = '%s %s %s·%s' % (ligandentity.name, row, nmrentity_list[entityIndx]['name'], item2)
                 details = {
                     'type': row.replace(' ', '').lower(),
                     'entity': '%s·%s' % (nmrentity_list[entityIndx]['name'], item2),
+                    'start': start,
+                    'end': end,
+                    'uniprot_acc': uniprot_acc,
                     }
 
                 if item1 == 'NSP5':
@@ -2923,19 +2932,24 @@ def update_NMR_binding(filepath):
                 # Find obj index in nmr list of objs given entity name and set name, description and details for non-complex-realted columns
                 entityIndx = findIndexInObjList(nmrentity_list, 'name', column)
 
+                # Set FeatureRegionEntity start and end
+                start = nmrentity_list[entityIndx]['start']
+                end = nmrentity_list[entityIndx]['end']
+
+                # Get UniProt id from modelentity_list
+                uniprot_acc = nmrentity_list[entityIndx]['uniprot_acc']
+
                 name = '%s %s %s' % (ligandentity.name, row, nmrentity_list[entityIndx]['name'])
                 description = 'NMR-based detection of fragment %s %s to target %s.' % (ligandentity.name, row.lower(), nmrentity_list[entityIndx]['verbose_name'])
                 details = {
                     'type': row.replace(' ', '').lower(),
                     'entity': nmrentity_list[entityIndx]['name'],
+                    'start': start,
+                    'end': end,
+                    'uniprot_acc': uniprot_acc,
                     }
 
-            # Set FeatureRegionEntity start and end
-            start= nmrentity_list[entityIndx]['start']
-            end = nmrentity_list[entityIndx]['end']
-
-            # Get UniProt id from modelentity_list to get UniProtEntry
-            uniprot_acc = nmrentity_list[entityIndx]['uniprot_acc']
+            # Get UniProtEntry given a uniprot_id
             uniprotentry = getUniProtEntry(uniprot_acc, '',)
 
             # Create FeatureRegionEntity
