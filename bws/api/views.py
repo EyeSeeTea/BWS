@@ -997,7 +997,7 @@ class NMRViewSet(viewsets.ModelViewSet):
 
         # Get NMR queryset
         queryset = FeatureRegionEntity.objects.filter(
-            featureType__dataSource__exact='The COVID19-NMR Consortium').order_by('id')
+            featureType__dataSource__exact='The COVID19-NMR Consortium').order_by('details__type')
 
         # Filter queryset depending on URL parameters
         if uniprot_id:
