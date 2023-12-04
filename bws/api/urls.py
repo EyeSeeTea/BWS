@@ -5,9 +5,6 @@ from django.conf import settings
 import debug_toolbar
 
 router = DefaultRouter()
-# router.register(r'datafiles', views.EntryViewSet)
-router.register(r'ligandToImageData',
-                views.LigandToImageDataViewSet, basename=models.LigandEntity)
 router.register(r'topics', views.TopicViewSet)
 router.register(r'topicStructures', views.StructureToTopicViewSet)
 router.register(r'refinedModelSources', views.RefinedModelSourceViewSet)
@@ -78,6 +75,8 @@ urlpatterns = [
 
     # NMR annotations end-points
     re_path(r'^nmr/$', views.NMRViewSet.as_view({'get': 'list'})),
+    re_path(r'^nmr/targets/$', views.NMRTargetsViewSet.as_view()),
+    re_path(r'^nmr/targets/(?P<uniprot_id>[OPQ][0-9][A-Z0-9]{3}[0-9]|[A-NR-Z][0-9]([A-Z][A-Z0-9]{2}[0-9]){1,2})/$', views.NMRTargetsViewSet.as_view()),
     re_path(r'^nmr/(?P<uniprot_id>[OPQ][0-9][A-Z0-9]{3}[0-9]|[A-NR-Z][0-9]([A-Z][A-Z0-9]{2}[0-9]){1,2})/$', views.NMRViewSet.as_view({'get': 'list'})),
     re_path(r'^nmr/(?P<uniprot_id>[OPQ][0-9][A-Z0-9]{3}[0-9]|[A-NR-Z][0-9]([A-Z][A-Z0-9]{2}[0-9]){1,2})/(?P<dataType>(binding|notbinding|docking))/$', views.NMRViewSet.as_view({'get': 'list'})),
     re_path(r'^nmr/(?P<uniprot_id>[OPQ][0-9][A-Z0-9]{3}[0-9]|[A-NR-Z][0-9]([A-Z][A-Z0-9]{2}[0-9]){1,2})/(?P<dataType>(binding|notbinding|docking))/(?P<ligand_id>[0-9A-Z\-]+)/$', views.NMRViewSet.as_view({'get': 'list'})),
