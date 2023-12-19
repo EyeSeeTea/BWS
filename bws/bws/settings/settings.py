@@ -179,7 +179,7 @@ LOGGING = {
 # update with every release
 APP_VERSION_MAJOR = '0'
 APP_VERSION_MINOR = '4'
-APP_VERSION_PATCH = '11'
+APP_VERSION_PATCH = '12'
 
 ENVIRONMENT =  'DEV' if DEBUG else 'PROD'
 
