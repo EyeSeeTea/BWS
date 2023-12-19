@@ -10,7 +10,7 @@ from django.http import HttpResponse, HttpResponseNotFound
 from .serializers import *
 from .models import *
 from .utils import PdbEntryAnnFromMapsUtils
-from rest_framework import status, viewsets, permissions, generics
+from rest_framework import status, viewsets, permissions, generics, mixins
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from .dataPaths import *
@@ -143,7 +143,9 @@ class PdbEntryAllAnnFromMapView(APIView, PdbEntryAnnFromMapsUtils):
 
 #  ######################################################################
 
-class RefinedModelMethodViewSet(viewsets.ModelViewSet):
+class RefinedModelMethodViewSet(viewsets.GenericViewSet,
+    mixins.ListModelMixin, mixins.RetrieveModelMixin
+    ):
     """
     This viewset automatically provides `list` and `detail` actions.
     """
@@ -156,7 +158,9 @@ class RefinedModelMethodViewSet(viewsets.ModelViewSet):
     ordering = ['name']
 
 
-class RefinedModelSourceViewSet(viewsets.ModelViewSet):
+class RefinedModelSourceViewSet(viewsets.GenericViewSet,
+    mixins.ListModelMixin, mixins.RetrieveModelMixin
+    ):
     """
     This viewset automatically provides `list` and `detail` actions.
     """
@@ -169,7 +173,9 @@ class RefinedModelSourceViewSet(viewsets.ModelViewSet):
     ordering = ['name']
 
 
-class RefinedModelViewSet(viewsets.ModelViewSet):
+class RefinedModelViewSet(viewsets.GenericViewSet,
+    mixins.ListModelMixin, mixins.RetrieveModelMixin
+    ):
     """
     This viewset automatically provides `list` and `detail` actions.
     """
@@ -183,7 +189,9 @@ class RefinedModelViewSet(viewsets.ModelViewSet):
     ordering = ['method']
 
 
-class TopicViewSet(viewsets.ModelViewSet):
+class TopicViewSet(viewsets.GenericViewSet,
+    mixins.ListModelMixin, mixins.RetrieveModelMixin
+    ):
     """
     This viewset automatically provides `list` and `detail` actions.
     """
@@ -196,7 +204,9 @@ class TopicViewSet(viewsets.ModelViewSet):
     ordering = ['name']
 
 
-class StructureToTopicViewSet(viewsets.ModelViewSet):
+class StructureToTopicViewSet(viewsets.GenericViewSet,
+    mixins.ListModelMixin, mixins.RetrieveModelMixin
+    ):
     """
     This viewset automatically provides `list` and `detail` actions.
     """
@@ -359,7 +369,9 @@ class FunPDBeEntryByPDBMethodView(APIView):
 
 
 
-class SampleEntitySet(viewsets.ModelViewSet):
+class SampleEntitySet(viewsets.GenericViewSet,
+    mixins.ListModelMixin, mixins.RetrieveModelMixin
+    ):
     """
     This viewset automatically provides `list` and `detail` actions.
     """
@@ -368,7 +380,9 @@ class SampleEntitySet(viewsets.ModelViewSet):
     serializer_class = SampleEntitySerializer
 
 
-class LigandEntityViewSet(viewsets.ModelViewSet):
+class LigandEntityViewSet(viewsets.GenericViewSet, 
+    mixins.ListModelMixin, mixins.RetrieveModelMixin
+    ):
     """
     This viewset automatically provides `list` and `detail` actions.
     """
@@ -392,7 +406,9 @@ class LigandEntityViewSet(viewsets.ModelViewSet):
     ordering = ['ligandType', 'IUPACInChIkey']
 
 
-class PdbLigandViewSet(viewsets.ModelViewSet):
+class PdbLigandViewSet(viewsets.GenericViewSet,
+    mixins.ListModelMixin, mixins.RetrieveModelMixin
+    ):
     """
     This viewset automatically provides `list` and `detail` actions.
     """
