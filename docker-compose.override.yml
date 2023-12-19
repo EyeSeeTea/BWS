@@ -8,7 +8,7 @@ services:
   # App container
   web:
     environment:
-      - DJANGO_SETTINGS_MODULE=bws.settings.development
+      - DJANGO_SETTINGS_MODULE=bws.settings.production
     ports:
       - "${APP_EXT_PORT}:8000"
     volumes:
