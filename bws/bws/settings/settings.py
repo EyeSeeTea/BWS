@@ -178,8 +178,8 @@ LOGGING = {
 # Semantic Versioning 2.0.0
 # update with every release
 APP_VERSION_MAJOR = '0'
-APP_VERSION_MINOR = '4'
-APP_VERSION_PATCH = '12'
+APP_VERSION_MINOR = '5'
+APP_VERSION_PATCH = '0'
 
 ENVIRONMENT =  'DEV' if DEBUG else 'PROD'
 
