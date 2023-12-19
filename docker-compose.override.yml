@@ -1,11 +1,11 @@
 version: "3.3"
-# 
+#
 # DEVELOPMENT ONLY SETTINGS
 # Override common settings
-# 
+#
 
 services:
-# App container
+  # App container
   web:
     environment:
       - DJANGO_SETTINGS_MODULE=bws.settings.development
@@ -16,7 +16,8 @@ services:
       - ./data:/data
       - ./tools:/tools
     command: python manage.py runserver 0.0.0.0:8000
-    entrypoint: bash -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    # entrypoint: bash -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    entrypoint: bash -c "python manage.py runserver 0.0.0.0:8000"
 
   pma:
     image: phpmyadmin/phpmyadmin:4.9
