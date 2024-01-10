@@ -670,3 +670,13 @@ class Analyses(models.Model):
 
     def __str__(self):
         return '%s (%s)' % (self.name, self.ligand)
+
+class NMRTargetToPoliprotein(models.Model):
+    uniprotentry = models.ForeignKey(UniProtEntry,
+                              related_name='uniprotentities', on_delete=models.CASCADE)
+    targetName = models.CharField(max_length=100, default='')
+    start = models.IntegerField()
+    end = models.IntegerField()
+
+    def __str__(self):
+        return '%s (%s)' % (self.targetName, self.id)

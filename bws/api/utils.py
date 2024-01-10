@@ -2834,6 +2834,25 @@ def updateFeatureRegionEntity(name, featureType, description, pdbentry, uniprote
         print(exc, os.strerror)
     return obj
 
+def updateNMRTargetToPoliprotein(uniprotentry, targetName, start, end):
+    obj = None
+    try:
+        obj, created = NMRTargetToPoliprotein.objects.update_or_create(
+            uniprotentry=uniprotentry,
+            targetName=targetName,
+            start=start,
+            end=end
+            )
+        if created:
+            logger.debug('Created new %s: %s', NMRTargetToPoliprotein.__name__, obj)
+            print('Created new', NMRTargetToPoliprotein.__name__, obj)
+        else:
+            logger.debug('Updated%s: %s', NMRTargetToPoliprotein.__name__, obj)
+            print('Updated', NMRTargetToPoliprotein.__name__, obj)
+    except Exception as exc:
+        logger.exception(exc)
+        print(exc, os.strerror)
+    return obj
 
 def update_NMR_binding(filepath):
     """
@@ -2868,7 +2887,7 @@ def update_NMR_binding(filepath):
     )
 
     # Iterate through NMR dataframe and create LigandEntity and FeatureRegionEntity
-    for column in NMRdf2.columns[8:]: # columns equal protein entities
+    for column in NMRdf2.columns[8:]: # columns for protein entities
         for index, row in NMRdf2[column].items(): # rows equal binding or not binding results
             
             # Identify value for each column row and assign a different featureType depending on it
@@ -2905,6 +2924,7 @@ def update_NMR_binding(filepath):
 
                 # Find obj index in nmr list of objs given entity name and set name and description for complex-realted columns
                 entityIndx = findIndexInObjList(nmrentity_list, 'name', item1)
+                entity = '%s·%s' % (nmrentity_list[entityIndx]['name'], item2)
 
                 # Set FeatureRegionEntity start and end
                 start = nmrentity_list[entityIndx]['start']
@@ -2915,7 +2935,7 @@ def update_NMR_binding(filepath):
                 name = '%s %s %s·%s' % (ligandentity.name, row, nmrentity_list[entityIndx]['name'], item2)
                 details = {
                     'type': row.replace(' ', '').lower(),
-                    'entity': '%s·%s' % (nmrentity_list[entityIndx]['name'], item2),
+                    'entity': entity,
                     'start': start,
                     'end': end,
                     'uniprot_acc': uniprot_acc,
@@ -2931,6 +2951,7 @@ def update_NMR_binding(filepath):
             else:
                 # Find obj index in nmr list of objs given entity name and set name, description and details for non-complex-realted columns
                 entityIndx = findIndexInObjList(nmrentity_list, 'name', column)
+                entity = nmrentity_list[entityIndx]['name']
 
                 # Set FeatureRegionEntity start and end
                 start = nmrentity_list[entityIndx]['start']
@@ -2943,7 +2964,7 @@ def update_NMR_binding(filepath):
                 description = 'NMR-based detection of fragment %s %s to target %s.' % (ligandentity.name, row.lower(), nmrentity_list[entityIndx]['verbose_name'])
                 details = {
                     'type': row.replace(' ', '').lower(),
-                    'entity': nmrentity_list[entityIndx]['name'],
+                    'entity': entity,
                     'start': start,
                     'end': end,
                     'uniprot_acc': uniprot_acc,
@@ -2951,6 +2972,14 @@ def update_NMR_binding(filepath):
 
             # Get UniProtEntry given a uniprot_id
             uniprotentry = getUniProtEntry(uniprot_acc, '',)
+
+            # Create NMRTargetToPoliprotein entry
+            updateNMRTargetToPoliprotein(
+                uniprotentry=uniprotentry,
+                targetName=entity,
+                start=start,
+                end=end
+            )
 
             # Create FeatureRegionEntity
             updateFeatureRegionEntity(
