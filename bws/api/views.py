@@ -1010,6 +1010,7 @@ class NMRViewSet(viewsets.ModelViewSet):
         # Get query parameters start and end
         start = self.request.query_params.get('start', None)
         end = self.request.query_params.get('end', None)
+        target = self.request.query_params.get('target', None)
 
         # Get NMR queryset
         queryset = FeatureRegionEntity.objects.filter(
@@ -1025,6 +1026,8 @@ class NMRViewSet(viewsets.ModelViewSet):
 
         if start and end:
             queryset = queryset.filter(start__lte=end, end__gte=start)
+        if target:
+            queryset = queryset.filter(details__entity=target)
 
         return queryset
 
