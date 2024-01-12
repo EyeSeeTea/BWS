@@ -175,7 +175,7 @@ LOGGING = {
 # Semantic Versioning 2.0.0
 # update with every release
 API_VERSION_MAJOR = "0"
-API_VERSION_MINOR = "5"
+API_VERSION_MINOR = "6"
 API_VERSION_PATCH = "0"
 
 
