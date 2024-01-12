@@ -12,31 +12,50 @@ from bws.settings import *
 from dotenv import load_dotenv
 from pathlib import Path
 
-BASE_DIR = Path(__file__).resolve().parent.parent
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'SECRET_KEY'
+# Application definition
+INSTALLED_APPS += [
+    "debug_toolbar",
+]
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+CRISPY_TEMPLATE_PACK = "bootstrap4"
 
-ALLOWED_HOSTS = ['*']
+MIDDLEWARE += [
+    "debug_toolbar.middleware.DebugToolbarMiddleware",
+    # debug_toolbar_force enable to show debug_toolbar in non- or partial-HTML views (APIs)
+    "debug_toolbar_force.middleware.ForceDebugToolbarMiddleware",
+]
 
 # Database
-# https://docs.djangoproject.com/en/3.1/ref/settings/#databases
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.mysql',
-#         'NAME': os.environ['DB_NAME'],
-#         'USER': os.environ['DB_USER_NAME'],
-#         'PASSWORD': os.environ['DB_USER_PASSWD'],
-#         'HOST': os.environ['DB_HOST'],
-#         'PORT': os.environ['DB_PORT'],
-#     }
-# }
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+    "default": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": os.path.join(BASE_DIR, "db.sqlite3"),
     }
+}
+
+RUNNING_ENVIRONMENT = "DEV" if DEBUG else "PROD"
+
+REST_FRAMEWORK = {
+    "DEFAULT_VERSION": ""
+    + API_VERSION_MAJOR
+    + "."
+    + API_VERSION_MINOR
+    + "."
+    + API_VERSION_PATCH
+    + "-"
+    + RUNNING_ENVIRONMENT,
+    "DEFAULT_RENDERER_CLASSES": [
+        "rest_framework.renderers.JSONRenderer",
+        "rest_framework.renderers.BrowsableAPIRenderer",
+    ],
+    "DEFAULT_FILTER_BACKENDS": ["django_filters.rest_framework.DjangoFilterBackend"],
+    "DEFAULT_SCHEMA_CLASS": "rest_framework.schemas.coreapi.AutoSchema",
+    "DEFAULT_PAGINATION_CLASS": "bws.pagination.StandardResultsSetPagination",
+    "PAGE_SIZE": 100,
+}
+
+
+DEBUG_TOOLBAR_CONFIG = {
+    "SHOW_TOOLBAR_CALLBACK": lambda request: True,
 }

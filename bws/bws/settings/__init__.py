@@ -1,3 +1,3 @@
 # settings/__init__.py
 
-from .settings import *
+from .base import *
