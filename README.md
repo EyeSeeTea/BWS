@@ -14,10 +14,10 @@ newgrp docker
 INSTALLATION:
 
 DEV
-- docker-compose up --build / docker compose up --build
-- docker-compose up --build --force-recreate / - docker compose up --build --force-recreate
-- docker-compose up -d / docker compose up -d
-- docker-compose down / docker compose down
+- docker-compose -f docker-compose.yml -f docker-compose.develop.yml up --build
+- docker-compose -f docker-compose.yml -f docker-compose.develop.yml up --build
+- docker-compose -f docker-compose.yml -f docker-compose.develop.yml up -d
+- docker-compose -f docker-compose.yml -f docker-compose.develop.yml down
 
  Connection to the running container "bws_web_1" in DEV
 - docker exec -it bws_web_1 /bin/bash
@@ -65,8 +65,8 @@ In the browser, append "?debug-toolbar" at the end of url.
  e.g.: http://localhost:8003/api/LigandToImageData/?debug-toolbar
 
 PROD
-- docker-compose up --build
-- docker-compose down -v
+- docker-compose -f docker-compose.yml -f docker-compose.production.yml up
+- docker-compose -f docker-compose.yml -f docker-compose.production.yml up down
 
 # Troubleshooting
  

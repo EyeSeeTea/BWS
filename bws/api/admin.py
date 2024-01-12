@@ -26,3 +26,5 @@ admin.site.register(models.PdbToEntity)
 admin.site.register(models.ModelEntity)
 admin.site.register(models.FeatureRegionEntity)
 admin.site.register(models.FeatureModelEntity)
+admin.site.register(models.NMRTargetToPoliprotein)
+

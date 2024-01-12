@@ -1,0 +1,12 @@
+version: "3.3"
+#
+# DEVELOPMENT ONLY SETTINGS
+#
+
+services:
+  # App container
+  web:
+    environment:
+      - DJANGO_SETTINGS_MODULE=bws.settings.development
+    command: python manage.py runserver 0.0.0.0:8000
+    entrypoint: bash -c "python manage.py makemigrations && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
