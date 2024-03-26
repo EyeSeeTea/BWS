@@ -2872,16 +2872,9 @@ def update_NMR_binding(filepath):
     NMRdf2 = NMRdf.dropna(axis=0).reset_index(drop=True)
 
     # Update or create FeatureType for binding and not binding results #TODO: pass this to a csv and create a custom command to import it
-    featureTypeBinding = updateFeatureType(
-        name = 'NMR Binding',
-        description = 'List of binding fragments from an NMR screening study in which a well-defined fragment library was used to identify hits against SCoV2 proteins.',
-        dataSource = 'The COVID19-NMR Consortium',
-        externalLink = 'https://onlinelibrary.wiley.com/doi/10.1002/anie.202205858',
-    )
-
-    featureTypeNotBinding = updateFeatureType(
-        name = 'NMR Not-Binding',
-        description = 'List of not-binding fragments from an NMR screening study in which a well-defined fragment library was used to identify hits against SCoV2 proteins.',
+    featureType = updateFeatureType(
+        name = 'NMR-based fragment screening',
+        description = 'NMR-based screening using a well-defined fragment library for identifying hits against 25 SAR-CoV-2 proteins.',
         dataSource = 'The COVID19-NMR Consortium',
         externalLink = 'https://onlinelibrary.wiley.com/doi/10.1002/anie.202205858',
     )
@@ -2890,14 +2883,6 @@ def update_NMR_binding(filepath):
     for column in NMRdf2.columns[8:]: # columns for protein entities
         for index, row in NMRdf2[column].items(): # rows equal binding or not binding results
             
-            # Identify value for each column row and assign a different featureType depending on it
-            if row == 'Binding':
-                featureType = featureTypeBinding
-            elif row == 'Not Binding':
-                featureType = featureTypeNotBinding
-            else:
-                print('Data Type not identified for: ', column, NMRdf2.iloc[index]['Ligand_ID'])
-
             # Get or create LigandEntity entry
             ligandentity = getLigandEntity(
                 dbId=None, 
