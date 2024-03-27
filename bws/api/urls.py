@@ -121,6 +121,7 @@ urlpatterns = [
     ),
     # NMR annotations end-points
     re_path(r"^nmr/$", views.NMRViewSet.as_view({"get": "list"})),
+    re_path(r"^nmr/source/$", views.NMRSourceViewSet.as_view({"get": "list"})),
     re_path(r"^nmr/targets/$", views.NMRTargetsViewSet.as_view()),
     re_path(
         r"^nmr/targets/(?P<uniprot_id>[OPQ][0-9][A-Z0-9]{3}[0-9]|[A-NR-Z][0-9]([A-Z][A-Z0-9]{2}[0-9]){1,2})/$",
