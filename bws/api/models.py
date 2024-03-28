@@ -169,6 +169,7 @@ class PdbEntry(models.Model):
     entities = models.ManyToManyField('ModelEntity', through='PdbToEntity')
     ligands = models.ManyToManyField('LigandEntity', through='PdbToLigand')
     dbauthors = models.ManyToManyField('Author')
+    emdbs = models.ManyToManyField('EmdbEntry', through='HybridModel')
 
     def imageLink(self):
         return 'https://www.ebi.ac.uk/pdbe/static/entry/%s_deposited_chain_front_image-200x200.png' % (self.dbId.lower(), )

@@ -281,6 +281,21 @@ class SampleEntitySerializer(serializers.ModelSerializer):
         model = SampleEntity
         fields = '__all__'
 
+class SimpleLigandEntitySerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = LigandEntity
+        fields = [
+                  'IUPACInChIkey',
+                  'dbId', 'ligandType', 'name',
+                  'formula', 'formula_weight',
+                  'details', 'altNames',
+                  'imageLink', 'externalLink',
+                  'pubChemCompoundId', 'systematicNames',
+                  'IUPACInChI',
+                  'isomericSMILES', 'canonicalSMILES',
+                  'well'
+                  ]
 
 class LigandEntitySerializer(serializers.ModelSerializer):
     imageData = serializers.SerializerMethodField()
@@ -358,12 +373,18 @@ class PdbLigandSerializer(serializers.ModelSerializer):
         fields = ['pdbId', 'ligand', 'quantity']
         depth = 1
 
+class UniProtEntrySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UniProtEntry
+        fields = ['dbId', 'name', 'externalLink']
 
 class EntityExportSerializer(serializers.ModelSerializer):
     isAntibody = serializers.BooleanField
     isNanobody = serializers.BooleanField
     isSybody = serializers.BooleanField
-
+    organism = OrganismSerializer(read_only=True)
+    uniprotAcc = UniProtEntrySerializer(read_only=True)
+    
     class Meta:
         model = ModelEntity
         fields = ['uniprotAcc',
@@ -486,11 +507,16 @@ class PdbEntryDetailsExportSerializer(serializers.ModelSerializer):
         # fields = '__all__'
         fields = ['sample', 'refdoc']
 
+class EmdbEntrySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EmdbEntry
+        fields = ['dbId', 'title', 'emMethod', 'resolution', 'status', 'details', 'imageLink', 'externalLink']
 
 class PdbEntryExportSerializer(serializers.ModelSerializer):
 
     entities = EntityExportSerializer(many=True)
-    ligands = serializers.StringRelatedField(many=True)
+    ligands = SimpleLigandEntitySerializer(many=True)
+    emdbs =  EmdbEntrySerializer(many=True, read_only=True)
     refModels = RefinedModelSerializer(many=True, read_only=True)
     dbauthors = serializers.StringRelatedField(many=True)
     details = PdbEntryDetailsExportSerializer(many=True)
@@ -498,6 +524,8 @@ class PdbEntryExportSerializer(serializers.ModelSerializer):
     class Meta:
         model = PdbEntry
         fields = ['dbId',
+                  'title',
+                  'emdbs',
                   'method',
                   'keywords',
                   'refModels',
@@ -505,7 +533,8 @@ class PdbEntryExportSerializer(serializers.ModelSerializer):
                   'ligands',
                   'dbauthors',
                   'details',
-                  'imageLink', 'externalLink', 'queryLink',
+                  'imageLink',
+                  'externalLink',
                   ]
 
 class FeatureTypeNMRSerializer(serializers.ModelSerializer):
