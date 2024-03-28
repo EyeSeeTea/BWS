@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
+    'haystack',
     "whitenoise.runserver_nostatic",
     "django.contrib.staticfiles",
     "corsheaders",
@@ -78,7 +79,7 @@ ROOT_URLCONF = "bws.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [os.path.join(BASE_DIR, "api/templates")],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
