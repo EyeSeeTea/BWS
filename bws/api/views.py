@@ -1148,6 +1148,19 @@ class NMRTargetsViewSet(APIView):
 
         return Response({'count': count, 'results': unique_results})
 
+
+class NMRSourceViewSet(viewsets.ModelViewSet):
+    """
+    This viewset automatically provides `list` and `detail` actions.
+    """
+    serializer_class = FeatureTypeNMRSerializer
+    queryset = FeatureType.objects.filter(
+            name__exact='NMR-based fragment screening')
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    filter_backends = (filters.DjangoFilterBackend, SearchFilter,
+                       OrderingFilter)
+
+
 # -----
 # DAQ
 # https://daqdb.kiharalab.org/download/current/entry_ids.txt
