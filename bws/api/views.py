@@ -968,11 +968,13 @@ class GetApiVersion(APIView):
         """
         Get full info on API version
         """
+        appName = getattr(settings, "API_NAME", "")
         appVersionMajor = getattr(settings, "API_VERSION_MAJOR", "")
         appVersionMinor = getattr(settings, "API_VERSION_MINOR", "")
         appVersionPatch = getattr(settings, "API_VERSION_PATCH", "")
         appEnvironment = getattr(settings, "RUNNING_ENVIRONMENT", "")
         resp = {
+            'APP_Name': appName,
             'API_Version':
             appVersionMajor + '.' + appVersionMinor + '.' + appVersionPatch +
             '-' + appEnvironment,
