@@ -40,271 +40,271 @@ REGEX_ONTOLOGY_ID = re.compile('(\w*)_\d*')
 PUBCHEM_WS_URL = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/'
 OLS_WS_URL = 'https://www.ebi.ac.uk/ols/%s/ontologies/%s/terms?iri=%s%s'
 
-#TODO: create a json to import this data?
+# TODO: create a json to import this data?
 
 nmrentity_list = [
     {
-    'name': 'NSP1',
-    'verbose_name': 'Non-structural protein 1',
-    'start': 1,
-    'end': 180,
-    'uniprot_acc': 'P0DTD1',
+        'name': 'NSP1',
+        'verbose_name': 'Non-structural protein 1',
+        'start': 1,
+        'end': 180,
+        'uniprot_acc': 'P0DTD1',
     },
 
     {
-    'name': 'NSP1 GD',
-    'verbose_name': 'Globular domain of Non-structural protein 1',
-    'start': 12,
-    'end': 127,
-    'uniprot_acc': 'P0DTD1',
+        'name': 'NSP1 GD',
+        'verbose_name': 'Globular domain of Non-structural protein 1',
+        'start': 12,
+        'end': 127,
+        'uniprot_acc': 'P0DTD1',
     },
 
     {
-    'name': 'NSP2',
-    'verbose_name': 'Non-structural protein 2',
-    'start': 181,
-    'end': 818,
-    'uniprot_acc': 'P0DTD1',
+        'name': 'NSP2',
+        'verbose_name': 'Non-structural protein 2',
+        'start': 181,
+        'end': 818,
+        'uniprot_acc': 'P0DTD1',
     },
 
     {
-    'name': 'NSP2 CtDR',
-    'verbose_name': 'C-terminal domain of Non-structural protein 2',
-    'start': 690,
-    'end': 818,
-    'uniprot_acc': 'P0DTD1',
+        'name': 'NSP2 CtDR',
+        'verbose_name': 'C-terminal domain of Non-structural protein 2',
+        'start': 690,
+        'end': 818,
+        'uniprot_acc': 'P0DTD1',
     },
 
     {
-    'name': 'NSP3',
-    'verbose_name': 'Non-structural protein 3',
-    'start': 819,
-    'end': 2763,
-    'uniprot_acc': 'P0DTD1',
+        'name': 'NSP3',
+        'verbose_name': 'Non-structural protein 3',
+        'start': 819,
+        'end': 2763,
+        'uniprot_acc': 'P0DTD1',
     },
 
     {
-    'name': 'NSP3 UBl1',
-    'verbose_name': 'Ubiquitin-like domain 1 of Non-structural protein 3',
-    'start': 821,
-    'end': 929,
-    'uniprot_acc': 'P0DTD1',
+        'name': 'NSP3 UBl1',
+        'verbose_name': 'Ubiquitin-like domain 1 of Non-structural protein 3',
+        'start': 821,
+        'end': 929,
+        'uniprot_acc': 'P0DTD1',
     },
 
     {
-    'name': 'NSP3 MacroDomain',
-    'verbose_name': 'MacroDomain I of Non-structural protein 3 (Mac1)',
-    'start': 1025,
-    'end': 1194,
-    'uniprot_acc': 'P0DTD1',
+        'name': 'NSP3 MacroDomain',
+        'verbose_name': 'MacroDomain I of Non-structural protein 3 (Mac1)',
+        'start': 1025,
+        'end': 1194,
+        'uniprot_acc': 'P0DTD1',
     },
 
     {
-    'name': 'NSP3 SUD-N',
-    'verbose_name': 'SARS-unique domain N of Non-structural protein 3 (Mac2)',
-    'start': 1231,
-    'end': 1359,
-    'uniprot_acc': 'P0DTD1',
+        'name': 'NSP3 SUD-N',
+        'verbose_name': 'SARS-unique domain N of Non-structural protein 3 (Mac2)',
+        'start': 1231,
+        'end': 1359,
+        'uniprot_acc': 'P0DTD1',
     },
 
     {
-    'name': 'NSP3 SUD-M',
-    'verbose_name': 'SARS-unique domain M of Non-structural protein 3 (Mac3)',
-    'start': 1367,
-    'end': 1494,
-    'uniprot_acc': 'P0DTD1',
+        'name': 'NSP3 SUD-M',
+        'verbose_name': 'SARS-unique domain M of Non-structural protein 3 (Mac3)',
+        'start': 1367,
+        'end': 1494,
+        'uniprot_acc': 'P0DTD1',
     },
 
     {
-    'name': 'NSP3 SUD-C',
-    'verbose_name': 'SARS-unique domain C of Non-structural protein 3 (DPUP)',
-    'start': 1496,
-    'end': 1561,
-    'uniprot_acc': 'P0DTD1',
+        'name': 'NSP3 SUD-C',
+        'verbose_name': 'SARS-unique domain C of Non-structural protein 3 (DPUP)',
+        'start': 1496,
+        'end': 1561,
+        'uniprot_acc': 'P0DTD1',
     },
 
     {
-    'name': 'NSP3 SUD-MC',
-    'verbose_name': 'SARS-unique domain M and C of Non-structural protein 3 (Mac3 and DPUP)',
-    'start': 1367,
-    'end': 1561,
-    'uniprot_acc': 'P0DTD1',
+        'name': 'NSP3 SUD-MC',
+        'verbose_name': 'SARS-unique domain M and C of Non-structural protein 3 (Mac3 and DPUP)',
+        'start': 1367,
+        'end': 1561,
+        'uniprot_acc': 'P0DTD1',
     },
 
     {
-    'name': 'NSP3 Ubl2',
-    'verbose_name': 'Ubiquitin-like domain 2 of Non-structural protein 3',
-    'start': 1565,
-    'end': 1620,
-    'uniprot_acc': 'P0DTD1',
+        'name': 'NSP3 Ubl2',
+        'verbose_name': 'Ubiquitin-like domain 2 of Non-structural protein 3',
+        'start': 1565,
+        'end': 1620,
+        'uniprot_acc': 'P0DTD1',
     },
 
     {
-    'name': 'NSP3 PLPro',
-    'verbose_name': 'Papain-like proteinase domain of Non-structural protein 3',
-    'start': 1634,
-    'end': 1898,
-    'uniprot_acc': 'P0DTD1',
+        'name': 'NSP3 PLPro',
+        'verbose_name': 'Papain-like proteinase domain of Non-structural protein 3',
+        'start': 1634,
+        'end': 1898,
+        'uniprot_acc': 'P0DTD1',
     },
 
     {
-    'name': 'NSP3 NAB',
-    'verbose_name': 'Nucleic acid binding domain of Non-structural protein 3',
-    'start': 1911,
-    'end': 2021,
-    'uniprot_acc': 'P0DTD1',
+        'name': 'NSP3 NAB',
+        'verbose_name': 'Nucleic acid binding domain of Non-structural protein 3',
+        'start': 1911,
+        'end': 2021,
+        'uniprot_acc': 'P0DTD1',
     },
 
     {
-    'name': 'NSP3 Y3',
-    'verbose_name': 'Y3 domain of Non-structural protein 3',
-    'start': 2660,
-    'end': 2763,
-    'uniprot_acc': 'P0DTD1',
+        'name': 'NSP3 Y3',
+        'verbose_name': 'Y3 domain of Non-structural protein 3',
+        'start': 2660,
+        'end': 2763,
+        'uniprot_acc': 'P0DTD1',
     },
 
     {
-    'name': 'NSP4',
-    'verbose_name': 'Non-structural protein 4',
-    'start': 2764,
-    'end': 3263,
-    'uniprot_acc': 'P0DTD1',
+        'name': 'NSP4',
+        'verbose_name': 'Non-structural protein 4',
+        'start': 2764,
+        'end': 3263,
+        'uniprot_acc': 'P0DTD1',
     },
 
     {
-    'name': 'NSP5',
-    'verbose_name': 'Non-structural protein 5',
-    'start': 3264,
-    'end': 3569,
-    'uniprot_acc': 'P0DTD1',
+        'name': 'NSP5',
+        'verbose_name': 'Non-structural protein 5',
+        'start': 3264,
+        'end': 3569,
+        'uniprot_acc': 'P0DTD1',
     },
 
     {
-    'name': 'NSP6',
-    'verbose_name': 'Non-structural protein 6',
-    'start': 3570,
-    'end': 3859,
-    'uniprot_acc': 'P0DTD1',
+        'name': 'NSP6',
+        'verbose_name': 'Non-structural protein 6',
+        'start': 3570,
+        'end': 3859,
+        'uniprot_acc': 'P0DTD1',
     },
 
     {
-    'name': 'NSP7',
-    'verbose_name': 'Non-structural protein 7',
-    'start': 3860,
-    'end': 3942,
-    'uniprot_acc': 'P0DTD1',
+        'name': 'NSP7',
+        'verbose_name': 'Non-structural protein 7',
+        'start': 3860,
+        'end': 3942,
+        'uniprot_acc': 'P0DTD1',
     },
 
     {
-    'name': 'NSP8',
-    'verbose_name': 'Non-structural protein 8',
-    'start': 3943,
-    'end': 4140,
-    'uniprot_acc': 'P0DTD1',
+        'name': 'NSP8',
+        'verbose_name': 'Non-structural protein 8',
+        'start': 3943,
+        'end': 4140,
+        'uniprot_acc': 'P0DTD1',
     },
 
     {
-    'name': 'NSP9',
-    'verbose_name': 'Non-structural protein 9',
-    'start': 4141,
-    'end': 4253,
-    'uniprot_acc': 'P0DTD1',
+        'name': 'NSP9',
+        'verbose_name': 'Non-structural protein 9',
+        'start': 4141,
+        'end': 4253,
+        'uniprot_acc': 'P0DTD1',
     },
 
     {
-    'name': 'NSP10',
-    'verbose_name': 'Non-structural protein 10',
-    'start': 4254,
-    'end': 4392,
-    'uniprot_acc': 'P0DTD1',
+        'name': 'NSP10',
+        'verbose_name': 'Non-structural protein 10',
+        'start': 4254,
+        'end': 4392,
+        'uniprot_acc': 'P0DTD1',
     },
 
     {
-    'name': 'NSP11',
-    'verbose_name': 'Non-structural protein 11',
-    'start': 4393,
-    'end': 4405,
-    'uniprot_acc': 'P0DTD1',
+        'name': 'NSP11',
+        'verbose_name': 'Non-structural protein 11',
+        'start': 4393,
+        'end': 4405,
+        'uniprot_acc': 'P0DTD1',
     },
 
     {
-    'name': 'NSP12',
-    'verbose_name': 'Non-structural protein 12',
-    'start': 4393,
-    'end': 5324,
-    'uniprot_acc': 'P0DTD1',
+        'name': 'NSP12',
+        'verbose_name': 'Non-structural protein 12',
+        'start': 4393,
+        'end': 5324,
+        'uniprot_acc': 'P0DTD1',
     },
 
     {
-    'name': 'NSP13',
-    'verbose_name': 'Non-structural protein 13',
-    'start': 5325,
-    'end': 5925,
-    'uniprot_acc': 'P0DTD1',
+        'name': 'NSP13',
+        'verbose_name': 'Non-structural protein 13',
+        'start': 5325,
+        'end': 5925,
+        'uniprot_acc': 'P0DTD1',
     },
 
     {
-    'name': 'NSP14',
-    'verbose_name': 'Non-structural protein 14',
-    'start': 5926,
-    'end': 6452,
-    'uniprot_acc': 'P0DTD1',
+        'name': 'NSP14',
+        'verbose_name': 'Non-structural protein 14',
+        'start': 5926,
+        'end': 6452,
+        'uniprot_acc': 'P0DTD1',
     },
 
     {
-    'name': 'NSP15',
-    'verbose_name': 'Non-structural protein 15',
-    'start': 6453,
-    'end': 6798,
-    'uniprot_acc': 'P0DTD1',
+        'name': 'NSP15',
+        'verbose_name': 'Non-structural protein 15',
+        'start': 6453,
+        'end': 6798,
+        'uniprot_acc': 'P0DTD1',
     },
 
     {
-    'name': 'NSP16',
-    'verbose_name': 'Non-structural protein 16',
-    'start': 6799,
-    'end': 7096,
-    'uniprot_acc': 'P0DTD1',
+        'name': 'NSP16',
+        'verbose_name': 'Non-structural protein 16',
+        'start': 6799,
+        'end': 7096,
+        'uniprot_acc': 'P0DTD1',
     },
 
     {
-    'name': 'Nucleoprotein IDR1-NTD-IDR2',
-    'verbose_name': 'Intrinsically Disordered Region (IDR) of Nucleoprotein',
-    'start': 1,
-    'end': 248,
-    'uniprot_acc': 'P0DTC9',
+        'name': 'Nucleoprotein IDR1-NTD-IDR2',
+        'verbose_name': 'Intrinsically Disordered Region (IDR) of Nucleoprotein',
+        'start': 1,
+        'end': 248,
+        'uniprot_acc': 'P0DTC9',
     },
 
     {
-    'name': 'Nucleoprotein NTD-SR',
-    'verbose_name': 'Rich Region (SR) of Nucleoprotein N-terminal domain',
-    'start': 44,
-    'end': 212,
-    'uniprot_acc': 'P0DTC9',
+        'name': 'Nucleoprotein NTD-SR',
+        'verbose_name': 'Rich Region (SR) of Nucleoprotein N-terminal domain',
+        'start': 44,
+        'end': 212,
+        'uniprot_acc': 'P0DTC9',
     },
 
     {
-    'name': 'Nucleoprotein NTD',
-    'verbose_name': 'N-terminal domain of Nucleoprotein',
-    'start': 44,
-    'end': 180,
-    'uniprot_acc': 'P0DTC9',
+        'name': 'Nucleoprotein NTD',
+        'verbose_name': 'N-terminal domain of Nucleoprotein',
+        'start': 44,
+        'end': 180,
+        'uniprot_acc': 'P0DTC9',
     },
 
     {
-    'name': 'Nucleoprotein CTD',
-    'verbose_name': 'C-terminal domain of Nucleoprotein',
-    'start': 247,
-    'end': 364,
-    'uniprot_acc': 'P0DTC9',
+        'name': 'Nucleoprotein CTD',
+        'verbose_name': 'C-terminal domain of Nucleoprotein',
+        'start': 247,
+        'end': 364,
+        'uniprot_acc': 'P0DTC9',
     },
 
     {
-    'name': 'ORF9b',
-    'verbose_name': 'ORF9b protein',
-    'start': 1,
-    'end': 97,
-    'uniprot_acc': 'P0DTD2',
+        'name': 'ORF9b',
+        'verbose_name': 'ORF9b protein',
+        'start': 1,
+        'end': 97,
+        'uniprot_acc': 'P0DTD2',
     },
 ]
 
@@ -512,7 +512,7 @@ def updateRefinedModel(emdbObj, pdbObj, sourceObj, methodObj, filename, external
     return obj
 
 
-def update_isolde_refinements(inputfile):
+def update_isolde_refinements(inputfile=None):
     """
     Update the isolde refinement models from GitHub
     """
@@ -884,8 +884,10 @@ def updateRefinedModelMethod(source, name, description='', url=''):
 
 # ========== ========== ========== ========== ========== ========== ==========
 
-def getStructuresFromPath(path):
-
+def get_structures_from_path(path):
+    """
+    get_structures_from_path
+    """
     logger.debug("Updating Structure entries from : %s", path)
     print("Updating Structure entries from", path)
 
@@ -893,15 +895,18 @@ def getStructuresFromPath(path):
 
     try:
         # Get files from path
-        filenames = getCifFiles(path)
+        filenames = get_mmcif_files(path)
 
-        numFiles = len(filenames)
+        # for filename in filenames:
         for idx, filename in enumerate(filenames):
-            entryId = filename.replace('.cif', '')
+            filename.replace(".cif", "")
+
             # Read mmCIF to dictionary
-            mmCifDict = fileCif2Json(path, filename)
-            print("->>> Entry:", idx, "/", numFiles)
-            obj = readmmCifFile(mmCifDict)
+            mmcif_dict = convert_mmcif_to_dictionary(path, filename)
+
+            print("->>> Entry:", idx + 1, "/", len(filenames))
+            read_mmcif_file(mmcif_dict)
+            # break
 
     except Exception as exc:
         logger.exception(exc)
@@ -909,7 +914,7 @@ def getStructuresFromPath(path):
     return objs
 
 
-def getCifFiles(path, pattern='*.cif'):
+def get_mmcif_files(path, pattern='*.cif'):
     fileList = []
     for root, dirs, files in os.walk(path):
         for filename in fnmatch.filter(files, pattern):
@@ -917,14 +922,14 @@ def getCifFiles(path, pattern='*.cif'):
     return fileList
 
 
-def fileCif2Json(path, filename):
+def convert_mmcif_to_dictionary(path, filename):
     filepath = os.path.join(path, filename)
     # filepath = os.path.join(path, filename[1:3], filename)
     mmcif_dict = MMCIF2Dict.MMCIF2Dict(filepath)
     return mmcif_dict
 
 
-def readmmCifFile(mmCifDict):
+def read_mmcif_file(mmCifDict):
     hybridmodelObj = None
     pdbobj = None
 
@@ -2084,7 +2089,7 @@ def getLigandEntity(dbId, ligandType, name, formula, formula_weight, details, al
                       isomericSMILES, canonicalSMILES, formula, formula_weight],
                       path=os.path.join(LOCAL_DATA_DIR, 'IDR'), filename='ligands_not_found.txt')
             return None
-        assert(IUPACInChIkey)
+        assert (IUPACInChIkey)
         obj = updateLigandEntity(IUPACInChIkey, dbId, ligandType, name, formula,
                                  formula_weight, None, altNames, systematicNames, pubChemCompoundId, IUPACInChI, isomericSMILES, canonicalSMILES)
     return obj
@@ -2117,6 +2122,7 @@ def getAnalyses(name, relation, value, description, units, pvalue, dataComment, 
         print(exc, os.strerror)
     return obj
 
+
 def getOntology(dbId, name, description, externalLink, queryLink):
     """
     Get Ontology entry or create in case it does not exist
@@ -2126,7 +2132,7 @@ def getOntology(dbId, name, description, externalLink, queryLink):
         obj, created = Ontology.objects.get_or_create(
             dbId=dbId,
             defaults={
-                'name': name, 
+                'name': name,
                 'description': description,
                 'externalLink': externalLink,
                 'queryLink': queryLink,
@@ -2139,6 +2145,7 @@ def getOntology(dbId, name, description, externalLink, queryLink):
         logger.exception(exc)
         print(exc, os.strerror)
     return obj
+
 
 def updateOntologyTerm(dbId, name, description, externalLink, source):
     """
@@ -2167,6 +2174,7 @@ def updateOntologyTerm(dbId, name, description, externalLink, source):
         logger.exception(exc)
         print(exc, os.strerror)
     return obj
+
 
 def detect_getOntologyByDbId(OntTermId):
     '''
@@ -2205,10 +2213,11 @@ def detect_getOntologyByDbId(OntTermId):
     else:
         print('Unkown ontology for %s' % (OntTermId))
         raise KeyError
-    
+
     obj = getOntology(dbId, name, description, externalLink, queryLink)
 
     return obj
+
 
 def getDataFromOLS(url, jKey, returnList=False):
     '''
@@ -2224,7 +2233,7 @@ def getDataFromOLS(url, jKey, returnList=False):
             value = item_generator(jdata, jKey).__next__()
             if isinstance(value, list) and not returnList:
                 # Check if value list is empty
-                if value: 
+                if value:
                     value = value[0]
                 else:
                     value = ''
@@ -2255,15 +2264,19 @@ def getOntologyTermDataBydbId(dbId):
             print('OntologyTerm %s cannot be created due to unkown Ontology' % (dbId))
 
         # Get data from OLS by dbId to create OntologyTerm entry
-        url = OLS_WS_URL % ('api', OntologyEntry.dbId, OntologyEntry.queryLink, dbId)
+        url = OLS_WS_URL % ('api', OntologyEntry.dbId,
+                            OntologyEntry.queryLink, dbId)
 
         name = getDataFromOLS(url, 'label')
         description = getDataFromOLS(url, 'description')
-        externalLink = OLS_WS_URL % ('', OntologyEntry.dbId, OntologyEntry.queryLink, dbId)
+        externalLink = OLS_WS_URL % (
+            '', OntologyEntry.dbId, OntologyEntry.queryLink, dbId)
 
-        obj = updateOntologyTerm(dbId, name, description, externalLink, OntologyEntry)
+        obj = updateOntologyTerm(
+            dbId, name, description, externalLink, OntologyEntry)
 
     return obj
+
 
 def getListOfOntologyTerms(dbId_list):
     '''
@@ -2275,6 +2288,8 @@ def getListOfOntologyTerms(dbId_list):
         entry_list.append(entry)
 
     return entry_list
+
+
 class IDRUtils(object):
 
     def _updateAssayDirs_fromGitHub(self):
@@ -2317,7 +2332,7 @@ class IDRUtils(object):
         metadataFile = assayId + metadataFileExtention
 
         # Get Analyses files
-        #TODO: Change for other types of HCS assays that do not have .csv for addicional analyses
+        # TODO: Change for other types of HCS assays that do not have .csv for addicional analyses
         analysesFilePattern = '*.csv'
         analysesPattern = os.path.join(
             assayPath, 'Analyses', analysesFilePattern)
@@ -2343,7 +2358,8 @@ class IDRUtils(object):
         n_colName = getColNameByKW(analysesDf.columns, 'standard', 'type')
         r_colName = getColNameByKW(analysesDf.columns, 'standard', 'relation')
         v_colName = getColNameByKW(analysesDf.columns, 'standard', 'value')
-        u_colName = getColNameByKW(analysesDf.columns, 'uo', 'units') # units ontology terms
+        u_colName = getColNameByKW(
+            analysesDf.columns, 'uo', 'units')  # units ontology terms
         pv_colName = getColNameByKW(analysesDf.columns, 'pchembl', 'value')
         dc_colName = getColNameByKW(analysesDf.columns, 'data', 'comment')
         l_colName = getColNameByKW(analysesDf.columns, 'compound', 'key')
@@ -2356,7 +2372,7 @@ class IDRUtils(object):
         studyParserObj = StudyParser(MetadataFilePath)
 
         # Get or Create Organism entries
-        #TODO: create ontology term??
+        # TODO: create ontology term??
         organisms = [
             organism for organism in studyParserObj.study['Study Organism'].split("\t")]
         organismTermSources = [
@@ -2420,9 +2436,9 @@ class IDRUtils(object):
 
         for authorEntry in zip(authorLastNames, authorFirstNames, authorEmails, authorAddresses, authorORCIDs, authorRoles):
 
-            # NOTE: pseudoName tries to mimic Author entry name from publication['Author List'] 
-            # although middle names would be missing. E.g: 
-            # Carpenter AE (Author entry name from publication['Author List']); 
+            # NOTE: pseudoName tries to mimic Author entry name from publication['Author List']
+            # although middle names would be missing. E.g:
+            # Carpenter AE (Author entry name from publication['Author List']);
             # Carpenter A (Author entry name from study['Study Person Last Name'] + study['Study Person First Name'])
 
             pseudoName = ' '.join([authorEntry[0], authorEntry[1][0]])
@@ -2436,8 +2452,9 @@ class IDRUtils(object):
             )
 
         # Create Ontology, OntologyTerm entries for AssayEntity type
-        assayTypes = getListOfOntologyTerms(studyParserObj.study['Study Type Term Accession'].split("\t"))
-            
+        assayTypes = getListOfOntologyTerms(
+            studyParserObj.study['Study Type Term Accession'].split("\t"))
+
         # Create Assay entry
         AssayEntityEntry = updateAssayEntity(
             name=studyParserObj.study['Study Title'],
@@ -2453,8 +2470,10 @@ class IDRUtils(object):
         )
 
         # Add already updated/created Author Publicacion and OntologyTerm entries to AssayEntity entry
-        [AssayEntityEntry.organisms.add(orgEnt) for orgEnt in organism_entry_list]
-        [AssayEntityEntry.publications.add(pubEnt) for pubEnt in publication_entry_list]
+        [AssayEntityEntry.organisms.add(orgEnt)
+         for orgEnt in organism_entry_list]
+        [AssayEntityEntry.publications.add(pubEnt)
+         for pubEnt in publication_entry_list]
         [AssayEntityEntry.assayTypes.add(type) for type in assayTypes]
 
         # Create ScreenEntity entries
@@ -2475,9 +2494,12 @@ class IDRUtils(object):
             )
 
             # Create Ontology, OntologyTerm entries for ScreenEntity imagingMethods, screenTypes and technologyTypes
-            imagingMethods = getListOfOntologyTerms(screen['Screen Imaging Method Term Accession'].split("\t"))
-            screenTypes = getListOfOntologyTerms(screen['Screen Type Term Accession'].split("\t"))
-            technologyTypes = getListOfOntologyTerms(screen['Screen Technology Type Term Accession'].split("\t"))
+            imagingMethods = getListOfOntologyTerms(
+                screen['Screen Imaging Method Term Accession'].split("\t"))
+            screenTypes = getListOfOntologyTerms(
+                screen['Screen Type Term Accession'].split("\t"))
+            technologyTypes = getListOfOntologyTerms(
+                screen['Screen Technology Type Term Accession'].split("\t"))
 
             ScreenEntityEntry = updateScreenEntity(
                 dbId=screenId,
@@ -2490,10 +2512,12 @@ class IDRUtils(object):
                 assay=AssayEntityEntry,
             )
 
-            # Add OntologyTerm entries to ScreenEntity 
-            [ScreenEntityEntry.imagingMethods.add(method) for method in imagingMethods]
+            # Add OntologyTerm entries to ScreenEntity
+            [ScreenEntityEntry.imagingMethods.add(
+                method) for method in imagingMethods]
             [ScreenEntityEntry.screenTypes.add(type) for type in screenTypes]
-            [ScreenEntityEntry.technologyTypes.add(techtype) for techtype in technologyTypes]
+            [ScreenEntityEntry.technologyTypes.add(
+                techtype) for techtype in technologyTypes]
 
             # Create PlateEntity, LigandEntity and WellEntity entries
             screenDf = getScreenDataframe(session, screenId)
@@ -2511,7 +2535,7 @@ class IDRUtils(object):
 
                 # Get column names in screen DF that harbor key well attributes
                 cl_colName = getColNameByKW(
-                    screenDf.columns, 'accession', '3') #cellLine ontology terms
+                    screenDf.columns, 'accession', '3')  # cellLine ontology terms
                 ct_colName = getColNameByKW(
                     screenDf.columns, 'control', 'type')
                 qc_colName = getColNameByKW(
@@ -2527,7 +2551,7 @@ class IDRUtils(object):
                     screenDf.columns, 'phenotype', 'level')
                 c_colName = getColNameByKW(screenDf.columns, 'channel', '')
 
-                # Create Ontology, OntologyTerm entries for WellEntity cellLine 
+                # Create Ontology, OntologyTerm entries for WellEntity cellLine
                 cellLineEntry = getOntologyTermDataBydbId(row[cl_colName])
 
                 # Create WellEntity entries for unkown wells (no ligand tested and no control)
@@ -2544,7 +2568,7 @@ class IDRUtils(object):
                         imageThumbailLink=URL_THUMBNAIL.format(
                             **{'imageId': wellImageIds[0]}),
                         imagesIds=wellImageIds,
-                        cellLine=cellLineEntry, 
+                        cellLine=cellLineEntry,
                         controlType=row[ct_colName],
                         qualityControl=row[qc_colName],
                         micromolarConcentration=None,
@@ -2570,7 +2594,7 @@ class IDRUtils(object):
                         imageThumbailLink=URL_THUMBNAIL.format(
                             **{'imageId': wellImageIds[0]}),
                         imagesIds=wellImageIds,
-                        cellLine=cellLineEntry, 
+                        cellLine=cellLineEntry,
                         controlType=row[ct_colName],
                         qualityControl=row[qc_colName],
                         micromolarConcentration=None,
@@ -2676,9 +2700,10 @@ class IDRUtils(object):
                                 elif row[n_colName].lower() == 'selectivity index':
                                     description = 'The selectivity index (SI) is defined as the ratio of cytotoxicity to biological activity, which means the ratio of the 50% cytotoxic concentration, CC50, to the 50% antiviral concentration, IC50, (CC50/IC50)'
 
-                                # Create Ontology, OntologyTerm entries for Analyses units 
+                                # Create Ontology, OntologyTerm entries for Analyses units
                                 if row[u_colName] is not None:
-                                    unitsEntry = getOntologyTermDataBydbId(row[u_colName])
+                                    unitsEntry = getOntologyTermDataBydbId(
+                                        row[u_colName])
                                 else:
                                     unitsEntry = None
 
@@ -2702,6 +2727,7 @@ def readInputFile(filename):
     df = pd.read_csv(filename, sep=';')
     return df
 
+
 def initUniProtEntry(filepath):
     # Create dataframe from file
     df = readInputFile(filepath)
@@ -2711,7 +2737,8 @@ def initUniProtEntry(filepath):
         uniprotentry = updateUniProtEntry(
             db_accession=row['db_accession'],
             db_code=row['db_code'],
-            )
+        )
+
 
 def getUniProtEntry(db_accession, db_code):
     """
@@ -2745,7 +2772,7 @@ def findIndexInObjList(objList, key, value):
     for obj in objList:
         if obj[key] == value:
             return objList.index(obj)
-        
+
 
 def preprocessColumnNames(df):
     df.rename(columns={
@@ -2774,10 +2801,11 @@ def preprocessColumnNames(df):
         'ORF9a-NTD': 'Nucleoprotein NTD',
         'ORF9a-NTD-SR': 'Nucleoprotein NTD-SR',
         'ORF9b': 'ORF9b',
-    }, 
-    inplace=True)
+    },
+        inplace=True)
 
     return df
+
 
 def updateFeatureModelEntity(name, featureType, description, pdbentry, uniprotentry, ligandentity, externalLink, details):
     obj = None
@@ -2795,7 +2823,8 @@ def updateFeatureModelEntity(name, featureType, description, pdbentry, uniproten
                 'details': details,
             })
         if created:
-            logger.debug('Created new %s: %s', FeatureModelEntity.__name__, obj)
+            logger.debug('Created new %s: %s',
+                         FeatureModelEntity.__name__, obj)
             print('Created new', FeatureModelEntity.__name__, obj)
         else:
             logger.debug('Updated%s: %s', FeatureModelEntity.__name__, obj)
@@ -2824,7 +2853,8 @@ def updateFeatureRegionEntity(name, featureType, description, pdbentry, uniprote
                 'details': details,
             })
         if created:
-            logger.debug('Created new %s: %s', FeatureRegionEntity.__name__, obj)
+            logger.debug('Created new %s: %s',
+                         FeatureRegionEntity.__name__, obj)
             print('Created new', FeatureRegionEntity.__name__, obj)
         else:
             logger.debug('Updated%s: %s', FeatureRegionEntity.__name__, obj)
@@ -2834,6 +2864,7 @@ def updateFeatureRegionEntity(name, featureType, description, pdbentry, uniprote
         print(exc, os.strerror)
     return obj
 
+
 def updateNMRTargetToPoliprotein(uniprotentry, targetName, start, end):
     obj = None
     try:
@@ -2842,9 +2873,10 @@ def updateNMRTargetToPoliprotein(uniprotentry, targetName, start, end):
             targetName=targetName,
             start=start,
             end=end
-            )
+        )
         if created:
-            logger.debug('Created new %s: %s', NMRTargetToPoliprotein.__name__, obj)
+            logger.debug('Created new %s: %s',
+                         NMRTargetToPoliprotein.__name__, obj)
             print('Created new', NMRTargetToPoliprotein.__name__, obj)
         else:
             logger.debug('Updated%s: %s', NMRTargetToPoliprotein.__name__, obj)
@@ -2853,6 +2885,7 @@ def updateNMRTargetToPoliprotein(uniprotentry, targetName, start, end):
         logger.exception(exc)
         print(exc, os.strerror)
     return obj
+
 
 def update_NMR_binding(filepath):
     """
@@ -2868,41 +2901,41 @@ def update_NMR_binding(filepath):
     NMRdf['NSP16·NSP10'] = NMRdf.loc[:, 'NSP10·NSP16']
     NMRdf['NSP14·NSP10'] = NMRdf.loc[:, 'NSP10·NSP14']
 
-    # Drop ligands with no InChIKey 
+    # Drop ligands with no InChIKey
     NMRdf2 = NMRdf.dropna(axis=0).reset_index(drop=True)
 
     # Update or create FeatureType for binding and not binding results #TODO: pass this to a csv and create a custom command to import it
     featureType = updateFeatureType(
-        name = 'NMR-based fragment screening',
-        description = 'NMR-based screening using a well-defined fragment library for identifying hits against 25 SAR-CoV-2 proteins.',
-        dataSource = 'The COVID19-NMR Consortium',
-        externalLink = 'https://onlinelibrary.wiley.com/doi/10.1002/anie.202205858',
+        name='NMR-based fragment screening',
+        description='NMR-based screening using a well-defined fragment library for identifying hits against 25 SAR-CoV-2 proteins.',
+        dataSource='The COVID19-NMR Consortium',
+        externalLink='https://onlinelibrary.wiley.com/doi/10.1002/anie.202205858',
     )
 
     # Iterate through NMR dataframe and create LigandEntity and FeatureRegionEntity
-    for column in NMRdf2.columns[8:]: # columns for protein entities
-        for index, row in NMRdf2[column].items(): # rows equal binding or not binding results
-            
+    for column in NMRdf2.columns[8:]:  # columns for protein entities
+        # rows equal binding or not binding results
+        for index, row in NMRdf2[column].items():
+
             # Get or create LigandEntity entry
             ligandentity = getLigandEntity(
-                dbId=None, 
-                ligandType=None, 
-                name=NMRdf2.iloc[index]['Ligand_ID'], 
-                formula=NMRdf2.iloc[index]['Formula'], 
-                formula_weight=None, 
-                details=None, 
+                dbId=None,
+                ligandType=None,
+                name=NMRdf2.iloc[index]['Ligand_ID'],
+                formula=NMRdf2.iloc[index]['Formula'],
+                formula_weight=None,
+                details=None,
                 altNames=None,
-                pubChemCompoundId=NMRdf2.iloc[index]['PubChemID'], 
-                systematicNames=None, 
-                IUPACInChI=None, 
-                IUPACInChIkey=NMRdf2.iloc[index]['InChIKey'], 
-                isomericSMILES=None, 
+                pubChemCompoundId=NMRdf2.iloc[index]['PubChemID'],
+                systematicNames=None,
+                IUPACInChI=None,
+                IUPACInChIkey=NMRdf2.iloc[index]['InChIKey'],
+                isomericSMILES=None,
                 canonicalSMILES=NMRdf2.iloc[index]['SMILES']
-                )
-
+            )
 
             # Set FeatureRegionEntity name, description depending on column content
-            if '·' in column: # For protein complexes
+            if '·' in column:  # For protein complexes
                 complex = column.split('·')
                 item1 = complex[0]
                 item2 = complex[1]
@@ -2917,21 +2950,25 @@ def update_NMR_binding(filepath):
                 # Get UniProt id from modelentity_list
                 uniprot_acc = nmrentity_list[entityIndx]['uniprot_acc']
 
-                name = '%s %s %s·%s' % (ligandentity.name, row, nmrentity_list[entityIndx]['name'], item2)
+                name = '%s %s %s·%s' % (
+                    ligandentity.name, row, nmrentity_list[entityIndx]['name'], item2)
                 details = {
                     'type': row.replace(' ', '').lower(),
                     'entity': entity,
                     'start': start,
                     'end': end,
                     'uniprot_acc': uniprot_acc,
-                    }
+                }
 
                 if item1 == 'NSP5':
-                    description = 'NMR-based detection of fragment %s %s to target %s with additional amino acids %s in the N-terminus (monomeric version of %s in solution)' % (ligandentity.name, row.lower(), nmrentity_list[entityIndx]['verbose_name'], item2, nmrentity_list[entityIndx]['name'])
+                    description = 'NMR-based detection of fragment %s %s to target %s with additional amino acids %s in the N-terminus (monomeric version of %s in solution)' % (
+                        ligandentity.name, row.lower(), nmrentity_list[entityIndx]['verbose_name'], item2, nmrentity_list[entityIndx]['name'])
                 elif item1 == 'NSP3 MacroDomain':
-                    description = 'NMR-based detection of fragment %s %s to target %s in complex with %s. (the active metabolite of the remdesivir)' % (ligandentity.name, row.lower(), nmrentity_list[entityIndx]['verbose_name'], item2)
+                    description = 'NMR-based detection of fragment %s %s to target %s in complex with %s. (the active metabolite of the remdesivir)' % (
+                        ligandentity.name, row.lower(), nmrentity_list[entityIndx]['verbose_name'], item2)
                 else:
-                    description = 'NMR-based detection of fragment %s %s to target %s in complex with %s.' % (ligandentity.name, row.lower(), nmrentity_list[entityIndx]['verbose_name'], item2)
+                    description = 'NMR-based detection of fragment %s %s to target %s in complex with %s.' % (
+                        ligandentity.name, row.lower(), nmrentity_list[entityIndx]['verbose_name'], item2)
 
             else:
                 # Find obj index in nmr list of objs given entity name and set name, description and details for non-complex-realted columns
@@ -2945,15 +2982,17 @@ def update_NMR_binding(filepath):
                 # Get UniProt id from modelentity_list
                 uniprot_acc = nmrentity_list[entityIndx]['uniprot_acc']
 
-                name = '%s %s %s' % (ligandentity.name, row, nmrentity_list[entityIndx]['name'])
-                description = 'NMR-based detection of fragment %s %s to target %s.' % (ligandentity.name, row.lower(), nmrentity_list[entityIndx]['verbose_name'])
+                name = '%s %s %s' % (ligandentity.name, row,
+                                     nmrentity_list[entityIndx]['name'])
+                description = 'NMR-based detection of fragment %s %s to target %s.' % (
+                    ligandentity.name, row.lower(), nmrentity_list[entityIndx]['verbose_name'])
                 details = {
                     'type': row.replace(' ', '').lower(),
                     'entity': entity,
                     'start': start,
                     'end': end,
                     'uniprot_acc': uniprot_acc,
-                    }
+                }
 
             # Get UniProtEntry given a uniprot_id
             uniprotentry = getUniProtEntry(uniprot_acc, '',)
@@ -2968,16 +3007,14 @@ def update_NMR_binding(filepath):
 
             # Create FeatureRegionEntity
             updateFeatureRegionEntity(
-            name=name, 
-            featureType=featureType, 
-            description=description, 
-            pdbentry=None, 
-            uniprotentry=uniprotentry, 
-            ligandentity=ligandentity, 
-            externalLink='', 
-            start=start,
-            end=end,
-            details=details,
+                name=name,
+                featureType=featureType,
+                description=description,
+                pdbentry=None,
+                uniprotentry=uniprotentry,
+                ligandentity=ligandentity,
+                externalLink='',
+                start=start,
+                end=end,
+                details=details,
             )
-
-        

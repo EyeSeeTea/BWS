@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from api.utils import getStructuresFromPath
+from api.utils import get_structures_from_path
 
 
 class Command(BaseCommand):
@@ -19,4 +19,4 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         path = options['path_name'][0]
         print("Reading data from", path)
-        getStructuresFromPath(path)
+        get_structures_from_path(path)
