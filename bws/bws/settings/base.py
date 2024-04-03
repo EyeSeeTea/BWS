@@ -176,7 +176,7 @@ LOGGING = {
 # update with every release
 API_NAME = os.environ.get("PROJECT_NAME")
 API_VERSION_MAJOR = "0"
-API_VERSION_MINOR = "6"
+API_VERSION_MINOR = "8"
 API_VERSION_PATCH = "0"
 
 

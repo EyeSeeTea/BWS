@@ -1,0 +1,39 @@
+ # To be run from inside the Docker container
+ 
+
+### Update every <NumDays> days
+cd /tools
+python3 getNewPDBEntries_covid.py -i 8
+python3 getPBDFiles.py -i /data/updates/latest/PDB_entries_covid_em.txt -o /data/pdb/covid-new
+python3 getPBDFiles.py -i /data/updates/latest/PDB_entries_covid_noem.txt -o /data/pdb/covid-new
+
+cd /app
+python3 manage.py update_entries_from_dir /data/pdb/covid-new/
+python3 manage.py update_Isolde_Refinements
+
+
+
+- - - - - - - - - - - - - - - - - - - - 
+
+python3 manage.py runserver
+
+
+- - - - - - - - - - - - - - - - - - - - 
+Replace quoted keys in JSON to tools
+cmd+f  to open the search tool
+"(\w+)":
+
+cmd+option+r to enable regex search
+$1:
+
+replace all
+
+Ligands
+xRef: ["IDR"],
+
+Entities
+xRef: [
+  {xDB: "NMR", xDB_code: "NSP1+GD" },
+  {xDB: "CHSF"},
+  {xDB: "IxDB", xDB_code: "NSP1_002" },
+],
