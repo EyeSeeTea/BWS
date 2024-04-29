@@ -12,8 +12,10 @@ services:
     deploy:
       restart_policy:
         condition: always
-    command: python manage.py runserver 0.0.0.0:8000
-    entrypoint: bash -c "python manage.py runserver 0.0.0.0:8000"
+    #command: python manage.py runserver 0.0.0.0:8000
+    entrypoint: bash -c "python manage.py makemigrations && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    depends_on:
+      - db
 
   pma:
     image: phpmyadmin/phpmyadmin:4.9

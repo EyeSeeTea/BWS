@@ -9,6 +9,7 @@ USER_PASSWD=change.me
 USER_UID=1234
 USER_GID=1234
 
+# PROD only related db env vars, no need to update for dev
 DB_HOST=db
 DB_PORT=3306
 DB_NAME=appdb
@@ -21,4 +22,21 @@ PMA_EXT_PORT=8103
 
 SECRET_KEY='PrUeBaS'
 
-DEBUG=True
+DEBUG=True # Change to False for PROD instance
+
+### ElasticSearch related env variables
+# Elastic host
+ES_HOST=es01
+# Password for the 'elastic' user (at least 6 characters)
+ES_PASSWD=change.me
+# Version of Elastic products
+STACK_VERSION=8.7.1
+# Set the cluster name
+CLUSTER_NAME=es-cluster
+# Set to 'basic' or 'trial' to automatically start the 30-day trial
+LICENSE=basic
+#LICENSE=trial
+# Port to expose Elasticsearch HTTP API to the host
+ES_PORT=9200
+# Increase or decrease based on the available host memory (in bytes)
+ES_MEM_LIMIT=1073741824
