@@ -1929,6 +1929,10 @@ def getScreenId(session, key, value, screenDir):
     # Set url variables
     qs = {'key': key, 'value': value}
     url = URL_SCREENS_PROJECTS.format(**qs)
+
+    resp = session.get(url)
+    if resp.status_code != 200:
+        return None
     screens_projects_json = session.get(url).json()
 
     # Get screen ID given screen dir (e.g. idr0094-ellinger-sarscov2/screenA)
@@ -1947,6 +1951,9 @@ def getScreenDataframe(session, screenId):
     url = URL_SCREEN_TABLE.format(**qs)
 
     # Create a dataframe from "data" key in json output from url
+    resp = session.get(url)
+    if resp.status_code != 200:
+        return None
     jsonData = session.get(url).json()
     columns = jsonData['data']['columns']
     data = jsonData['data']['rows']
@@ -2513,15 +2520,18 @@ class IDRUtils(object):
             )
 
             # Add OntologyTerm entries to ScreenEntity
-            [ScreenEntityEntry.imagingMethods.add(
-                method) for method in imagingMethods]
-            [ScreenEntityEntry.screenTypes.add(type) for type in screenTypes]
-            [ScreenEntityEntry.technologyTypes.add(
-                techtype) for techtype in technologyTypes]
+            if ScreenEntityEntry:
+                if imagingMethods:
+                    [ScreenEntityEntry.imagingMethods.add(method) for method in imagingMethods]
+                if screenTypes:
+                    [ScreenEntityEntry.screenTypes.add(type) for type in screenTypes]
+                if technologyTypes:
+                    [ScreenEntityEntry.technologyTypes.add(techtype) for techtype in technologyTypes]
 
             # Create PlateEntity, LigandEntity and WellEntity entries
             screenDf = getScreenDataframe(session, screenId)
-
+            if not screenDf:
+                continue
             for index, row in screenDf.iterrows():
                 PlateEntityEntry = updatePlateEntity(
                     dbId=row['Plate'],
