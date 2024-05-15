@@ -174,7 +174,7 @@ LOGGING = {
 
 # Semantic Versioning 2.0.0
 # update with every release
-API_NAME = os.environ.get("PROJECT_NAME")
+API_NAME = os.environ.get("COMPOSE_PROJECT_NAME")
 API_VERSION_MAJOR = "0"
 API_VERSION_MINOR = "8"
 API_VERSION_PATCH = "0"
