@@ -43,7 +43,7 @@ Or alternativelly, run commands directly using the docker container command line
 - docker exec -it bws_web_1 python manage.py makemigrations
 - docker exec -it bws_web_1 python manage.py migrate
 - docker exec -it bws_web_1 python manage.py initBaseTables
-- docker exec -it bws_web_1 python manage.py updateEntriesFromDir /data/covid/
+- docker exec -it bws_web_1 python manage.py update_entries_from_dir /data/covid/
 - docker exec -it bws_web_1 python manage.py updateDB_fromHCSAssay /data/IDR/idr0094-ellinger-sarscov2
 - docker exec -it bws_web_1 python manage.py update_NMR_binding /data/C19-NMR-C/C19-NMR-C_pre-processed_data.csv
 - docker exec -it bws_web_1 python manage.py update_NMR_docking /data/C19-NMR-C/C19-NMR-C_All_Proteins_pre-processed_data.csv
