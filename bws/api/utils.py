@@ -649,36 +649,6 @@ def getAllIsoldeDataFiles(entries, exts=["txt"]):
                     ISOLDE_LOCAL_DATA_PATH, pdb_id[1:3], pdb_id))
 
 
-def findRefinedModelSource(name):
-    """
-    Find a RefinedModelSource entry in the DB table
-    """
-    obj = None
-    try:
-        obj = RefinedModelSource.objects.get(name=name)
-        logger.debug('Found: %s', obj)
-        print('Found', obj)
-    except Exception as exc:
-        logger.exception(exc)
-        print(exc, os.strerror)
-    return obj
-
-
-def findRefinedModelMethod(name):
-    """
-    Find a RefinedModelMethod entry in the DB table
-    """
-    obj = None
-    try:
-        obj = RefinedModelMethod.objects.get(name=name)
-        logger.debug('Found: %s', obj)
-        print('Found', obj)
-    except Exception as exc:
-        logger.exception(exc)
-        print(exc, os.strerror)
-    return obj
-
-
 def update_RefinedModel(refmodel):
     """
     Update a RefinedModel in the DB
