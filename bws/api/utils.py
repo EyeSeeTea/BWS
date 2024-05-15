@@ -2943,6 +2943,8 @@ def update_NMR_binding(filepath):
                 isomericSMILES=None,
                 canonicalSMILES=NMRdf2.iloc[index]['SMILES']
             )
+            if not ligandentity:
+                continue
 
             # Set FeatureRegionEntity name, description depending on column content
             if '·' in column:  # For protein complexes
