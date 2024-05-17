@@ -66,7 +66,16 @@ In the browser, append "?debug-toolbar" at the end of url.
 
 PROD
 - docker compose --env-file .env-prod -f docker-compose.production.yml up
-- docker compose --env-file .env-prod -f docker-compose.production.yml up --build 
+- docker compose --env-file .env-prod -f docker-compose.production.yml up --build
+- docker compose --env-file .env-prod -f docker-compose.production.yml up -d
+
+Once running, some initial setup is required (create DB tables, etc)., in a separate terminal:
+- docker exec -t -i bws-prod-web-1 /bin/bash
+-   python manage.py collectstatic
+-   python manage.py migrate
+-   python manage.py createsuperuser
+-   exit
+
 - docker compose --env-file .env-prod -f docker-compose.production.yml down
 - docker compose --env-file .env-prod -f docker-compose.production.yml down -v
 
