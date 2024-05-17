@@ -1,11 +1,18 @@
 #
 # DEVELOPMENT ONLY SETTINGS
 #
-
 services:
   # App container
   web:
+    image: ${IMAGE_NAME}-dev
+    build:
+      dockerfile: Dockerfile-dev
     environment:
       - DJANGO_SETTINGS_MODULE=bws.settings.development
-    command: python manage.py runserver 0.0.0.0:8000
-    entrypoint: bash -c "python manage.py makemigrations && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    labels:
+        - "csic.cnb.bcu.app.environment=${ENVIRONMENT}"
+    command: bash -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    ports:
+      - "${APP_EXT_PORT}:8000"
+    volumes:
+      - ./app:/app

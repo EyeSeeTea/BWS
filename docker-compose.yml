@@ -1,21 +1,21 @@
 #
 # COMMON ONLY SETTINGS
 #
-
 services:
   # App container
   web:
-    image: bcu/bws
-    build:
-      context: ./bws
-      labels:
-        - "csic.cnb.bcu.project.name=3DBionotes"
-        - "csic.cnb.bcu.app.name=BWS"
-        - "csic.cnb.bcu.app.description=3DBionotes-WS API"
     env_file: .env
-    ports:
-      - "${APP_EXT_PORT}:8000"
+    build:
+      context: ./app
+      args:
+        USER_NAME: ${USER_NAME}
+        USER_UID: ${USER_UID}
+        APP_NAME: ${APP_NAME}
+      labels:
+        - "csic.cnb.bcu.project.name=${PROJECT_NAME}"
+        - "csic.cnb.bcu.app.name=${APP_NAME}"
+        - "csic.cnb.bcu.app.description=3DBionotes-WS API"
+        - "csic.cnb.bcu.app.maintainer=jr.macias@cnb.csic.es"
     volumes:
-      - ./bws:/app
-      - ./data:/data
-      - ./tools:/tools
+      - ${PATH_DATA}:/data
+      - ${PATH_TOOLS}:/tools:ro
