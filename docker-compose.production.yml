@@ -1,13 +1,21 @@
 #
 # PRODUCTION ONLY SETTINGS
 #
+name: bws-prod
+
 services:
   # App container
   web:
-    image: ${IMAGE_NAME}-prod
+    image: ${IMAGE_NAME}
+    env_file:
+      - .env-prod
     build:
+      context: ./app
       dockerfile: Dockerfile-prod
       args:
+        USER_NAME: ${USER_NAME}
+        USER_UID: ${USER_UID}
+        APP_NAME: ${APP_NAME}
         DB_HOST: ${DB_HOST}
         DB_PORT: ${DB_PORT}
         DB_ROOT_PASSWD: ${DB_ROOT_PASSWD}
