@@ -28,6 +28,9 @@ services:
     command: python manage.py runserver 0.0.0.0:8000
     ports:
       - "${APP_EXT_PORT}:8000"
+    volumes:
+      - ${PATH_DATA}:/data
+      - ${PATH_TOOLS}:/tools:ro
     deploy:
       restart_policy:
         condition: always
