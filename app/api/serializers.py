@@ -110,7 +110,7 @@ class ScreenEntitySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ScreenEntity
-        fields = ['dbId', 'name', 'description', 'screenTypes', 'technologyTypes', 
+        fields = ['dbId', 'name', 'description', 'screenTypes', 'technologyTypes',
                   'imagingMethods', 'sampleType', 'dataDoi', 'plateCount', 'plates']
 
     def get_plates(self, obj):
@@ -294,7 +294,7 @@ class LigandEntitySerializer(serializers.ModelSerializer):
                   'details', 'altNames',
                   'imageLink', 'externalLink',
                   'pubChemCompoundId', 'systematicNames',
-                  'IUPACInChI', 
+                  'IUPACInChI',
                   'isomericSMILES', 'canonicalSMILES',
                   'imageData',
                   ]
@@ -357,6 +357,14 @@ class PdbLigandSerializer(serializers.ModelSerializer):
         # fields = '__all__'
         fields = ['pdbId', 'ligand', 'quantity']
         depth = 1
+
+
+class ModelEntitySerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = ModelEntity
+        fields = '__all__'
+
 
 
 class EntityExportSerializer(serializers.ModelSerializer):
@@ -514,7 +522,8 @@ class FeatureTypeNMRSerializer(serializers.ModelSerializer):
         model = FeatureType
         fields = ['dataSource', 'name',
                   'description', 'externalLink']
-        
+
+
 class FeatureRegionEntitySerializer(serializers.ModelSerializer):
 
     ligandentity = LigandEntitySerializer(read_only=True)
@@ -522,4 +531,7 @@ class FeatureRegionEntitySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = FeatureRegionEntity
-        fields = ['name', 'description', 'externalLink', 'pdbentry', 'uniprotentry', 'ligandentity', 'details', 'start', 'end', 'featureType']
+        fields = [
+            'name', 'description', 'externalLink', 'pdbentry', 'uniprotentry',
+            'ligandentity', 'details', 'start', 'end', 'featureType'
+        ]

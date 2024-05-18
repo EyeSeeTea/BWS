@@ -10,7 +10,7 @@ FILE_TYPES = ["PDB_ANN_FROM_MAP", "ISOLDE",
 
 EMDB_URL = "https://www.ebi.ac.uk/emdb"
 BIONOTES_URL = "https://3dbionotes.cnb.csic.es"
-PUBCHE_URL="https://pubchem.ncbi.nlm.nih.gov"
+PUBCHE_URL = "https://pubchem.ncbi.nlm.nih.gov"
 
 SINGLE_PARTICLE = "Single Particle"
 HELICAL = "Shelical"
@@ -69,6 +69,7 @@ class DataFile(models.Model):
 
 # ========== ========== ========== ========== ========== ========== ==========
 
+
 class Ontology(models.Model):
     '''
     Ontology.
@@ -78,13 +79,15 @@ class Ontology(models.Model):
     name = models.CharField(max_length=255, blank=False,
                             null=False, default='')
     description = models.CharField(max_length=900, blank=False,
-                            null=False, default='')
+                                   null=False, default='')
     externalLink = models.URLField(max_length=200, default='', blank=True)
-    queryLink = models.URLField(max_length=200, default='', blank=True) # Link that OLS API uses to access ontology data
-    
+    # Link that OLS API uses to access ontology data
+    queryLink = models.URLField(max_length=200, default='', blank=True)
+
     def __str__(self):
         return '%s' % (self.name)
-    
+
+
 class OntologyTerm(models.Model):
     '''
     Ontology term.
@@ -94,13 +97,15 @@ class OntologyTerm(models.Model):
     name = models.CharField(max_length=255, blank=False,
                             null=False, default='')
     description = models.CharField(max_length=900, blank=False,
-                            null=False, default='')
+                                   null=False, default='')
     externalLink = models.URLField(max_length=200, default='', blank=True)
-    source = models.ForeignKey(Ontology, related_name = 'terms', on_delete=models.CASCADE)
-    
+    source = models.ForeignKey(
+        Ontology, related_name='terms', on_delete=models.CASCADE)
+
     def __str__(self):
         return '%s' % (self.name)
-    
+
+
 class EmdbEntry(models.Model):
     dbId = models.CharField(max_length=10, blank=False,
                             default='', primary_key=True, validators=[
@@ -151,7 +156,7 @@ class UniProtEntry(models.Model):
     externalLink = models.CharField(max_length=200)
 
     def __str__(self):
-        return '%s(%s)' % (self.dbId, self.name)
+        return '%s (%s)' % (self.dbId, self.name)
 
 
 class PdbEntry(models.Model):
@@ -174,7 +179,8 @@ class PdbEntry(models.Model):
     dbauthors = models.ManyToManyField('Author')
 
     def imageLink(self):
-        return 'https://www.ebi.ac.uk/pdbe/static/entry/%s_deposited_chain_front_image-200x200.png' % (self.dbId.lower(), )
+        return 'https://www.ebi.ac.uk/pdbe/static/entry/%s_deposited_chain_front_image-200x200.png' % (
+            self.dbId.lower(), )
 
     def externalLink(self):
         return 'https://www.ebi.ac.uk/pdbe/entry/pdb/%s' % (self.dbId.lower(),)
@@ -191,7 +197,7 @@ class PdbToEntity(models.Model):
                               related_name='pdbentities', on_delete=models.CASCADE)
     entity = models.ForeignKey('ModelEntity',
                                related_name='pdbentities', on_delete=models.CASCADE)
-    quantity = models.IntegerField()
+    quantity = models.IntegerField(null=True, blank=True)
 
     def __str__(self):
         return '(%s) %s' % (self.pdbId.dbId, self.entity.name)
@@ -210,24 +216,31 @@ class Organism(models.Model):
 
 class ModelEntity(models.Model):
     uniprotAcc = models.ForeignKey(UniProtEntry,
-                                   blank=True, null=True,
-                                   related_name='modelEntities', on_delete=models.CASCADE)
+                                   blank=True,
+                                   null=True,
+                                   related_name='modelEntities',
+                                   on_delete=models.CASCADE)
     organism = models.ForeignKey(Organism,
-                                 blank=True, null=True,
-                                 related_name='modelEntities', on_delete=models.CASCADE)
+                                 blank=True,
+                                 null=True,
+                                 related_name='modelEntities',
+                                 on_delete=models.CASCADE)
     type = models.CharField(max_length=25)
     src_method = models.CharField(max_length=200)
     name = models.CharField(max_length=200)
     mutation = models.CharField(max_length=200)
     details = models.CharField(max_length=200)
     altNames = models.CharField(max_length=1024)
+    start = models.IntegerField(null=True, blank=True)
+    end = models.IntegerField(null=True, blank=True)
 
     @property
     def isAntibody(self):
         found = False
         kwords = ['antibody', 'antibodies', 'fab', 'heavy', 'light']
         for word in kwords:
-            if word in self.name.lower() or word in self.details.lower() or word in self.altNames.lower():
+            if word in self.name.lower() or word in self.details.lower(
+            ) or word in self.altNames.lower():
                 found = True
                 break
         return found
@@ -237,17 +250,19 @@ class ModelEntity(models.Model):
         found = False
         kwords = ['nanobody', 'nanobodies', 'nonobody']
         for word in kwords:
-            if word in self.name.lower() or word in self.details.lower() or word in self.altNames.lower():
+            if word in self.name.lower() or word in self.details.lower(
+            ) or word in self.altNames.lower():
                 found = True
                 break
         return found
 
-    @ property
+    @property
     def isSybody(self):
         found = False
         kwords = ['synthetic nanobody', 'sybody', 'sybodies']
         for word in kwords:
-            if word in self.name.lower() or word in self.details.lower() or word in self.altNames.lower():
+            if word in self.name.lower() or word in self.details.lower(
+            ) or word in self.altNames.lower():
                 found = True
                 break
         return found
@@ -261,16 +276,18 @@ class PdbToLigand(models.Model):
                               related_name='pdbligands', on_delete=models.CASCADE)
     ligand = models.ForeignKey('LigandEntity',
                                related_name='pdbligands', on_delete=models.CASCADE)
-    quantity = models.IntegerField()
+    quantity = models.IntegerField(null=True, blank=True)
 
     def __str__(self):
         return '(%s) %s' % (self.pdbId.dbId, self.ligand.name)
 
 
 class LigandEntity(models.Model):
-    IUPACInChIkey = models.CharField(max_length=27, primary_key=True, default='')
+    IUPACInChIkey = models.CharField(
+        max_length=27, primary_key=True, default='')
     dbId = models.CharField(max_length=20, null=True, blank=True)
-    pubChemCompoundId = models.CharField(max_length=250,  null=True, blank=True)
+    pubChemCompoundId = models.CharField(
+        max_length=250,  null=True, blank=True)
     ligandType = models.CharField(max_length=25, null=True, blank=True)
     name = models.CharField(max_length=255, null=True, blank=True)
     formula = models.CharField(max_length=255, null=True, blank=True)
@@ -292,7 +309,6 @@ class LigandEntity(models.Model):
 
     def __str__(self):
         return '%s (LigandEntity)' % (self.IUPACInChIkey,)
-
 
 
 class RefinedModelSource(models.Model):
@@ -376,7 +392,7 @@ class PdbEntryAuthor(models.Model):
                               related_name='pdbauthors', on_delete=models.CASCADE)
     author = models.ForeignKey(Author,
                                related_name='pdbmodels', on_delete=models.CASCADE)
-    ordinal = models.IntegerField()
+    ordinal = models.IntegerField(null=True, blank=True)
 
     def __str__(self):
         return '(%s) %s - %s' % (self.ordinal, self.author.orcid, self.author.name)
@@ -413,7 +429,7 @@ class PublicationAuthor(models.Model):
                                related_name='pubauthors', on_delete=models.CASCADE)
     publication = models.ForeignKey(Publication,
                                     related_name='pubauthors', on_delete=models.CASCADE)
-    ordinal = models.IntegerField()
+    ordinal = models.IntegerField(null=True, blank=True)
 
     def __str__(self):
         return '(%s) %s - %s' % (self.ordinal, self.author.orcid, self.author.name)
@@ -447,10 +463,10 @@ class PdbEntryDetails(models.Model):
                                related_name='details', on_delete=models.CASCADE)
 
     refdoc = models.ManyToManyField(Publication)
-    
+
 # class PTMEntity(models.Model):
 #     '''
-#     Protein entities that arise from other proteins' post-translational modifications (PTMs) and/or 
+#     Protein entities that arise from other proteins' post-translational modifications (PTMs) and/or
 #     processing events and do not have UniProt id associated.
 #     '''
 #     name = models.CharField(max_length=255, blank=False,
@@ -464,7 +480,7 @@ class PdbEntryDetails(models.Model):
 
 #     def __str__(self):
 #         return '%s' % (self.name)
-    
+
 # class DomainEntity(models.Model):
 #     '''
 #     Domain or region of interest for a specific protein
@@ -480,7 +496,8 @@ class PdbEntryDetails(models.Model):
 
 #     def __str__(self):
 #         return '%s' % (self.name)
-    
+
+
 class FeatureType(models.Model):
     '''
         Feature type
@@ -505,9 +522,9 @@ class FeatureEntity(models.Model):
     pdbentry = models.ForeignKey(PdbEntry,
                                  related_name='%(class)s_features', null=True, blank=True, on_delete=models.CASCADE)
     uniprotentry = models.ForeignKey(UniProtEntry,
-                                 related_name='%(class)s_features', null=True, blank=True, on_delete=models.CASCADE)
+                                     related_name='%(class)s_features', null=True, blank=True, on_delete=models.CASCADE)
     ligandentity = models.ForeignKey(LigandEntity,
-                                 related_name='%(class)s_features', null=True, blank=True, on_delete=models.CASCADE)
+                                     related_name='%(class)s_features', null=True, blank=True, on_delete=models.CASCADE)
     # ptmentity = models.ForeignKey(PTMEntity,
     #                              related_name='%(class)s_features', null=True, blank=True, on_delete=models.CASCADE)
     # domainentity = models.ForeignKey(DomainEntity,
@@ -527,46 +544,52 @@ class FeatureModelEntity(FeatureEntity):
     # class Meta:
     #     abstract = True
 
+
 class FeatureRegionEntity(FeatureEntity):
     '''
         Feature that is associated with a region in a Model
     '''
-    start = models.IntegerField()
-    end = models.IntegerField()
+    start = models.IntegerField(null=True, blank=True)
+    end = models.IntegerField(null=True, blank=True)
     details = models.JSONField(blank=True, null=True, default=list)
 
     def __str__(self):
         return '%s (FeatureRegionEntity)' % (self.name)
 
+
 class AssayEntity(FeatureModelEntity):
 
     dbId = models.CharField(max_length=50, blank=False,
                             default='', primary_key=True)
-    assayTypes = models.ManyToManyField(OntologyTerm, related_name='type_term_assays')
+    assayTypes = models.ManyToManyField(
+        OntologyTerm, related_name='type_term_assays')
     organisms = models.ManyToManyField(Organism)
     publications = models.ManyToManyField(Publication)
     screenCount = models.IntegerField(blank=True, null=True)
     BIAId = models.CharField(max_length=255, blank=True, default='')
     releaseDate = models.DateField(
-        max_length=255, blank=True, null=True, default='')
+        max_length=255, blank=True, null=True)
     dataDoi = models.CharField(max_length=255, blank=True, default='')
 
     def __str__(self):
-        return '%s - %s (AssayEntity)' % (self.dbId, self.name)
+        return f'{self.dbId} - {self.name} (AssayEntity)'
 
 
 class ScreenEntity(models.Model):
 
     assay = models.ForeignKey(AssayEntity,
-                              related_name='screens', default='', on_delete=models.CASCADE)
+                              related_name='screens', on_delete=models.CASCADE)
 
     dbId = models.CharField(max_length=50, blank=False,
                             default='', primary_key=True)
     name = models.CharField(max_length=255, blank=False, default='')
     description = models.CharField(max_length=5000, blank=True, default='')
-    screenTypes = models.ManyToManyField(OntologyTerm, related_name='type_term_screens')
-    technologyTypes = models.ManyToManyField(OntologyTerm, related_name='technology_term_screens')
-    imagingMethods = models.ManyToManyField(OntologyTerm, related_name='imaging_term_screens')
+    screenTypes = models.ManyToManyField(
+        OntologyTerm, related_name='type_term_screens')
+    technologyTypes = models.ManyToManyField(
+        OntologyTerm, related_name='technology_term_screens')
+    imagingMethods = models.ManyToManyField(
+        OntologyTerm, related_name='imaging_term_screens')
     sampleType = models.CharField(max_length=255, blank=True, default='')
     plateCount = models.IntegerField(blank=True, null=True)
     dataDoi = models.CharField(max_length=255, blank=True, default='')
@@ -578,7 +601,7 @@ class ScreenEntity(models.Model):
 class PlateEntity(models.Model):
 
     screen = models.ForeignKey(ScreenEntity,
-                               related_name='plates', default='', on_delete=models.CASCADE)
+                               related_name='plates', on_delete=models.CASCADE)
 
     dbId = models.CharField(max_length=50, blank=False,
                             default='', primary_key=True)
@@ -596,17 +619,17 @@ class WellEntity(models.Model):
                             default='', primary_key=True)
     name = models.CharField(max_length=255, blank=False, default='')
     description = models.CharField(max_length=5000, blank=True, default='')
-    ligand = models.ForeignKey(LigandEntity,
-                               related_name='well', null=True, blank=True, default='', on_delete=models.CASCADE)
+    ligand = models.ForeignKey(
+        LigandEntity, related_name='well', null=True, blank=True, on_delete=models.CASCADE)
 
-    plate = models.ForeignKey(PlateEntity,
-                              related_name='wells', default='', on_delete=models.CASCADE)
+    plate = models.ForeignKey(
+        PlateEntity, related_name='wells', on_delete=models.CASCADE)
 
     externalLink = models.URLField(max_length=200, blank=True)
     imageThumbailLink = models.URLField(max_length=200, blank=True)
     imagesIds = models.CharField(max_length=255, blank=True, default='')
-    cellLine = models.ForeignKey(OntologyTerm, default='',
-                                 related_name='cell_term_wells', on_delete=models.CASCADE)
+    cellLine = models.ForeignKey(
+        OntologyTerm, related_name='cell_term_wells', on_delete=models.CASCADE)
     controlType = models.CharField(max_length=255, blank=True, default='')
     qualityControl = models.CharField(max_length=255, blank=True, default='')
     micromolarConcentration = models.FloatField(
@@ -639,12 +662,16 @@ class StructureTopic(models.Model):
         Structure to Topic relationship
     '''
     structure = models.ForeignKey(HybridModel,
-                                  related_name='topics', on_delete=models.CASCADE)
+                                  related_name='topics',
+                                  on_delete=models.CASCADE)
     topic = models.ForeignKey(Topic,
-                              related_name='structures', on_delete=models.CASCADE)
+                              related_name='structures',
+                              on_delete=models.CASCADE)
 
     def __str__(self):
-        return '%s: %s(%s)' % (self.topic.name, self.structure.pdbId if self.structure.pdbId else '', self.structure.emdbId if self.structure.emdbId else '')
+        return '%s: %s(%s)' % (
+            self.topic.name, self.structure.pdbId if self.structure.pdbId else
+            '', self.structure.emdbId if self.structure.emdbId else '')
 
 
 class Analyses(models.Model):
@@ -653,11 +680,12 @@ class Analyses(models.Model):
     '''
     name = models.CharField(max_length=255, blank=False,
                             null=False, default='')
-    relation = models.CharField(max_length=10, blank=True, null=True, default='=')
+    relation = models.CharField(
+        max_length=10, blank=True, null=True, default='=')
     value = models.FloatField(null=False, blank=False, default=0)
     description = models.CharField(
         max_length=255, blank=True, null=True, default='')
-    units = models.ForeignKey(OntologyTerm, null=True, blank=True, default='',
+    units = models.ForeignKey(OntologyTerm, null=True, blank=True,
                               related_name='unit_term_analyses', on_delete=models.CASCADE)
     pvalue = models.FloatField(null=True, blank=True)
     dataComment = models.CharField(
@@ -671,12 +699,49 @@ class Analyses(models.Model):
     def __str__(self):
         return '%s (%s)' % (self.name, self.ligand)
 
+
 class NMRTargetToPoliprotein(models.Model):
     uniprotentry = models.ForeignKey(UniProtEntry,
-                              related_name='uniprotentities', on_delete=models.CASCADE)
+                                     related_name='uniprotentities', on_delete=models.CASCADE)
     targetName = models.CharField(max_length=100, default='')
-    start = models.IntegerField()
-    end = models.IntegerField()
+    start = models.IntegerField(null=True, blank=True)
+    end = models.IntegerField(null=True, blank=True)
 
     def __str__(self):
-        return '%s (%s)' % (self.targetName, self.id)
+        return self.targetName
+
+
+class NMRTarget(models.Model):
+    """
+        Controlled Vocabulary for NMR Tagets
+        Initialized by init_base_tables.py
+    """
+    name = models.CharField(max_length=100,
+                            blank=False,
+                            null=False,
+                            default='')
+    verbose_name = models.CharField(max_length=255,
+                                    blank=True,
+                                    null=True,
+                                    default='')
+    uniprot_acc = models.ForeignKey(UniProtEntry,
+                                    related_name='nmrtargets', on_delete=models.CASCADE)
+    start = models.IntegerField(null=True, blank=True)
+    end = models.IntegerField(null=True, blank=True)
+
+    def __str__(self):
+        return self.name
+
+
+class NMRTargetToModelEntity(models.Model):
+    target = models.ForeignKey(NMRTarget,
+                               related_name='modelentities',
+                               on_delete=models.CASCADE)
+    model_entity = models.ForeignKey(ModelEntity,
+                                     related_name='nmrtargets',
+                                     on_delete=models.CASCADE)
+    start = models.IntegerField(null=True, blank=True)
+    end = models.IntegerField(null=True, blank=True)
+
+    def __str__(self):
+        return self.target

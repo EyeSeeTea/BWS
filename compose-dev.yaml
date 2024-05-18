@@ -1,0 +1,33 @@
+#
+# DEVELOPMENT ONLY SETTINGS
+#
+name: bws-dev
+
+services:
+  # App container
+  web:
+    image: ${IMAGE_NAME}
+    env_file:
+      - .env-dev
+    build:
+      context: ./app
+      dockerfile: Dockerfile-dev
+      args:
+        USER_NAME: ${USER_NAME}
+        USER_UID: ${USER_UID}
+        APP_NAME: ${APP_NAME}
+    environment:
+      - DJANGO_SETTINGS_MODULE=bws.settings.development
+    labels:
+        - "csic.cnb.bcu.app.environment=${ENVIRONMENT}"
+        - "csic.cnb.bcu.project.name=${PROJECT_NAME}"
+        - "csic.cnb.bcu.app.name=${APP_NAME}"
+        - "csic.cnb.bcu.app.description=3DBionotes-WS API"
+        - "csic.cnb.bcu.app.maintainer=jr.macias@cnb.csic.es"
+    command: bash -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    ports:
+      - "${APP_EXT_PORT}:8000"
+    volumes:
+      - ./app:/app
+      - ${PATH_DATA}:/data
+      - ${PATH_TOOLS}:/tools:ro
