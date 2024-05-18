@@ -524,11 +524,11 @@ class EmvDataView(APIView):
         """
         data_files = []
         entries = []
-        print(f"--->>> Getting EMV files from {EMV_DATA_DIR}")
         data_files = _getEmvDataFiles(path="%s/%s" % (EMV_DATA_DIR, 'emd-*'),
                                       pattern='*emv_*.json')
         for file in data_files:
             entries.append(_getJsonEMVEntry(file))
+        if entries:
             return Response(entries)
         else:
             return HttpResponseNotFound()
