@@ -14,10 +14,10 @@ newgrp docker
 INSTALLATION:
 
 DEV
-- docker compose --env-file .env-dev -f docker-compose.develop.yml up
-- docker compose --env-file .env-dev -f docker-compose.develop.yml up --build
-- docker compose --env-file .env-dev -f docker-compose.develop.yml down
-- docker compose --env-file .env-dev -f docker-compose.develop.yml down -v
+- docker compose --env-file .env-dev -f compose-dev.yaml up
+- docker compose --env-file .env-dev -f compose-dev.yaml up --build
+- docker compose --env-file .env-dev -f compose-dev.yaml down
+- docker compose --env-file .env-dev -f compose-dev.yaml down -v
 
  Connection to the running container "bws-web-1" in DEV
 - docker exec -it bws-web-1 /bin/bash
@@ -65,9 +65,9 @@ In the browser, append "?debug-toolbar" at the end of url.
  e.g.: http://localhost:8003/api/LigandToImageData/?debug-toolbar
 
 PROD
-- docker compose --env-file .env-prod -f docker-compose.production.yml up
-- docker compose --env-file .env-prod -f docker-compose.production.yml up --build
-- docker compose --env-file .env-prod -f docker-compose.production.yml up -d
+- docker compose --env-file .env-prod -f compose-prod.yaml up
+- docker compose --env-file .env-prod -f compose-prod.yaml up --build
+- docker compose --env-file .env-prod -f compose-prod.yaml up -d
 
 Once running, some initial setup is required (create DB tables, etc)., in a separate terminal:
 - docker exec -t -i bws-prod-web-1 /bin/bash
@@ -76,8 +76,8 @@ Once running, some initial setup is required (create DB tables, etc)., in a sepa
 -   python manage.py createsuperuser
 -   exit
 
-- docker compose --env-file .env-prod -f docker-compose.production.yml down
-- docker compose --env-file .env-prod -f docker-compose.production.yml down -v
+- docker compose --env-file .env-prod -f compose-prod.yaml down
+- docker compose --env-file .env-prod -f compose-prod.yaml down -v
 
 # Troubleshooting
  
