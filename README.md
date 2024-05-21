@@ -42,7 +42,8 @@ Or alternativelly, run commands directly using the docker container command line
 - docker exec -it bws-web-1 python manage.py createsuperuser
 - docker exec -it bws-web-1 python manage.py makemigrations
 - docker exec -it bws-web-1 python manage.py migrate
-- docker exec -it bws-web-1 python manage.py initBaseTables
+- docker exec -it bws-web-1 python manage.py init_base_tables
+- docker exec -it bws-web-1 python manage.py init_nmr_targets
 - docker exec -it bws-web-1 python manage.py update_entries_from_dir /data/covid/
 - docker exec -it bws-web-1 python manage.py updateDB_fromHCSAssay /data/IDR/idr0094-ellinger-sarscov2
 - docker exec -it bws-web-1 python manage.py update_NMR_binding /data/C19-NMR-C/C19-NMR-C_pre-processed_data.csv

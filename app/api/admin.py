@@ -27,4 +27,5 @@ admin.site.register(models.ModelEntity)
 admin.site.register(models.FeatureRegionEntity)
 admin.site.register(models.FeatureModelEntity)
 admin.site.register(models.NMRTargetToPoliprotein)
-
+admin.site.register(models.NMRTarget)
+admin.site.register(models.NMRTargetToModelEntity)

@@ -465,7 +465,7 @@ def findRefinedModelSource(name):
     try:
         obj = RefinedModelSource.objects.get(name=name)
         logger.debug('Found: %s', obj)
-        print('Found', obj)
+        # print('Found', obj)
     except Exception as exc:
         logger.exception(exc)
         print(name, exc, os.strerror)
@@ -480,7 +480,7 @@ def findRefinedModelMethod(name):
     try:
         obj = RefinedModelMethod.objects.get(name=name)
         logger.debug('Found: %s', obj)
-        print('Found', obj)
+        # print('Found', obj)
     except Exception as exc:
         logger.exception(exc)
         print(name, exc, os.strerror)
@@ -518,36 +518,36 @@ def update_isolde_refinements(inputfile=None):
     Update the isolde refinement models from GitHub
     """
     logger.debug("- update isolde refinements: %s", inputfile)
-    print("- update isolde refinements:", inputfile)
+    # print("- update isolde refinements:", inputfile)
     if not inputfile:
         url = CSTF_GITHUB_RAW_URL + ISOLDE_REF_FNAME
         logger.debug("-- download Isolde entries list: %s", inputfile)
-        print("-- download Isolde entries list:", url)
+        # print("-- download Isolde entries list:", url)
         inputfile = download_file(url, CSTF_LOCAL_PATH)
 
     entries = []
-    print("- parse Isolde entry list:", inputfile)
+    # print("- parse Isolde entry list:", inputfile)
     logger.debug("- parse Isolde entry list: %s", inputfile)
     parseIsoldeEntryList(inputfile, entries)
 
-    print("- get Isolde refinement data")
+    # print("- get Isolde refinement data")
     logger.debug("- get Isolde refinement data")
     getIsoldeRefinementData(entries)
 
-    print("-- save Isolde data (JSON):", CSTF_LOCAL_PATH, ISOLDE_JSON_FNAME)
+    # print("-- save Isolde data (JSON):", CSTF_LOCAL_PATH, ISOLDE_JSON_FNAME)
     logger.debug("-- save Isolde data (JSON): %s %s",
                  CSTF_LOCAL_PATH, ISOLDE_JSON_FNAME)
     save_json(entries, CSTF_LOCAL_PATH, ISOLDE_JSON_FNAME)
 
-    print("-- get Isolde refined model")
+    # print("-- get Isolde refined model")
     logger.debug("-- get Isolde refined model")
     getIsoldeRefinedModel(entries)
 
-    print("-- get all files in Isolde data folder")
+    # print("-- get all files in Isolde data folder")
     logger.debug("-- get all files in Isolde data folder")
     getAllIsoldeDataFiles(entries, [".txt", ".mtz", ".cif"])
 
-    print("-- update DB Isolde data")
+    # print("-- update DB Isolde data")
     logger.debug("-- update DB Isolde data")
     for entry in entries:
         if 'filename' in entry:
@@ -580,7 +580,7 @@ def parseIsoldeEntryList(inputfile, entries):
             line = line.removeprefix('pdb/')
             entries.append({"pdbId": line.split('/')[-2],
                             "path": line})
-        print("-- found:", len(entries), "entries")
+        # print("-- found:", len(entries), "entries")
         logger.debug("-- found: %s entries", len(entries))
 
 
@@ -592,7 +592,7 @@ def getIsoldeRefinementData(entries):
         pdb_id = entry["pdbId"]
         remote_path = entry["path"]
         url = os.path.join(CSTF_GITHUB_URL, remote_path)
-        print("-- get Isolde refinements for:", pdb_id, remote_path)
+        # print("-- get Isolde refinements for:", pdb_id, remote_path)
         logger.debug("-- get Isolde refinements for: %s %s",
                      pdb_id, remote_path)
         filenames = getGitHubFileList(url, ".pdb")
@@ -601,7 +601,7 @@ def getIsoldeRefinementData(entries):
         for filename in filenames:
             if filename.startswith(pdb_id):
                 filename = filenames[len(filenames)-1]
-                print("--- found:", len(filenames), "refinements ", filename)
+                # print("--- found:", len(filenames), "refinements ", filename)
                 logger.debug("--- found: %s refinements %s",
                              len(filenames), filename)
                 entry.update({"filename": filename})
@@ -623,8 +623,8 @@ def getIsoldeRefinedModel(entries):
             filename = entry["filename"]
             pdb_id = entry["pdbId"]
             url = os.path.join(CSTF_GITHUB_RAW_URL, entry["path"], filename)
-            print("--- dowload Isolde refinements for",
-                  pdb_id, entry["path"], filename)
+            # print("--- dowload Isolde refinements for",
+            #       pdb_id, entry["path"], filename)
             logger.debug("--- dowload Isolde refinements for %s %s %s",
                          pdb_id, entry["path"], filename)
             download_file(url, os.path.join(
@@ -640,7 +640,7 @@ def getAllIsoldeDataFiles(entries, exts=["txt"]):
         remote_path = entry["path"]
         url = os.path.join(CSTF_GITHUB_URL, remote_path)
         url_raw = os.path.join(CSTF_GITHUB_RAW_URL, remote_path)
-        print("--- get all Isolde refinement files for", pdb_id, remote_path)
+        # print("--- get all Isolde refinement files for", pdb_id, remote_path)
         logger.debug("--- get all Isolde refinement files for %s %s",
                      pdb_id, remote_path)
         for ext in [".txt", ".mtz", ".cif"]:
@@ -778,8 +778,7 @@ def initNMRTargets():
     for target in nmrentity_list:
         print(target['name'], target['verbose_name'], target['uniprot_acc'],
               target['start'], target['end'])
-
-        uniprot_obj = UniProtEntry.objects.get(pk=target['uniprot_acc'])
+        uniprot_obj = getOrCreateUniProtEntry(target['uniprot_acc'], "")
         updateNMRTarget(target['name'], target['verbose_name'], uniprot_obj,
                         target['start'], target['end'])
 
@@ -792,6 +791,29 @@ def updateNMRTarget(name, verbose_name, uniprot_acc, start, end):
             defaults={
                 'verbose_name': verbose_name,
                 'uniprot_acc': uniprot_acc,
+                'start': start,
+                'end': end,
+            }
+        )
+        if created:
+            logger.debug('Created new %s: %s', obj.__class__.__name__, obj)
+            print('Created new', obj.__class__.__name__, obj)
+        else:
+            logger.debug('Updated %s: %s', obj.__class__.__name__, obj)
+            print('Updated', obj.__class__.__name__, obj)
+    except Exception as exc:
+        logger.exception(exc)
+        print(exc, os.strerror)
+    return obj
+
+
+def updateNMRTargetToModelEntity(target, entity, start, end):
+    obj = None
+    try:
+        obj, created = NMRTargetToModelEntity.objects.update_or_create(
+            target=target,
+            model_entity=entity,
+            defaults={
                 'start': start,
                 'end': end,
             }
@@ -1211,6 +1233,29 @@ def updateHybridModel(emdbObj, pdbObj):
     return obj
 
 
+def getOrCreateUniProtEntry(db_accession, db_code):
+    obj = None
+    try:
+        obj, created = UniProtEntry.objects.get_or_create(dbId=db_accession,
+                                                          defaults={
+                                                              'name':
+                                                              db_code,
+                                                              'externalLink':
+                                                              URL_UNIPROT +
+                                                              db_accession,
+                                                          })
+        if created:
+            logger.debug(' %s: %s', obj.__class__.__name__, obj)
+            print('Created new', obj.__class__.__name__, obj)
+        else:
+            logger.debug('Updated %s: %s', obj.__class__.__name__, obj)
+            print('Updated', obj.__class__.__name__, obj)
+    except Exception as exc:
+        logger.exception(exc)
+        print(exc, os.strerror)
+    return obj
+
+
 def updateUniProtEntry(db_accession, db_code):
     obj = None
     try:
@@ -1313,42 +1358,115 @@ def updateEntitymmCifFile(indx, mmCifDict, uniprotObj=None, organismObj=None):
     return obj, quantity[indx]
 
 
-def updatePdbToEntity(pdbObj, polymerObj, quantity=1):
-    obj = None
-    try:
-        obj, created = PdbToEntity.objects.update_or_create(
-            pdbId=pdbObj,
-            entity=polymerObj,
-            defaults={
-                'quantity': quantity,
-            })
-        if created:
-            logger.debug('Created new %s: %s', obj.__class__.__name__, obj)
-            print('Created new', obj.__class__.__name__, obj)
-        else:
-            logger.debug('Updated %s: %s', obj.__class__.__name__, obj)
-            print('Updated', obj.__class__.__name__, obj)
-    except Exception as exc:
-        logger.exception(exc)
-        print(exc, os.strerror)
-    return obj
+def updatePdbToEntity(mmCifDict, entity_id, pdbObj, polymerObj, quantity=1):
+    entity_src_entity_id = mmCifDict.get('_entity_src_gen.entity_id', '')
+    entity_pdbx_beg_seq_num = mmCifDict.get('_entity_src_gen.pdbx_beg_seq_num',
+                                            '')
+    entity_pdbx_end_seq_num = mmCifDict.get('_entity_src_gen.pdbx_end_seq_num',
+                                            '')
+    for (src_entity_id, entity_beg_seq_num,
+         entity_end_seq_num) in zip(entity_src_entity_id,
+                                    entity_pdbx_beg_seq_num,
+                                    entity_pdbx_end_seq_num):
+        if src_entity_id == entity_id:
+            pdbx_beg_seq_num = entity_beg_seq_num
+            pdbx_end_seq_num = entity_end_seq_num
+            break
+
+    entity_poly_entity_id = mmCifDict.get('_entity_poly.entity_id', '')
+    entity_poly_pdbx_strand_id = mmCifDict.get('_entity_poly.pdbx_strand_id',
+                                               '')
+    struct_ref_seq_pdbx_strand_id = mmCifDict.get(
+        '_struct_ref_seq.pdbx_strand_id', '')
+    struct_ref_seq_seq_align_begin = mmCifDict.get(
+        '_struct_ref_seq.seq_align_beg', '')
+    struct_ref_seq_seq_align_end = mmCifDict.get(
+        '_struct_ref_seq.seq_align_end', '')
+    struct_ref_seq_db_align_begin = mmCifDict.get(
+        '_struct_ref_seq.db_align_beg', '')
+    struct_ref_seq_db_align_end = mmCifDict.get('_struct_ref_seq.db_align_end',
+                                                '')
+    struct_ref_seq_auth_seq_align_begin = mmCifDict.get(
+        '_struct_ref_seq.pdbx_auth_seq_align_beg', '')
+    struct_ref_seq_auth_seq_align_end = mmCifDict.get(
+        '_struct_ref_seq.pdbx_auth_seq_align_end', '')
+
+    chain_ids = ""
+    for (poly_entity_id, poly_pdbx_strand_id) in zip(entity_poly_entity_id,
+                                                     entity_poly_pdbx_strand_id):
+        if poly_entity_id == entity_id:
+            chain_ids = poly_pdbx_strand_id
+            break
+    objs = []
+    for chain in chain_ids.split(','):
+        obj = None
+        seq_align_begin = 0
+        seq_align_end = 0
+        db_align_begin = 0
+        db_align_end = 0
+        auth_seq_align_begin = 0
+        auth_seq_align_end = 0
+        for (ref_seq_pdbx_strand_id, ref_seq_seq_align_begin,
+             ref_seq_seq_align_end, ref_seq_db_align_begin,
+             ref_seq_db_align_end, ref_seq_auth_seq_align_begin,
+             ref_seq_auth_seq_align_end) in zip(
+                 struct_ref_seq_pdbx_strand_id, struct_ref_seq_seq_align_begin,
+                 struct_ref_seq_seq_align_end, struct_ref_seq_db_align_begin,
+                 struct_ref_seq_db_align_end,
+                 struct_ref_seq_auth_seq_align_begin,
+                 struct_ref_seq_auth_seq_align_end):
+            if ref_seq_pdbx_strand_id == chain:
+                seq_align_begin = int(ref_seq_seq_align_begin)
+                seq_align_end = int(ref_seq_seq_align_end)
+                db_align_begin = int(ref_seq_db_align_begin)
+                db_align_end = int(ref_seq_db_align_end)
+                auth_seq_align_begin = int(ref_seq_auth_seq_align_begin)
+                auth_seq_align_end = int(ref_seq_auth_seq_align_end)
+                break
+
+        try:
+            obj, created = PdbToEntity.objects.update_or_create(
+                pdbId=pdbObj,
+                entity=polymerObj,
+                chain_id=chain,
+                defaults={
+                    'pdbx_beg_seq_num': pdbx_beg_seq_num,
+                    'pdbx_end_seq_num': pdbx_end_seq_num,
+                    'seq_align_begin': seq_align_begin,
+                    'seq_align_end': seq_align_end,
+                    'db_align_begin': db_align_begin,
+                    'db_align_end': db_align_end,
+                    'auth_seq_align_begin': auth_seq_align_begin,
+                    'auth_seq_align_end': auth_seq_align_end,
+                })
+            if created:
+                logger.debug('Created new %s: %s', obj.__class__.__name__, obj)
+                print('Created new', obj.__class__.__name__, obj)
+            else:
+                logger.debug('Updated %s: %s', obj.__class__.__name__, obj)
+                print('Updated', obj.__class__.__name__, obj)
+        except Exception as exc:
+            logger.exception(exc)
+            print(exc, os.strerror)
+        objs.append(obj)
+    return objs
 
 
 def getPdbToEntityListmmCifFile(mmCifDict, pdbObj):
     objList = []
-    types = mmCifDict.get('_entity.type', '')
+    entity_types = mmCifDict.get('_entity.type', '')
     entity_ids = mmCifDict.get('_entity.id', '')
-    unp_db_names = mmCifDict.get('_struct_ref.db_name', '')
-    unp_db_codes = mmCifDict.get('_struct_ref.db_code', '')
-    unp_db_accessions = mmCifDict.get('_struct_ref.pdbx_db_accession', '')
-
+    struct_ref_db_name = mmCifDict.get('_struct_ref.db_name', '')
+    struct_ref_db_code = mmCifDict.get('_struct_ref.db_code', '')
+    struct_ref_db_accession = mmCifDict.get(
+        '_struct_ref.pdbx_db_accession', '')
     for indx, entity_id in enumerate(entity_ids):
-        if types[indx] == 'polymer':
+        if entity_types[indx] == 'polymer':
             # UniProt
             uniprotObj = None
-            if unp_db_names[indx] == 'UNP':
-                db_accession = unp_db_accessions[indx]
-                db_code = unp_db_codes[indx]
+            if struct_ref_db_name[indx] == 'UNP':
+                db_accession = struct_ref_db_accession[indx]
+                db_code = struct_ref_db_code[indx]
                 uniprotObj = updateUniProtEntry(db_accession, db_code)
 
             # Organism
@@ -1359,8 +1477,19 @@ def getPdbToEntityListmmCifFile(mmCifDict, pdbObj):
                 indx, mmCifDict, uniprotObj, organismObj)
 
             # PDB-Polymer
-            pdbEntityOgj = updatePdbToEntity(pdbObj, entityObj, quantity)
-            objList.append(pdbEntityOgj)
+            objList = updatePdbToEntity(
+                mmCifDict, entity_id, pdbObj, entityObj, quantity)
+            for pdbEntityOgj in objList:
+                if pdbEntityOgj.entity.uniprotAcc:
+                    uniprot_id = pdbEntityOgj.entity.uniprotAcc.dbId
+                    entity_begin = pdbEntityOgj.pdbx_beg_seq_num
+                    entity_end = pdbEntityOgj.pdbx_end_seq_num
+                    targets = NMRTarget.objects.filter(uniprot_acc__dbId=uniprot_id,
+                                                    start__lte=entity_end,
+                                                    end__gte=entity_begin)
+                    for target in targets:
+                        updateNMRTargetToModelEntity(
+                            target, entityObj, entity_begin, entity_end)
     return objList
 
 
@@ -1481,14 +1610,14 @@ def getPubChemData(inChIKey, ligandId, ligandName):
     Get PuChem ID, inChIKey, inChI, isomericSMILES, canonicalSMILES, formula and formula_weight given ligand inChIKey, id or name by means of PuChem-WS
     '''
 
-    print('---> getPubChemData', inChIKey, ligandId, ligandName)
+    # print('---> getPubChemData', inChIKey, ligandId, ligandName)
     pubChemCompoundId = ''
     if inChIKey:
-        print('----> searching by', inChIKey)
+        # print('----> searching by', inChIKey)
         pubChemCompoundId = getDataFromPubChem(
             url=PUBCHEM_WS_URL + 'inchikey/' + inChIKey + '/cids/JSON', jKey='CID')
     if (not pubChemCompoundId) and ligandId:
-        print('----> searching by', ligandId)
+        # print('----> searching by', ligandId)
         pubChemCompoundId = getDataFromPubChem(
             url=PUBCHEM_WS_URL + 'xref/RegistryID/' + ligandId + '/cids/JSON', jKey='CID')
     if (not pubChemCompoundId) and ligandName:
@@ -1496,11 +1625,11 @@ def getPubChemData(inChIKey, ligandId, ligandName):
         ligandName = ligandName.replace('(+/-)', ' ')
         ligandName = ligandName.replace('?', ' ')
         ligandName = ligandName.strip()
-        print('----> searching by', ligandName)
+        # print('----> searching by', ligandName)
         pubChemCompoundId = getDataFromPubChem(
             url=PUBCHEM_WS_URL + 'name/' + ligandName + '/cids/JSON', jKey='CID')
     if isinstance(pubChemCompoundId, list):
-        print("----> CID:", pubChemCompoundId)
+        # print("----> CID:", pubChemCompoundId)
         pubChemCompoundId = pubChemCompoundId[0]
 
     # if Compound PubChem ID can not be found
@@ -1508,17 +1637,17 @@ def getPubChemData(inChIKey, ligandId, ligandName):
         return None, None, None, None, None, None, None
 
     inChIKey = getDataFromPubChem(url=PUBCHEM_WS_URL +
-                                  'cid/' + pubChemCompoundId +
+                                  'cid/' + str(pubChemCompoundId) +
                                   '/property/InChIKey/json', jKey='InChIKey')
-    inChI = getDataFromPubChem(url=PUBCHEM_WS_URL + 'cid/' + pubChemCompoundId +
+    inChI = getDataFromPubChem(url=PUBCHEM_WS_URL + 'cid/' + str(pubChemCompoundId) +
                                '/property/InChI/json', jKey='InChI')
-    isomericSMILES = getDataFromPubChem(url=PUBCHEM_WS_URL + 'cid/' + pubChemCompoundId +
+    isomericSMILES = getDataFromPubChem(url=PUBCHEM_WS_URL + 'cid/' + str(pubChemCompoundId) +
                                         '/property/isomericSMILES/json', jKey='IsomericSMILES')
-    canonicalSMILES = getDataFromPubChem(url=PUBCHEM_WS_URL + 'cid/' + pubChemCompoundId +
+    canonicalSMILES = getDataFromPubChem(url=PUBCHEM_WS_URL + 'cid/' + str(pubChemCompoundId) +
                                          '/property/CanonicalSMILES/json', jKey='CanonicalSMILES')
-    formula = getDataFromPubChem(url=PUBCHEM_WS_URL + 'cid/' + pubChemCompoundId +
+    formula = getDataFromPubChem(url=PUBCHEM_WS_URL + 'cid/' + str(pubChemCompoundId) +
                                  '/property/MolecularFormula/json', jKey='MolecularFormula')
-    formula_weight = getDataFromPubChem(url=PUBCHEM_WS_URL + 'cid/' + pubChemCompoundId +
+    formula_weight = getDataFromPubChem(url=PUBCHEM_WS_URL + 'cid/' + str(pubChemCompoundId) +
                                         '/property/MolecularWeight/json', jKey='MolecularWeight')
 
     return pubChemCompoundId, inChIKey, inChI, isomericSMILES, canonicalSMILES, formula, formula_weight
@@ -1570,7 +1699,7 @@ def getRefinedModelPDBRedo(pdbObj):
         resp = requests.head(url, timeout=HTTP_TIMEOUT)
         print('Connecting', url)
         if resp.status_code == 200:
-            print('-->>> response', resp.status_code)
+            # print('-->>> response', resp.status_code)
             refModelSource = RefinedModelSource.objects.get(name='PDB-REDO')
             refModelMethod = RefinedModelMethod.objects.get(
                 source=refModelSource, name='PDB-Redo')
@@ -1595,9 +1724,9 @@ def getRefinedModelCeres(pdbObj, emdbObj):
         print('Connecting', url)
         resp = requests.get(url, timeout=HTTP_TIMEOUT)
         if resp.status_code == 200:
-            print('-->>> response', resp.status_code)
+            # print('-->>> response', resp.status_code)
             if resp.text.find('Does not exist') == -1:
-                print('-->>> Found CERES refModel', pdbId, emdbId)
+                # print('-->>> Found CERES refModel', pdbId, emdbId)
                 refModelSource = RefinedModelSource.objects.get(name='Phenix')
                 refModelMethod = RefinedModelMethod.objects.get(
                     source=refModelSource, name='CERES')
@@ -1610,8 +1739,8 @@ def getRefinedModelCeres(pdbObj, emdbObj):
                     externalLink=url,
                     queryLink=URL_PHENIX_CERES_QUERY,
                     details='')
-            else:
-                print('-->>> No entry found', )
+            # else:
+                # print('-->>> No entry found', )
     except requests.ConnectionError:
         print("Can't find PDB-Redo model: failed to connect", url)
     return refModel
@@ -2109,7 +2238,7 @@ def getLigandEntity(dbId, ligandType, name, formula, formula_weight, details, al
     try:
         # first look if the compound is already in the DB
         obj = LigandEntity.objects.get(pk=IUPACInChIkey)
-        print("Found in DB Compound ", obj)
+        # print("Found in DB Compound ", obj)
     except LigandEntity.DoesNotExist:
         # get data from PubChem by ligandId or ligandName
         pubChemCompoundId, IUPACInChIkey, IUPACInChI, isomericSMILES, canonicalSMILES, formula, formula_weight = getPubChemData(
@@ -2771,7 +2900,7 @@ def readInputFile(filename):
     return df
 
 
-def initUniProtEntry(filepath):
+def init_uniprot_entry(filepath):
     # Create dataframe from file
     df = readInputFile(filepath)
 

@@ -194,10 +194,23 @@ class PdbEntry(models.Model):
 
 class PdbToEntity(models.Model):
     pdbId = models.ForeignKey(PdbEntry,
-                              related_name='pdbentities', on_delete=models.CASCADE)
+                              related_name='pdbentities',
+                              on_delete=models.CASCADE)
     entity = models.ForeignKey('ModelEntity',
-                               related_name='pdbentities', on_delete=models.CASCADE)
-    quantity = models.IntegerField(null=True, blank=True)
+                               related_name='pdbentities',
+                               on_delete=models.CASCADE)
+    # quantity = models.IntegerField(null=True, blank=True)
+
+    chain_id = models.CharField(max_length=5, blank=False, default='')
+    pdbx_beg_seq_num = models.IntegerField(null=True, blank=True)
+    pdbx_end_seq_num = models.IntegerField(null=True, blank=True)
+    # alignments
+    db_align_begin = models.IntegerField(null=True, blank=True)
+    db_align_end = models.IntegerField(null=True, blank=True)
+    seq_align_begin = models.IntegerField(null=True, blank=True)
+    seq_align_end = models.IntegerField(null=True, blank=True)
+    auth_seq_align_begin = models.IntegerField(null=True, blank=True)
+    auth_seq_align_end = models.IntegerField(null=True, blank=True)
 
     def __str__(self):
         return '(%s) %s' % (self.pdbId.dbId, self.entity.name)
@@ -744,4 +757,4 @@ class NMRTargetToModelEntity(models.Model):
     end = models.IntegerField(null=True, blank=True)
 
     def __str__(self):
-        return self.target
+        return self.target.name
