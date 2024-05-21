@@ -757,4 +757,4 @@ class NMRTargetToModelEntity(models.Model):
     end = models.IntegerField(null=True, blank=True)
 
     def __str__(self):
-        return self.target
+        return self.target.name

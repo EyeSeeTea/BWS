@@ -465,7 +465,7 @@ def findRefinedModelSource(name):
     try:
         obj = RefinedModelSource.objects.get(name=name)
         logger.debug('Found: %s', obj)
-        print('Found', obj)
+        # print('Found', obj)
     except Exception as exc:
         logger.exception(exc)
         print(name, exc, os.strerror)
@@ -480,7 +480,7 @@ def findRefinedModelMethod(name):
     try:
         obj = RefinedModelMethod.objects.get(name=name)
         logger.debug('Found: %s', obj)
-        print('Found', obj)
+        # print('Found', obj)
     except Exception as exc:
         logger.exception(exc)
         print(name, exc, os.strerror)
@@ -518,36 +518,36 @@ def update_isolde_refinements(inputfile=None):
     Update the isolde refinement models from GitHub
     """
     logger.debug("- update isolde refinements: %s", inputfile)
-    print("- update isolde refinements:", inputfile)
+    # print("- update isolde refinements:", inputfile)
     if not inputfile:
         url = CSTF_GITHUB_RAW_URL + ISOLDE_REF_FNAME
         logger.debug("-- download Isolde entries list: %s", inputfile)
-        print("-- download Isolde entries list:", url)
+        # print("-- download Isolde entries list:", url)
         inputfile = download_file(url, CSTF_LOCAL_PATH)
 
     entries = []
-    print("- parse Isolde entry list:", inputfile)
+    # print("- parse Isolde entry list:", inputfile)
     logger.debug("- parse Isolde entry list: %s", inputfile)
     parseIsoldeEntryList(inputfile, entries)
 
-    print("- get Isolde refinement data")
+    # print("- get Isolde refinement data")
     logger.debug("- get Isolde refinement data")
     getIsoldeRefinementData(entries)
 
-    print("-- save Isolde data (JSON):", CSTF_LOCAL_PATH, ISOLDE_JSON_FNAME)
+    # print("-- save Isolde data (JSON):", CSTF_LOCAL_PATH, ISOLDE_JSON_FNAME)
     logger.debug("-- save Isolde data (JSON): %s %s",
                  CSTF_LOCAL_PATH, ISOLDE_JSON_FNAME)
     save_json(entries, CSTF_LOCAL_PATH, ISOLDE_JSON_FNAME)
 
-    print("-- get Isolde refined model")
+    # print("-- get Isolde refined model")
     logger.debug("-- get Isolde refined model")
     getIsoldeRefinedModel(entries)
 
-    print("-- get all files in Isolde data folder")
+    # print("-- get all files in Isolde data folder")
     logger.debug("-- get all files in Isolde data folder")
     getAllIsoldeDataFiles(entries, [".txt", ".mtz", ".cif"])
 
-    print("-- update DB Isolde data")
+    # print("-- update DB Isolde data")
     logger.debug("-- update DB Isolde data")
     for entry in entries:
         if 'filename' in entry:
@@ -580,7 +580,7 @@ def parseIsoldeEntryList(inputfile, entries):
             line = line.removeprefix('pdb/')
             entries.append({"pdbId": line.split('/')[-2],
                             "path": line})
-        print("-- found:", len(entries), "entries")
+        # print("-- found:", len(entries), "entries")
         logger.debug("-- found: %s entries", len(entries))
 
 
@@ -592,7 +592,7 @@ def getIsoldeRefinementData(entries):
         pdb_id = entry["pdbId"]
         remote_path = entry["path"]
         url = os.path.join(CSTF_GITHUB_URL, remote_path)
-        print("-- get Isolde refinements for:", pdb_id, remote_path)
+        # print("-- get Isolde refinements for:", pdb_id, remote_path)
         logger.debug("-- get Isolde refinements for: %s %s",
                      pdb_id, remote_path)
         filenames = getGitHubFileList(url, ".pdb")
@@ -601,7 +601,7 @@ def getIsoldeRefinementData(entries):
         for filename in filenames:
             if filename.startswith(pdb_id):
                 filename = filenames[len(filenames)-1]
-                print("--- found:", len(filenames), "refinements ", filename)
+                # print("--- found:", len(filenames), "refinements ", filename)
                 logger.debug("--- found: %s refinements %s",
                              len(filenames), filename)
                 entry.update({"filename": filename})
@@ -623,8 +623,8 @@ def getIsoldeRefinedModel(entries):
             filename = entry["filename"]
             pdb_id = entry["pdbId"]
             url = os.path.join(CSTF_GITHUB_RAW_URL, entry["path"], filename)
-            print("--- dowload Isolde refinements for",
-                  pdb_id, entry["path"], filename)
+            # print("--- dowload Isolde refinements for",
+            #       pdb_id, entry["path"], filename)
             logger.debug("--- dowload Isolde refinements for %s %s %s",
                          pdb_id, entry["path"], filename)
             download_file(url, os.path.join(
@@ -640,7 +640,7 @@ def getAllIsoldeDataFiles(entries, exts=["txt"]):
         remote_path = entry["path"]
         url = os.path.join(CSTF_GITHUB_URL, remote_path)
         url_raw = os.path.join(CSTF_GITHUB_RAW_URL, remote_path)
-        print("--- get all Isolde refinement files for", pdb_id, remote_path)
+        # print("--- get all Isolde refinement files for", pdb_id, remote_path)
         logger.debug("--- get all Isolde refinement files for %s %s",
                      pdb_id, remote_path)
         for ext in [".txt", ".mtz", ".cif"]:
@@ -791,6 +791,29 @@ def updateNMRTarget(name, verbose_name, uniprot_acc, start, end):
             defaults={
                 'verbose_name': verbose_name,
                 'uniprot_acc': uniprot_acc,
+                'start': start,
+                'end': end,
+            }
+        )
+        if created:
+            logger.debug('Created new %s: %s', obj.__class__.__name__, obj)
+            print('Created new', obj.__class__.__name__, obj)
+        else:
+            logger.debug('Updated %s: %s', obj.__class__.__name__, obj)
+            print('Updated', obj.__class__.__name__, obj)
+    except Exception as exc:
+        logger.exception(exc)
+        print(exc, os.strerror)
+    return obj
+
+
+def updateNMRTargetToModelEntity(target, entity, start, end):
+    obj = None
+    try:
+        obj, created = NMRTargetToModelEntity.objects.update_or_create(
+            target=target,
+            model_entity=entity,
+            defaults={
                 'start': start,
                 'end': end,
             }
@@ -1374,6 +1397,7 @@ def updatePdbToEntity(mmCifDict, entity_id, pdbObj, polymerObj, quantity=1):
         if poly_entity_id == entity_id:
             chain_ids = poly_pdbx_strand_id
             break
+    objs = []
     for chain in chain_ids.split(','):
         obj = None
         seq_align_begin = 0
@@ -1424,8 +1448,8 @@ def updatePdbToEntity(mmCifDict, entity_id, pdbObj, polymerObj, quantity=1):
         except Exception as exc:
             logger.exception(exc)
             print(exc, os.strerror)
-
-    return obj
+        objs.append(obj)
+    return objs
 
 
 def getPdbToEntityListmmCifFile(mmCifDict, pdbObj):
@@ -1453,9 +1477,19 @@ def getPdbToEntityListmmCifFile(mmCifDict, pdbObj):
                 indx, mmCifDict, uniprotObj, organismObj)
 
             # PDB-Polymer
-            pdbEntityOgj = updatePdbToEntity(
+            objList = updatePdbToEntity(
                 mmCifDict, entity_id, pdbObj, entityObj, quantity)
-            objList.append(pdbEntityOgj)
+            for pdbEntityOgj in objList:
+                if pdbEntityOgj.entity.uniprotAcc:
+                    uniprot_id = pdbEntityOgj.entity.uniprotAcc.dbId
+                    entity_begin = pdbEntityOgj.pdbx_beg_seq_num
+                    entity_end = pdbEntityOgj.pdbx_end_seq_num
+                    targets = NMRTarget.objects.filter(uniprot_acc__dbId=uniprot_id,
+                                                    start__lte=entity_end,
+                                                    end__gte=entity_begin)
+                    for target in targets:
+                        updateNMRTargetToModelEntity(
+                            target, entityObj, entity_begin, entity_end)
     return objList
 
 
@@ -1576,14 +1610,14 @@ def getPubChemData(inChIKey, ligandId, ligandName):
     Get PuChem ID, inChIKey, inChI, isomericSMILES, canonicalSMILES, formula and formula_weight given ligand inChIKey, id or name by means of PuChem-WS
     '''
 
-    print('---> getPubChemData', inChIKey, ligandId, ligandName)
+    # print('---> getPubChemData', inChIKey, ligandId, ligandName)
     pubChemCompoundId = ''
     if inChIKey:
-        print('----> searching by', inChIKey)
+        # print('----> searching by', inChIKey)
         pubChemCompoundId = getDataFromPubChem(
             url=PUBCHEM_WS_URL + 'inchikey/' + inChIKey + '/cids/JSON', jKey='CID')
     if (not pubChemCompoundId) and ligandId:
-        print('----> searching by', ligandId)
+        # print('----> searching by', ligandId)
         pubChemCompoundId = getDataFromPubChem(
             url=PUBCHEM_WS_URL + 'xref/RegistryID/' + ligandId + '/cids/JSON', jKey='CID')
     if (not pubChemCompoundId) and ligandName:
@@ -1591,11 +1625,11 @@ def getPubChemData(inChIKey, ligandId, ligandName):
         ligandName = ligandName.replace('(+/-)', ' ')
         ligandName = ligandName.replace('?', ' ')
         ligandName = ligandName.strip()
-        print('----> searching by', ligandName)
+        # print('----> searching by', ligandName)
         pubChemCompoundId = getDataFromPubChem(
             url=PUBCHEM_WS_URL + 'name/' + ligandName + '/cids/JSON', jKey='CID')
     if isinstance(pubChemCompoundId, list):
-        print("----> CID:", pubChemCompoundId)
+        # print("----> CID:", pubChemCompoundId)
         pubChemCompoundId = pubChemCompoundId[0]
 
     # if Compound PubChem ID can not be found
@@ -1665,7 +1699,7 @@ def getRefinedModelPDBRedo(pdbObj):
         resp = requests.head(url, timeout=HTTP_TIMEOUT)
         print('Connecting', url)
         if resp.status_code == 200:
-            print('-->>> response', resp.status_code)
+            # print('-->>> response', resp.status_code)
             refModelSource = RefinedModelSource.objects.get(name='PDB-REDO')
             refModelMethod = RefinedModelMethod.objects.get(
                 source=refModelSource, name='PDB-Redo')
@@ -1690,9 +1724,9 @@ def getRefinedModelCeres(pdbObj, emdbObj):
         print('Connecting', url)
         resp = requests.get(url, timeout=HTTP_TIMEOUT)
         if resp.status_code == 200:
-            print('-->>> response', resp.status_code)
+            # print('-->>> response', resp.status_code)
             if resp.text.find('Does not exist') == -1:
-                print('-->>> Found CERES refModel', pdbId, emdbId)
+                # print('-->>> Found CERES refModel', pdbId, emdbId)
                 refModelSource = RefinedModelSource.objects.get(name='Phenix')
                 refModelMethod = RefinedModelMethod.objects.get(
                     source=refModelSource, name='CERES')
@@ -1705,8 +1739,8 @@ def getRefinedModelCeres(pdbObj, emdbObj):
                     externalLink=url,
                     queryLink=URL_PHENIX_CERES_QUERY,
                     details='')
-            else:
-                print('-->>> No entry found', )
+            # else:
+                # print('-->>> No entry found', )
     except requests.ConnectionError:
         print("Can't find PDB-Redo model: failed to connect", url)
     return refModel
@@ -2204,7 +2238,7 @@ def getLigandEntity(dbId, ligandType, name, formula, formula_weight, details, al
     try:
         # first look if the compound is already in the DB
         obj = LigandEntity.objects.get(pk=IUPACInChIkey)
-        print("Found in DB Compound ", obj)
+        # print("Found in DB Compound ", obj)
     except LigandEntity.DoesNotExist:
         # get data from PubChem by ligandId or ligandName
         pubChemCompoundId, IUPACInChIkey, IUPACInChI, isomericSMILES, canonicalSMILES, formula, formula_weight = getPubChemData(
