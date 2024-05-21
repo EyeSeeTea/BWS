@@ -778,8 +778,7 @@ def initNMRTargets():
     for target in nmrentity_list:
         print(target['name'], target['verbose_name'], target['uniprot_acc'],
               target['start'], target['end'])
-
-        uniprot_obj = UniProtEntry.objects.get(pk=target['uniprot_acc'])
+        uniprot_obj = getOrCreateUniProtEntry(target['uniprot_acc'], "")
         updateNMRTarget(target['name'], target['verbose_name'], uniprot_obj,
                         target['start'], target['end'])
 
@@ -1211,6 +1210,29 @@ def updateHybridModel(emdbObj, pdbObj):
     return obj
 
 
+def getOrCreateUniProtEntry(db_accession, db_code):
+    obj = None
+    try:
+        obj, created = UniProtEntry.objects.get_or_create(dbId=db_accession,
+                                                          defaults={
+                                                              'name':
+                                                              db_code,
+                                                              'externalLink':
+                                                              URL_UNIPROT +
+                                                              db_accession,
+                                                          })
+        if created:
+            logger.debug(' %s: %s', obj.__class__.__name__, obj)
+            print('Created new', obj.__class__.__name__, obj)
+        else:
+            logger.debug('Updated %s: %s', obj.__class__.__name__, obj)
+            print('Updated', obj.__class__.__name__, obj)
+    except Exception as exc:
+        logger.exception(exc)
+        print(exc, os.strerror)
+    return obj
+
+
 def updateUniProtEntry(db_accession, db_code):
     obj = None
     try:
@@ -1313,42 +1335,114 @@ def updateEntitymmCifFile(indx, mmCifDict, uniprotObj=None, organismObj=None):
     return obj, quantity[indx]
 
 
-def updatePdbToEntity(pdbObj, polymerObj, quantity=1):
-    obj = None
-    try:
-        obj, created = PdbToEntity.objects.update_or_create(
-            pdbId=pdbObj,
-            entity=polymerObj,
-            defaults={
-                'quantity': quantity,
-            })
-        if created:
-            logger.debug('Created new %s: %s', obj.__class__.__name__, obj)
-            print('Created new', obj.__class__.__name__, obj)
-        else:
-            logger.debug('Updated %s: %s', obj.__class__.__name__, obj)
-            print('Updated', obj.__class__.__name__, obj)
-    except Exception as exc:
-        logger.exception(exc)
-        print(exc, os.strerror)
+def updatePdbToEntity(mmCifDict, entity_id, pdbObj, polymerObj, quantity=1):
+    entity_src_entity_id = mmCifDict.get('_entity_src_gen.entity_id', '')
+    entity_pdbx_beg_seq_num = mmCifDict.get('_entity_src_gen.pdbx_beg_seq_num',
+                                            '')
+    entity_pdbx_end_seq_num = mmCifDict.get('_entity_src_gen.pdbx_end_seq_num',
+                                            '')
+    for (src_entity_id, entity_beg_seq_num,
+         entity_end_seq_num) in zip(entity_src_entity_id,
+                                    entity_pdbx_beg_seq_num,
+                                    entity_pdbx_end_seq_num):
+        if src_entity_id == entity_id:
+            pdbx_beg_seq_num = entity_beg_seq_num
+            pdbx_end_seq_num = entity_end_seq_num
+            break
+
+    entity_poly_entity_id = mmCifDict.get('_entity_poly.entity_id', '')
+    entity_poly_pdbx_strand_id = mmCifDict.get('_entity_poly.pdbx_strand_id',
+                                               '')
+    struct_ref_seq_pdbx_strand_id = mmCifDict.get(
+        '_struct_ref_seq.pdbx_strand_id', '')
+    struct_ref_seq_seq_align_begin = mmCifDict.get(
+        '_struct_ref_seq.seq_align_beg', '')
+    struct_ref_seq_seq_align_end = mmCifDict.get(
+        '_struct_ref_seq.seq_align_end', '')
+    struct_ref_seq_db_align_begin = mmCifDict.get(
+        '_struct_ref_seq.db_align_beg', '')
+    struct_ref_seq_db_align_end = mmCifDict.get('_struct_ref_seq.db_align_end',
+                                                '')
+    struct_ref_seq_auth_seq_align_begin = mmCifDict.get(
+        '_struct_ref_seq.pdbx_auth_seq_align_beg', '')
+    struct_ref_seq_auth_seq_align_end = mmCifDict.get(
+        '_struct_ref_seq.pdbx_auth_seq_align_end', '')
+
+    chain_ids = ""
+    for (poly_entity_id, poly_pdbx_strand_id) in zip(entity_poly_entity_id,
+                                                     entity_poly_pdbx_strand_id):
+        if poly_entity_id == entity_id:
+            chain_ids = poly_pdbx_strand_id
+            break
+    for chain in chain_ids.split(','):
+        obj = None
+        seq_align_begin = 0
+        seq_align_end = 0
+        db_align_begin = 0
+        db_align_end = 0
+        auth_seq_align_begin = 0
+        auth_seq_align_end = 0
+        for (ref_seq_pdbx_strand_id, ref_seq_seq_align_begin,
+             ref_seq_seq_align_end, ref_seq_db_align_begin,
+             ref_seq_db_align_end, ref_seq_auth_seq_align_begin,
+             ref_seq_auth_seq_align_end) in zip(
+                 struct_ref_seq_pdbx_strand_id, struct_ref_seq_seq_align_begin,
+                 struct_ref_seq_seq_align_end, struct_ref_seq_db_align_begin,
+                 struct_ref_seq_db_align_end,
+                 struct_ref_seq_auth_seq_align_begin,
+                 struct_ref_seq_auth_seq_align_end):
+            if ref_seq_pdbx_strand_id == chain:
+                seq_align_begin = int(ref_seq_seq_align_begin)
+                seq_align_end = int(ref_seq_seq_align_end)
+                db_align_begin = int(ref_seq_db_align_begin)
+                db_align_end = int(ref_seq_db_align_end)
+                auth_seq_align_begin = int(ref_seq_auth_seq_align_begin)
+                auth_seq_align_end = int(ref_seq_auth_seq_align_end)
+                break
+
+        try:
+            obj, created = PdbToEntity.objects.update_or_create(
+                pdbId=pdbObj,
+                entity=polymerObj,
+                chain_id=chain,
+                defaults={
+                    'pdbx_beg_seq_num': pdbx_beg_seq_num,
+                    'pdbx_end_seq_num': pdbx_end_seq_num,
+                    'seq_align_begin': seq_align_begin,
+                    'seq_align_end': seq_align_end,
+                    'db_align_begin': db_align_begin,
+                    'db_align_end': db_align_end,
+                    'auth_seq_align_begin': auth_seq_align_begin,
+                    'auth_seq_align_end': auth_seq_align_end,
+                })
+            if created:
+                logger.debug('Created new %s: %s', obj.__class__.__name__, obj)
+                print('Created new', obj.__class__.__name__, obj)
+            else:
+                logger.debug('Updated %s: %s', obj.__class__.__name__, obj)
+                print('Updated', obj.__class__.__name__, obj)
+        except Exception as exc:
+            logger.exception(exc)
+            print(exc, os.strerror)
+
     return obj
 
 
 def getPdbToEntityListmmCifFile(mmCifDict, pdbObj):
     objList = []
-    types = mmCifDict.get('_entity.type', '')
+    entity_types = mmCifDict.get('_entity.type', '')
     entity_ids = mmCifDict.get('_entity.id', '')
-    unp_db_names = mmCifDict.get('_struct_ref.db_name', '')
-    unp_db_codes = mmCifDict.get('_struct_ref.db_code', '')
-    unp_db_accessions = mmCifDict.get('_struct_ref.pdbx_db_accession', '')
-
+    struct_ref_db_name = mmCifDict.get('_struct_ref.db_name', '')
+    struct_ref_db_code = mmCifDict.get('_struct_ref.db_code', '')
+    struct_ref_db_accession = mmCifDict.get(
+        '_struct_ref.pdbx_db_accession', '')
     for indx, entity_id in enumerate(entity_ids):
-        if types[indx] == 'polymer':
+        if entity_types[indx] == 'polymer':
             # UniProt
             uniprotObj = None
-            if unp_db_names[indx] == 'UNP':
-                db_accession = unp_db_accessions[indx]
-                db_code = unp_db_codes[indx]
+            if struct_ref_db_name[indx] == 'UNP':
+                db_accession = struct_ref_db_accession[indx]
+                db_code = struct_ref_db_code[indx]
                 uniprotObj = updateUniProtEntry(db_accession, db_code)
 
             # Organism
@@ -1359,7 +1453,8 @@ def getPdbToEntityListmmCifFile(mmCifDict, pdbObj):
                 indx, mmCifDict, uniprotObj, organismObj)
 
             # PDB-Polymer
-            pdbEntityOgj = updatePdbToEntity(pdbObj, entityObj, quantity)
+            pdbEntityOgj = updatePdbToEntity(
+                mmCifDict, entity_id, pdbObj, entityObj, quantity)
             objList.append(pdbEntityOgj)
     return objList
 
@@ -1508,17 +1603,17 @@ def getPubChemData(inChIKey, ligandId, ligandName):
         return None, None, None, None, None, None, None
 
     inChIKey = getDataFromPubChem(url=PUBCHEM_WS_URL +
-                                  'cid/' + pubChemCompoundId +
+                                  'cid/' + str(pubChemCompoundId) +
                                   '/property/InChIKey/json', jKey='InChIKey')
-    inChI = getDataFromPubChem(url=PUBCHEM_WS_URL + 'cid/' + pubChemCompoundId +
+    inChI = getDataFromPubChem(url=PUBCHEM_WS_URL + 'cid/' + str(pubChemCompoundId) +
                                '/property/InChI/json', jKey='InChI')
-    isomericSMILES = getDataFromPubChem(url=PUBCHEM_WS_URL + 'cid/' + pubChemCompoundId +
+    isomericSMILES = getDataFromPubChem(url=PUBCHEM_WS_URL + 'cid/' + str(pubChemCompoundId) +
                                         '/property/isomericSMILES/json', jKey='IsomericSMILES')
-    canonicalSMILES = getDataFromPubChem(url=PUBCHEM_WS_URL + 'cid/' + pubChemCompoundId +
+    canonicalSMILES = getDataFromPubChem(url=PUBCHEM_WS_URL + 'cid/' + str(pubChemCompoundId) +
                                          '/property/CanonicalSMILES/json', jKey='CanonicalSMILES')
-    formula = getDataFromPubChem(url=PUBCHEM_WS_URL + 'cid/' + pubChemCompoundId +
+    formula = getDataFromPubChem(url=PUBCHEM_WS_URL + 'cid/' + str(pubChemCompoundId) +
                                  '/property/MolecularFormula/json', jKey='MolecularFormula')
-    formula_weight = getDataFromPubChem(url=PUBCHEM_WS_URL + 'cid/' + pubChemCompoundId +
+    formula_weight = getDataFromPubChem(url=PUBCHEM_WS_URL + 'cid/' + str(pubChemCompoundId) +
                                         '/property/MolecularWeight/json', jKey='MolecularWeight')
 
     return pubChemCompoundId, inChIKey, inChI, isomericSMILES, canonicalSMILES, formula, formula_weight
@@ -2771,7 +2866,7 @@ def readInputFile(filename):
     return df
 
 
-def initUniProtEntry(filepath):
+def init_uniprot_entry(filepath):
     # Create dataframe from file
     df = readInputFile(filepath)
 
