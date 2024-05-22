@@ -458,7 +458,7 @@ class PdbEntryFilter(filters.FilterSet):
         return queryset.annotate(has_ligand_well=ligand_well_exists).filter(has_ligand_well=value)
         
     def filter_by_is_nmr(self, queryset, name, value):
-        has_nmr = models.Exists(ModelEntity.objects.filter(pdbentry=models.OuterRef('pk'), uniprotAcc__featureregionentity_features__isnull=False))
+        has_nmr = models.Exists(ModelEntity.objects.filter(pdbentry=models.OuterRef('pk'), uniprotAcc__uniprotentities__isnull=False))
         return queryset.annotate(is_nmr=has_nmr).filter(is_nmr=value).distinct()
 
     def create_case_expression(self, kwords):

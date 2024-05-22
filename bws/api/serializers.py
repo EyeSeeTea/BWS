@@ -373,10 +373,18 @@ class PdbLigandSerializer(serializers.ModelSerializer):
         fields = ['pdbId', 'ligand', 'quantity']
         depth = 1
 
+class NMRTargetSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = NMRTargetToPoliprotein
+        fields = ['targetName', 'start', 'end']
+
 class UniProtEntrySerializer(serializers.ModelSerializer):
+    uniprotentities = NMRTargetSerializer(many=True, read_only=True)
+
     class Meta:
         model = UniProtEntry
-        fields = ['dbId', 'name', 'externalLink']
+        fields = ['dbId', 'name', 'externalLink', 'uniprotentities']
 
 class EntityExportSerializer(serializers.ModelSerializer):
     isAntibody = serializers.BooleanField
