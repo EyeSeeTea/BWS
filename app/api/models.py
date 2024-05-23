@@ -421,9 +421,6 @@ class Publication(models.Model):
     doi = models.CharField(max_length=255, blank=False, default='')
     pubMedId = models.CharField(max_length=255, blank=False, default='')
     PMCId = models.CharField(max_length=255, blank=False, default='')
-    abstract = models.CharField(max_length=5000, blank=True, null=True)
-
-    authors = models.ManyToManyField(Author)
 
     def __str__(self):
         return '(%s) %s - %s' % (self.year, self.issn, self.title)
