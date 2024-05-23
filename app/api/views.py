@@ -26,7 +26,8 @@ import time
 
 logger = logging.getLogger(__name__)
 
-REGEX_PDB_ID = re.compile('^\d\w{3}$')
+HTTP_TIMEOUT = 15
+REGEX_PDB_ID = re.compile(r'^\d\w{3}$')
 DEEP_RES_FNAME_TEMPLATE = "%(pdb_id)s.deepres.aa.pdb"
 MONORES_FNAME_TEMPLATE = "%(pdb_id)s.monores.aa.pdb"
 BLOCRES_FNAME_TEMPLATE = "%(pdb_id)s.blocres.aa.pdb"
@@ -146,8 +147,8 @@ class PdbEntryAllAnnFromMapView(APIView, PdbEntryAnnFromMapsUtils):
 #  ######################################################################
 
 class RefinedModelMethodViewSet(viewsets.GenericViewSet,
-    mixins.ListModelMixin, mixins.RetrieveModelMixin
-    ):
+                                mixins.ListModelMixin, mixins.RetrieveModelMixin
+                                ):
     """
     This viewset automatically provides `list` and `detail` actions.
     """
@@ -161,8 +162,8 @@ class RefinedModelMethodViewSet(viewsets.GenericViewSet,
 
 
 class RefinedModelSourceViewSet(viewsets.GenericViewSet,
-    mixins.ListModelMixin, mixins.RetrieveModelMixin
-    ):
+                                mixins.ListModelMixin, mixins.RetrieveModelMixin
+                                ):
     """
     This viewset automatically provides `list` and `detail` actions.
     """
@@ -176,8 +177,8 @@ class RefinedModelSourceViewSet(viewsets.GenericViewSet,
 
 
 class RefinedModelViewSet(viewsets.GenericViewSet,
-    mixins.ListModelMixin, mixins.RetrieveModelMixin
-    ):
+                          mixins.ListModelMixin, mixins.RetrieveModelMixin
+                          ):
     """
     This viewset automatically provides `list` and `detail` actions.
     """
@@ -192,8 +193,8 @@ class RefinedModelViewSet(viewsets.GenericViewSet,
 
 
 class TopicViewSet(viewsets.GenericViewSet,
-    mixins.ListModelMixin, mixins.RetrieveModelMixin
-    ):
+                   mixins.ListModelMixin, mixins.RetrieveModelMixin
+                   ):
     """
     This viewset automatically provides `list` and `detail` actions.
     """
@@ -207,8 +208,8 @@ class TopicViewSet(viewsets.GenericViewSet,
 
 
 class StructureToTopicViewSet(viewsets.GenericViewSet,
-    mixins.ListModelMixin, mixins.RetrieveModelMixin
-    ):
+                              mixins.ListModelMixin, mixins.RetrieveModelMixin
+                              ):
     """
     This viewset automatically provides `list` and `detail` actions.
     """
@@ -301,7 +302,7 @@ def getEmdbMappings(pdb_id):
     logger.debug("WS-qry: %s", url)
     try:
         headers = {'accept': 'application/json'}
-        resp = requests.get(url, headers=headers, timeout=(2, 5), verify=False)
+        resp = requests.get(url, headers=headers, timeout=(HTTP_TIMEOUT))
         jresp = resp.json()
 
         logger.debug("WS-response: %s, %s", resp.status_code, jresp)
@@ -370,10 +371,9 @@ class FunPDBeEntryByPDBMethodView(APIView):
         return Response(status=status.HTTP_404_NOT_FOUND)
 
 
-
 class SampleEntitySet(viewsets.GenericViewSet,
-    mixins.ListModelMixin, mixins.RetrieveModelMixin
-    ):
+                      mixins.ListModelMixin, mixins.RetrieveModelMixin
+                      ):
     """
     This viewset automatically provides `list` and `detail` actions.
     """
@@ -382,9 +382,9 @@ class SampleEntitySet(viewsets.GenericViewSet,
     serializer_class = SampleEntitySerializer
 
 
-class LigandEntityViewSet(viewsets.GenericViewSet, 
-    mixins.ListModelMixin, mixins.RetrieveModelMixin
-    ):
+class LigandEntityViewSet(viewsets.GenericViewSet,
+                          mixins.ListModelMixin, mixins.RetrieveModelMixin
+                          ):
     """
     This viewset automatically provides `list` and `detail` actions.
     """
@@ -409,8 +409,8 @@ class LigandEntityViewSet(viewsets.GenericViewSet,
 
 
 class PdbLigandViewSet(viewsets.GenericViewSet,
-    mixins.ListModelMixin, mixins.RetrieveModelMixin
-    ):
+                       mixins.ListModelMixin, mixins.RetrieveModelMixin
+                       ):
     """
     This viewset automatically provides `list` and `detail` actions.
     """
@@ -472,6 +472,18 @@ class PdbEntryFilter(filters.FilterSet):
         return case_expression
 
     
+
+class ModelEntityViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.RetrieveModelMixin):
+    """
+    This viewset automatically provides `list` and `detail` actions.
+    """
+    renderer_classes = [JSONRenderer]
+    queryset = ModelEntity.objects.all()
+    serializer_class = ModelEntitySerializer
+    search_fields = ['pdbId', 'ligand', 'quantity']
+    ordering_fields = ['pdbId', 'ligand', 'quantity']
+    ordering = ['pdbId']
+
 
 class PdbEntryViewSet(viewsets.ReadOnlyModelViewSet):
     """
@@ -588,7 +600,7 @@ class EmvDataView(APIView):
         """
         data_files = []
         entries = []
-        data_files = _getEmvDataFiles(path="%s/%s" % (EMDB_DATA_DIR, 'emd-*'),
+        data_files = _getEmvDataFiles(path="%s/%s" % (EMV_DATA_DIR, 'emd-*'),
                                       pattern='*emv_*.json')
         for file in data_files:
             entries.append(_getJsonEMVEntry(file))
@@ -674,7 +686,7 @@ class EmvDataByIdMethodView(APIView):
             db_id = self.kwargs['db_id'].lower()
             if method == 'mapq':
                 # data source: Grigore Pintilie
-                path = os.path.join(LOCAL_DATA_DIR, 'q-score', 'json')
+                path = os.path.join(PATH_DATA, 'q-score', 'json')
                 if db_id.startswith('emd-'):
                     pattern = "%s*_emv_%s.json" % (
                         db_id.replace("emd-", "emd_"), method,)
@@ -682,7 +694,7 @@ class EmvDataByIdMethodView(APIView):
                     pattern = "*%s_emv_%s.json" % (db_id, method,)
             elif method == 'daq':
                 # data source: Daisuke Kihara
-                path = os.path.join(LOCAL_DATA_DIR, 'daq', 'json', '**')
+                path = os.path.join(PATH_DATA, 'daq', 'json', '**')
                 if db_id.startswith('emd-'):
                     pattern = "%s*_emv_%s.json" % (db_id, method,)
                 else:
@@ -725,7 +737,7 @@ class EmvSourceDataByIdMethodView(APIView):
         method = self.kwargs['method'] if 'method' in self.kwargs else ""
         db_id = self.kwargs['db_id'].lower() if 'db_id' in self.kwargs else ""
 
-        path = os.path.join(LOCAL_DATA_DIR)
+        path = os.path.join(PATH_DATA)
         pattern = "*"
         data_files = []
 
@@ -733,7 +745,7 @@ class EmvSourceDataByIdMethodView(APIView):
             if fileformat == 'mmcif':
                 # original data from Grigore Pintilie
                 path = os.path.join(
-                    LOCAL_DATA_DIR, 'q-score', 'emdb_qscores')
+                    PATH_DATA, 'q-score', 'emdb_qscores')
                 if db_id.startswith('emd-'):
                     pattern = "%s*.cif" % db_id.replace("emd-", "emd_")
                 else:
@@ -741,7 +753,7 @@ class EmvSourceDataByIdMethodView(APIView):
 
             elif fileformat == 'json':
                 # reformated data from Grigore Pintilie
-                path = os.path.join(LOCAL_DATA_DIR, 'q-score', 'json')
+                path = os.path.join(PATH_DATA, 'q-score', 'json')
                 if db_id.startswith('emd-'):
                     pattern = "%s*_emv_%s.json" % (
                         db_id.replace("emd-", "emd_"), method,)
@@ -751,7 +763,7 @@ class EmvSourceDataByIdMethodView(APIView):
         elif method == 'daq':
             if fileformat == 'pdb':
                 # original data from Kihara Lab
-                path = os.path.join(LOCAL_DATA_DIR, 'daq',
+                path = os.path.join(PATH_DATA, 'daq',
                                     'data_20230426', '**')
                 if db_id.startswith('emd-'):
                     pattern = "%s*.pdb" % db_id.replace("emd-", "")
@@ -759,7 +771,7 @@ class EmvSourceDataByIdMethodView(APIView):
                     pattern = "*%s*.pdb" % db_id
             elif fileformat == 'json':
                 # reformated data from Kihara Lab
-                path = os.path.join(LOCAL_DATA_DIR, 'daq', 'json', '**')
+                path = os.path.join(PATH_DATA, 'daq', 'json', '**')
                 if db_id.startswith('emd-'):
                     pattern = "%s*_emv_%s.json" % (db_id, method,)
                 else:
@@ -801,7 +813,7 @@ class EmvMapQDataAveragesView(APIView):
         """
         db_id = self.kwargs['db_id'].lower() if 'db_id' in self.kwargs else ""
 
-        data_path = os.path.join(LOCAL_DATA_DIR, 'q-score')
+        data_path = os.path.join(PATH_DATA, 'q-score')
         data_filename = "emd_qscores.txt"
         dataFile = os.path.join(data_path, data_filename)
         resource = "EMV-MapQ-Averages"
@@ -1096,7 +1108,8 @@ class NMRViewSet(viewsets.ModelViewSet):
 
         # Filter queryset depending on URL parameters
         if uniprot_id:
-            queryset = queryset.filter(uniprotentry=uniprot_id).order_by('details__type')
+            queryset = queryset.filter(
+                uniprotentry=uniprot_id).order_by('details__type')
         if dataType:
             queryset = queryset.filter(details__type=dataType)
         if ligand_id:
@@ -1109,6 +1122,7 @@ class NMRViewSet(viewsets.ModelViewSet):
 
         return queryset
 
+
 class NMRTargetsViewSet(APIView):
     """
     This viewset automatically provides `list` and `detail` actions.
@@ -1119,7 +1133,7 @@ class NMRTargetsViewSet(APIView):
         # Get NMR target queryset
         queryset = FeatureRegionEntity.objects.filter(
             featureType__dataSource__exact='The COVID19-NMR Consortium').order_by('id').values('details')
-        
+
         # Get entry details for all NMR entries
         results = []
         for entry in queryset:
@@ -1144,7 +1158,8 @@ class NMRTargetsViewSet(APIView):
 
         # Filter unique entry list if uniprot id is provided
         if uniprot_id:
-            unique_results = [dic for dic in unique_results if dic.get('uniprot_acc') == uniprot_id]
+            unique_results = [dic for dic in unique_results if dic.get(
+                'uniprot_acc') == uniprot_id]
 
         count = len(unique_results)
 
@@ -1157,7 +1172,7 @@ class NMRSourceViewSet(viewsets.ModelViewSet):
     """
     serializer_class = FeatureTypeNMRSerializer
     queryset = FeatureType.objects.filter(
-            name__exact='NMR-based fragment screening')
+        name__exact='NMR-based fragment screening')
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     filter_backends = (filters.DjangoFilterBackend, SearchFilter,
                        OrderingFilter)
@@ -1267,7 +1282,7 @@ class EmvDataByIdDaqView(APIView):
         chains_data = []
         for url in urls:
             try:
-                resp = requests.get(url)
+                resp = requests.get(url, timeout=HTTP_TIMEOUT)
                 if resp.status_code == 200:
                     if format == 'pdb':
                         pdb_data += resp.text + '\n'
@@ -1292,28 +1307,32 @@ class EmvDataByIdDaqView(APIView):
             if cache_file.exists():
                 logger.debug("Found the cache file %s" + str(cache_file))
                 stat_result = cache_file.stat()
-                modified = datetime.fromtimestamp(stat_result.st_mtime, tz=timezone.utc)
-                logger.debug("The cache file is newer than %s days: %s" % (str(business_days), modified))
+                modified = datetime.fromtimestamp(
+                    stat_result.st_mtime, tz=timezone.utc)
+                logger.debug("The cache file is newer than %s days: %s" %
+                             (str(business_days), modified))
                 if ndays < stat_result.st_mtime:
                     logger.debug("Read cache file")
                     with cache_file.open() as cf:
                         text_content = cf.readlines()
                     return text_content
-                logger.debug("The cache file is older than %s days: %s" % (str(business_days), modified))
+                logger.debug("The cache file is older than %s days: %s" %
+                             (str(business_days), modified))
         except Exception as exc:
             logger.exception(exc)
 
         # get the list from source
         try:
-            resp = requests.get(url)
+            resp = requests.get(url, timeout=HTTP_TIMEOUT)
             if not resp.status_code == 200:
                 return []
             text_content = resp.text.splitlines()
             # save a cache
-            logger.debug("Create cache path if not exists %s" % str(cache_path))
+            logger.debug("Create cache path if not exists %s" %
+                         str(cache_path))
             Path(cache_path).mkdir(parents=True, exist_ok=True)
             logger.debug("Save the cache file %s" % cache_file)
-            with cache_file.open( mode='w') as cf:
+            with cache_file.open(mode='w') as cf:
                 for line in text_content:
                     cf.write(line + os.linesep)
             return text_content
