@@ -29,7 +29,7 @@ load_dotenv(os.path.join(BASE_DIR, ".env"))
 # See https://docs.djangoproject.com/en/3.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "SECRET_KEY"
+SECRET_KEY = os.environ.get("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -174,9 +174,9 @@ LOGGING = {
 
 # Semantic Versioning 2.0.0
 # update with every release
-API_NAME = os.environ.get("PROJECT_NAME")
+API_NAME = os.environ.get("APP_NAME")
 API_VERSION_MAJOR = "0"
-API_VERSION_MINOR = "8"
+API_VERSION_MINOR = "10"
 API_VERSION_PATCH = "0"
 
 
@@ -190,11 +190,7 @@ USE_X_FORWARDED_HOST = True
 USE_X_FORWARDED_PORT = True
 
 # To fix bug: Django’s Debug Toolbar not Showing Inside Docker
-INTERNAL_IPS = [
-    "127.0.0.1",
-    "localhost",
-    "0.0.0.0",
-]
+INTERNAL_IPS = ['*']
 
 
 hostname, _, ips = socket.gethostbyname_ex(socket.gethostname())

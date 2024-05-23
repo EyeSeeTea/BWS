@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from api.utils import initBaseTables
+from api.utils import init_base_tables
 
 
 class Command(BaseCommand):
@@ -12,4 +12,4 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         print(help)
-        initBaseTables()
+        init_base_tables()
