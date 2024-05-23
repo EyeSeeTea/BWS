@@ -2,7 +2,7 @@
 Command creating UniProt entries for each of the SARS-CoV-2 proteins in UniProtEntry table.
 """
 from django.core.management.base import BaseCommand
-from api.utils import initUniProtEntry
+from api.utils import init_uniprot_entry
 
 
 class Command(BaseCommand):
@@ -21,5 +21,5 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         filepath = options['file_path'][0]
         print("Initializing UniProtEntry for SARS-CoV-2 data from ", filepath)
-        initUniProtEntry(filepath)
+        init_uniprot_entry(filepath)
         print("Done.")

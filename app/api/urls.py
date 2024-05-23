@@ -13,6 +13,7 @@ router.register(r"refinedModels", views.RefinedModelViewSet)
 router.register(r"sampleEntities", views.SampleEntitySet)
 router.register(r"ligands", views.LigandEntityViewSet)
 router.register(r"pdbligands", views.PdbLigandViewSet)
+router.register(r"modelentities", views.ModelEntityViewSet)
 
 
 urlpatterns = [
@@ -69,8 +70,10 @@ urlpatterns = [
         views.EmvDataByIdDaqView.as_view(),
     ),
     # TODO: add end-point for getting different versions
-    # re_path(r'^emv/(?P<db_id>(\d[a-zA-Z]\w{2}|[EMD]*[emd]*-\d{4,5}))/daq/(?P<version>)/$', views.EmvDataByIdDaqView.as_view()),
-    # re_path(r'^emv/(?P<db_id>(\d[a-zA-Z]\w{2}|[EMD]*[emd]*-\d{4,5}))/daq/(?P<version>)/(?P<fileformat>(json|pdb))/$', views.EmvDataByIdDaqView.as_view()),
+    # re_path(r'^emv/(?P<db_id>(\d[a-zA-Z]\w{2}|[EMD]*[emd]*-\d{4,5}))/daq/(?P<version>)/$',
+    #  views.EmvDataByIdDaqView.as_view()),
+    # re_path(r'^emv/(?P<db_id>(\d[a-zA-Z]\w{2}|[EMD]*[emd]*-\d{4,5}))/daq/(?P<version>)/(?P<fileformat>(json|pdb))/$',
+    #  views.EmvDataByIdDaqView.as_view()),
     re_path(
         r"^emv/(?P<db_id>(\d[a-zA-Z]\w{2}|[EMD]*[emd]*-\d{4,5}))/(?P<method>(stats|deepres|monores|blocres|mapq|fscq))/(?P<fileformat>(json|pdb|mmcif))/$",
         views.EmvSourceDataByIdMethodView.as_view(),
@@ -94,9 +97,8 @@ urlpatterns = [
     ),
     # Ontology related endpoints
     re_path(r"^ontologies/$", views.OntologyViewSet.as_view({"get": "list"})),
-    re_path(
-        r"^ontologies/terms/$", views.AllOntologyTermViewSet.as_view({"get": "list"})
-    ),
+    re_path(r"^ontologies/terms/$",
+            views.AllOntologyTermViewSet.as_view({"get": "list"})),
     re_path(
         r"^ontologies/terms/(?P<term_id>\w[a-zA-Z]*_\d*)/$",
         views.AllOntologyTermViewSet.as_view({"get": "list"}),
