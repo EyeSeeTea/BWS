@@ -1,11 +1,11 @@
-version: "3.3"
+#name: '3DBionotes_django'
 #
 # DEVELOPMENT ONLY SETTINGS
 #
-
 services:
   # App container
   web:
+    container_name: bws-web
     environment:
       - DJANGO_SETTINGS_MODULE=bws.settings.development
     command: python manage.py runserver 0.0.0.0:8000
