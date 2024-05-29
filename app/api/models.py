@@ -157,8 +157,11 @@ class UniProtEntry(models.Model):
 
 
 class PdbEntry(models.Model):
-    dbId = models.CharField(max_length=4, blank=False,
-                            default='', primary_key=True, validators=[
+    dbId = models.CharField(max_length=4,
+                            blank=False,
+                            default='',
+                            primary_key=True,
+                            validators=[
                                 RegexValidator(
                                     regex='^[0-9][a-zA-Z_0-9]{3}$',
                                     message='dbID doesnt comply',
@@ -173,7 +176,7 @@ class PdbEntry(models.Model):
     modified = models.DateField(auto_now=True)
     entities = models.ManyToManyField('ModelEntity', through='PdbToEntity')
     ligands = models.ManyToManyField('LigandEntity', through='PdbToLigand')
-    dbauthors = models.ManyToManyField('Author')
+    dbauthors = models.ManyToManyField('Author', through='PdbEntryAuthor')
     emdbs = models.ManyToManyField('EmdbEntry', through='HybridModel')
 
     def imageLink(self):
@@ -181,10 +184,11 @@ class PdbEntry(models.Model):
             self.dbId.lower(), )
 
     def externalLink(self):
-        return 'https://www.ebi.ac.uk/pdbe/entry/pdb/%s' % (self.dbId.lower(),)
+        return 'https://www.ebi.ac.uk/pdbe/entry/pdb/%s' % (
+            self.dbId.lower(), )
 
     def __str__(self):
-        return '%s' % (self.dbId,)
+        return '%s' % (self.dbId, )
 
 
 class PdbToEntity(models.Model):
@@ -421,6 +425,7 @@ class Publication(models.Model):
     doi = models.CharField(max_length=255, blank=False, default='')
     pubMedId = models.CharField(max_length=255, blank=False, default='')
     PMCId = models.CharField(max_length=255, blank=False, default='')
+    authors = models.ManyToManyField(Author, through='PublicationAuthor')
 
     def __str__(self):
         return '(%s) %s - %s' % (self.year, self.issn, self.title)
