@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from itertools import chain
 from pathlib import Path
 import glob
 import re
@@ -10,16 +11,17 @@ from django.http import HttpResponse, HttpResponseNotFound
 from .serializers import *
 from .models import *
 from .utils import PdbEntryAnnFromMapsUtils
-from rest_framework import status, viewsets, permissions, generics, mixins
+from rest_framework import status, viewsets, permissions, mixins
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from .dataPaths import *
-from django_filters import FilterSet, ModelChoiceFilter
 from rest_framework.filters import OrderingFilter, SearchFilter
 from django_filters import rest_framework as filters
 from rest_framework.renderers import JSONRenderer
 from datetime import datetime
 from django.shortcuts import get_object_or_404
+from django.db.models import Case, When, Value, BooleanField
+from haystack.query import SearchQuerySet
 import time
 
 logger = logging.getLogger(__name__)
@@ -419,6 +421,57 @@ class PdbLigandViewSet(viewsets.GenericViewSet,
     ordering_fields = ['pdbId', 'ligand', 'quantity']
     ordering = ['pdbId']
 
+class PdbEntryFilter(filters.FilterSet):
+    is_antibody = filters.BooleanFilter(method='filter_by_is_antibody', label='Is antibody')
+    is_nanobody = filters.BooleanFilter(method='filter_by_is_nanobody', label='Is nanobody')
+    is_sybody = filters.BooleanFilter(method='filter_by_is_sybody', label='Is sybody')
+    is_idr = filters.BooleanFilter(method='filter_by_is_idr', label='Is IDR')
+    is_pdb_redo = filters.BooleanFilter(method='filter_by_is_pdb_redo', label='Is PDB-REDO')
+    is_nmr = filters.BooleanFilter(method='filter_by_is_nmr', label='Is NMR')
+
+    class Meta:
+        model = PdbEntry
+        fields = ['is_antibody', 'is_nanobody', 'is_sybody', 'is_idr', 'is_pdb_redo', 'is_nmr']
+
+    def filter_by_is_antibody(self, queryset, name, value):
+        kwords = ['antibody', 'antibodies', 'fab', 'heavy', 'light']
+        case_expression = self.create_case_expression(kwords)
+        return queryset.annotate(is_antibody=case_expression).filter(is_antibody=value).distinct()
+
+    def filter_by_is_nanobody(self, queryset, name, value):
+        kwords = ['nanobody', 'nanobodies', 'nonobody']
+        case_expression = self.create_case_expression(kwords)
+        return queryset.annotate(is_nanobody=case_expression).filter(is_nanobody=value).distinct()
+
+    def filter_by_is_sybody(self, queryset, name, value):
+        kwords = ['synthetic nanobody', 'sybody', 'sybodies']
+        case_expression = self.create_case_expression(kwords)
+        return queryset.annotate(is_sybody=case_expression).filter(is_sybody=value).distinct()
+    
+    def filter_by_is_pdb_redo(self, queryset, name, value):
+        pdb_redo_source = RefinedModelSource.objects.get(name='PDB-REDO')
+        pdb_redo_models = RefinedModel.objects.filter(pdbId=models.OuterRef('pk'), source=pdb_redo_source)
+        return queryset.annotate(has_pdb_redo=models.Exists(pdb_redo_models)).filter(has_pdb_redo=value)
+    
+    def filter_by_is_idr(self, queryset, name, value):
+        ligand_well_exists = models.Exists(LigandEntity.objects.filter(pdbentry=models.OuterRef('pk'), well__isnull=False))
+        return queryset.annotate(has_ligand_well=ligand_well_exists).filter(has_ligand_well=value)
+        
+    def filter_by_is_nmr(self, queryset, name, value):
+        has_nmr = models.Exists(ModelEntity.objects.filter(pdbentry=models.OuterRef('pk'), uniprotAcc__uniprotentities__isnull=False))
+        return queryset.annotate(is_nmr=has_nmr).filter(is_nmr=value).distinct()
+
+    def create_case_expression(self, kwords):
+        case_expression = Case(
+            *[When(entities__name__icontains=word, then=Value(True)) for word in kwords],
+            *[When(entities__details__icontains=word, then=Value(True)) for word in kwords],
+            *[When(entities__altNames__icontains=word, then=Value(True)) for word in kwords],
+            default=Value(False),
+            output_field=BooleanField()
+        )
+        return case_expression
+
+    
 
 class ModelEntityViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.RetrieveModelMixin):
     """
@@ -437,16 +490,19 @@ class PdbEntryViewSet(viewsets.ReadOnlyModelViewSet):
     This viewset automatically provides `list` and `detail` actions.
     """
     serializer_class = PdbEntryExportSerializer
-    filter_backends = (filters.DjangoFilterBackend, SearchFilter,
-                       OrderingFilter)
-    search_fields = ['dbId', 'title', 'keywords', 'method']
-    ordering_fields = [
-        'dbId', 'title', 'status', 'relDate', 'method', 'resolution'
-    ]
+    filter_backends = (filters.DjangoFilterBackend, OrderingFilter)
+    filterset_class = PdbEntryFilter
+    filterset_fields = ['is_antibody', 'is_nanobody', 'is_sybody', 'is_idr', 'is_pdb_redo', 'is_nmr']
+    ordering_fields = ['dbId', 'title', 'relDate', 'emdbs__dbId']
     ordering = ['-relDate']
 
     def get_queryset(self):
-        return PdbEntry.objects.all()
+        query = self.request.GET.get('q', '')
+        if query:
+            search_results = SearchQuerySet().models(PdbEntry).filter_and(content=query)
+            return PdbEntry.objects.filter(dbId__in=[result.pk for result in search_results])
+        else:
+            return PdbEntry.objects.all()
 
     def retrieve(self, request, *args, **kwargs):
         queryset = self.get_queryset()
@@ -454,6 +510,26 @@ class PdbEntryViewSet(viewsets.ReadOnlyModelViewSet):
         serializer = self.get_serializer(obj)
         return Response(serializer.data)
 
+class AutocompleteAPIView(APIView):
+    """
+    This view provides autocomplete functionality.
+    """
+    def get(self, request, *args, **kwargs):
+        query = request.GET.get('q', '').lower()
+        if query:
+            search_results = SearchQuerySet().models(PdbEntry).autocomplete(text_auto=query)
+            split_results = [list(filter(None, result.text_auto.lower().split(';;'))) for result in search_results]
+            filtered_results = [[word for word in result if query in word] for result in split_results]
+            flattened_results = list(chain(*filtered_results))
+            regex_filtered_results = [re.sub('.*[\w\d-]'+query+'.*|.*('+query+'[\w\d-]*\s?[\w\d-]*)|.*', r'\1', string, flags=re.IGNORECASE) for string in flattened_results]
+            unique_results = list(filter(None,dict.fromkeys(regex_filtered_results)))
+            return Response({
+                'results': unique_results
+            })
+        else:
+            return Response({
+                'results': []
+            })
 
 class LigandsSectionViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = LigandEntitySerializer
