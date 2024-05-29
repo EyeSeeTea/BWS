@@ -52,7 +52,7 @@ class PublicationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Publication
         fields = ['title', 'journal_abbrev', 'issn', 'issue', 'volume', 'page_first',
-                  'page_last', 'year', 'doi', 'pubMedId', 'PMCId', 'abstract', 'authors']
+                  'page_last', 'year', 'doi', 'pubMedId', 'PMCId', 'authors']
 
 
 class OrganismSerializer(serializers.ModelSerializer):
@@ -471,7 +471,6 @@ class PublicationResumeSerializer(serializers.ModelSerializer):
                   'doi',
                   'pmidLink',
                   'pubDate',
-                  'abstract',
                   'authors']
 
 

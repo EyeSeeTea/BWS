@@ -1098,7 +1098,7 @@ def updatePublicationAuthor(name, orcid, ordinal, publication):
     return obj
 
 
-def updatePublication(title, journal, issn, issue, volume, firstPage, lastPage, year, doi, pubMedId, abstract, PMCId=''):
+def updatePublication(title, journal, issn, issue, volume, firstPage, lastPage, year, doi, pubMedId, PMCId=''):
     obj = None
     try:
         obj, created = Publication.objects.update_or_create(
@@ -1113,7 +1113,6 @@ def updatePublication(title, journal, issn, issue, volume, firstPage, lastPage, 
                 'year': year,
                 'doi': doi,
                 'pubMedId': pubMedId,
-                'abstract': abstract,
                 'PMCId': PMCId,
             })
         if created:
@@ -1140,7 +1139,6 @@ def getPublications(mmCifDict):
     yearList = mmCifDict.get('_citation.year', '')
     doiList = mmCifDict.get('_citation.pdbx_database_id_DOI', '')
     pubMedList = mmCifDict.get('_citation.pdbx_database_id_PubMed', '')
-    abstractList = mmCifDict.get('_citation.abstract', '')
     for idx, title in enumerate(titleList):
         journal = journalList[idx].replace('?', '') if journalList else ''
         issn = issnList[idx].replace('?', '') if issnList else ''
@@ -1152,10 +1150,9 @@ def getPublications(mmCifDict):
         year = yearList[idx].replace('?', '') if yearList else ''
         doi = doiList[idx].replace('?', '') if doiList else ''
         pubMedId = pubMedList[idx].replace('?', '') if pubMedList else ''
-        abstract = abstractList[idx].replace('?', '') if abstractList else ''
 
         refObj = updatePublication(
-            title, journal, issn, issue, volume, firstPage, lastPage, year, doi, pubMedId, abstract)
+            title, journal, issn, issue, volume, firstPage, lastPage, year, doi, pubMedId)
         objs.append(refObj)
 
         auths = getCitationAuthors(mmCifDict, refObj)
@@ -2589,7 +2586,7 @@ class IDRUtils(object):
                 pubMedId=publication['PubMed ID'],
                 PMCId=publication['PMC ID'],
                 journal='', issn='', issue='', volume='',
-                firstPage='', lastPage='', year='', abstract='')
+                firstPage='', lastPage='', year='')
 
             publication_entry_list.append(PublicationEntry)
             # Add already updated/created Author entries to Publicacion entry
