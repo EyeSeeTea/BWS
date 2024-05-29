@@ -1,7 +1,6 @@
 # Add sample file for ENVIRONMENT variables
 # Copy to .env and change values as needed
 
-COMPOSE_PROJECT_NAME=bws
 PROJECT_NAME=BWS
 
 USER_NAME=bioinfo

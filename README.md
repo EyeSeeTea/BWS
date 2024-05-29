@@ -15,7 +15,9 @@ START DEV INSTANCE:
 
 1. Create .env file from .sample.env
 
-2. Start/stop application
+2. Add the `db.sqlite3` file in `/app/bws/` directory
+
+3. Start/stop application
 
 Start application and elasticsearch containers in deteched mode:
 
