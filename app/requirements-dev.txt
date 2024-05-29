@@ -11,4 +11,5 @@ django-debug-toolbar
 django-debug-toolbar-force
 pandas
 rcsbsearchapi
+django-haystack[elasticsearch]
 whitenoise

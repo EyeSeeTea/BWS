@@ -18,6 +18,7 @@ router.register(r"modelentities", views.ModelEntityViewSet)
 
 urlpatterns = [
     path("", include(router.urls)),
+    path('complete/search', views.AutocompleteAPIView.as_view()),
     # Get version
     re_path(r"^version/$", views.GetApiVersion.as_view()),
     # EM Validation annotations for 3DBionotes - Protvista
