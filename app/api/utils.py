@@ -674,7 +674,7 @@ def update_RefinedModel(refmodel):
                 'filename': filename if filename else '',
                 'externalLink': externalLink if externalLink else '',
                 'queryLink': queryLink if queryLink else '',
-                'details': details if details else '',
+                'details': details[:200] if details else '',
             })
         if created:
             logger.debug('Created new %s: %s', obj.__class__.__name__, obj)
@@ -926,7 +926,7 @@ def updateRefinedModelMethod(source, name, description='', url=''):
 
 # ========== ========== ========== ========== ========== ========== ==========
 
-def get_structures_from_path(path):
+def get_structures_from_path(path, start=0):
     """
     get_structures_from_path
     """
@@ -941,6 +941,10 @@ def get_structures_from_path(path):
 
         # for filename in filenames:
         for idx, filename in enumerate(filenames):
+            if idx < start:
+                print("-> skipping ", idx)
+                continue
+
             filename.replace(".cif", "")
 
             # Read mmCIF to dictionary
@@ -1341,8 +1345,8 @@ def updateEntitymmCifFile(indx, mmCifDict, uniprotObj=None, organismObj=None):
             defaults={
                 'altNames': altNames if altNames else '',
                 'type': types[indx] if types[indx] else '',
-                'details': details[indx].replace('?', '') if details[indx] else '',
-                'mutation': mutations[indx].replace('?', '') if mutations[indx] else '',
+                'details': details[indx][:200].replace('?', '') if details[indx] else '',
+                'mutation': mutations[indx][:200].replace('?', '') if mutations[indx] else '',
                 'uniprotAcc': uniprotObj,
                 'organism': organismObj,
             })
@@ -1364,13 +1368,15 @@ def updatePdbToEntity(mmCifDict, entity_id, pdbObj, polymerObj, quantity=1):
                                             '')
     entity_pdbx_end_seq_num = mmCifDict.get('_entity_src_gen.pdbx_end_seq_num',
                                             '')
+    pdbx_beg_seq_num = 0
+    pdbx_end_seq_num = 0
     for (src_entity_id, entity_beg_seq_num,
          entity_end_seq_num) in zip(entity_src_entity_id,
                                     entity_pdbx_beg_seq_num,
                                     entity_pdbx_end_seq_num):
         if src_entity_id == entity_id:
-            pdbx_beg_seq_num = entity_beg_seq_num
-            pdbx_end_seq_num = entity_end_seq_num
+            pdbx_beg_seq_num = int(entity_beg_seq_num.replace("?", "0"))
+            pdbx_end_seq_num = int(entity_end_seq_num.replace("?", "0"))
             break
 
     entity_poly_entity_id = mmCifDict.get('_entity_poly.entity_id', '')
@@ -1416,12 +1422,15 @@ def updatePdbToEntity(mmCifDict, entity_id, pdbObj, polymerObj, quantity=1):
                  struct_ref_seq_auth_seq_align_begin,
                  struct_ref_seq_auth_seq_align_end):
             if ref_seq_pdbx_strand_id == chain:
-                seq_align_begin = int(ref_seq_seq_align_begin)
-                seq_align_end = int(ref_seq_seq_align_end)
-                db_align_begin = int(ref_seq_db_align_begin)
-                db_align_end = int(ref_seq_db_align_end)
-                auth_seq_align_begin = int(ref_seq_auth_seq_align_begin)
-                auth_seq_align_end = int(ref_seq_auth_seq_align_end)
+                seq_align_begin = int(
+                    ref_seq_seq_align_begin.replace("?", "0"))
+                seq_align_end = int(ref_seq_seq_align_end.replace("?", "0"))
+                db_align_begin = int(ref_seq_db_align_begin.replace("?", "0"))
+                db_align_end = int(ref_seq_db_align_end.replace("?", "0"))
+                auth_seq_align_begin = int(
+                    ref_seq_auth_seq_align_begin.replace("?", "0"))
+                auth_seq_align_end = int(
+                    ref_seq_auth_seq_align_end.replace("?", "0"))
                 break
 
         try:
@@ -1485,8 +1494,8 @@ def getPdbToEntityListmmCifFile(mmCifDict, pdbObj):
                     entity_begin = pdbEntityOgj.pdbx_beg_seq_num
                     entity_end = pdbEntityOgj.pdbx_end_seq_num
                     targets = NMRTarget.objects.filter(uniprot_acc__dbId=uniprot_id,
-                                                    start__lte=entity_end,
-                                                    end__gte=entity_begin)
+                                                       start__lte=entity_end,
+                                                       end__gte=entity_begin)
                     for target in targets:
                         updateNMRTargetToModelEntity(
                             target, entityObj, entity_begin, entity_end)
@@ -1536,7 +1545,7 @@ def updateLigandEntity(inChIKey, ligandId, ligandType, ligandName, formula, form
                 'name': ligandName if ligandName else '',
                 'formula': formula if formula else '',
                 'formula_weight': formula_weight if formula_weight else '',
-                'details': details if details else '',
+                'details': details[:200] if details else '',
                 'altNames': altNames if altNames else '',
                 'systematicNames': systematicNames if systematicNames else '',
                 'IUPACInChI': IUPACInChI if IUPACInChI else '',
@@ -1794,7 +1803,7 @@ def updateSampleEntity(name, exprSystem,
             exprSystem=exprSystem,
             assembly=assembly,
             ass_method=ass_method,
-            ass_details=ass_details,
+            ass_details=ass_details[:200],
             macromolecules=macromolecules,
             uniProts=uniProts,
             genes=genes,
@@ -1835,7 +1844,8 @@ def getSampleDetails(mmCifDict):
         exprSystem=exprSystem[0].replace('?', '') if exprSystem else '',
         assembly=assembly[0].replace('?', '') if exprSystem else '',
         ass_method=ass_method[0].replace('?', '') if exprSystem else '',
-        ass_details=ass_details[0].replace('?', '') if exprSystem else '',
+        ass_details=ass_details[0][:200].replace(
+            '?', '') if exprSystem else '',
         macromolecules='',
         uniProts='',
         genes=''.join(genes).replace('?', ''),
@@ -2011,7 +2021,7 @@ def updateAssayEntity(dbId, name, featureType, description, externalLink, detail
                 'featureType': featureType,
                 'description': description,
                 'externalLink': externalLink,
-                'details': details,
+                'details': details[:200],
                 'screenCount': screenCount,
                 'BIAId': BIAId,
                 'releaseDate': releaseDate,
@@ -2692,7 +2702,7 @@ class IDRUtils(object):
 
             # Create PlateEntity, LigandEntity and WellEntity entries
             screenDf = getScreenDataframe(session, screenId)
-            if not screenDf:
+            if screenDf.empty:
                 continue
             for index, row in screenDf.iterrows():
                 PlateEntityEntry = updatePlateEntity(
@@ -2995,7 +3005,7 @@ def updateFeatureModelEntity(name, featureType, description, pdbentry, uniproten
                 'externalLink': externalLink,
                 'ligandentity': ligandentity,
                 'externalLink': externalLink,
-                'details': details,
+                'details': details[:200],
             })
         if created:
             logger.debug('Created new %s: %s',
