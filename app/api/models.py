@@ -132,9 +132,6 @@ class EmdbEntry(models.Model):
         # https://www.ebi.ac.uk/emdb/{emdbId}
         return '%s/entry/%s' % (EMDB_URL, self.dbId,)
 
-    def queryLink(self):
-        return '%s/?queryId=%s' % (BIONOTES_URL, self.dbId, )
-
     def __str__(self):
         return '%s' % (self.dbId,)
 
@@ -177,6 +174,7 @@ class PdbEntry(models.Model):
     entities = models.ManyToManyField('ModelEntity', through='PdbToEntity')
     ligands = models.ManyToManyField('LigandEntity', through='PdbToLigand')
     dbauthors = models.ManyToManyField('Author')
+    emdbs = models.ManyToManyField('EmdbEntry', through='HybridModel')
 
     def imageLink(self):
         return 'https://www.ebi.ac.uk/pdbe/static/entry/%s_deposited_chain_front_image-200x200.png' % (
@@ -184,9 +182,6 @@ class PdbEntry(models.Model):
 
     def externalLink(self):
         return 'https://www.ebi.ac.uk/pdbe/entry/pdb/%s' % (self.dbId.lower(),)
-
-    def queryLink(self):
-        return 'https://3dbionotes.cnb.csic.es/?queryId=%s' % (self.dbId.lower(),)
 
     def __str__(self):
         return '%s' % (self.dbId,)
@@ -426,9 +421,6 @@ class Publication(models.Model):
     doi = models.CharField(max_length=255, blank=False, default='')
     pubMedId = models.CharField(max_length=255, blank=False, default='')
     PMCId = models.CharField(max_length=255, blank=False, default='')
-    abstract = models.CharField(max_length=5000, blank=True, null=True)
-
-    authors = models.ManyToManyField(Author)
 
     def __str__(self):
         return '(%s) %s - %s' % (self.year, self.issn, self.title)
