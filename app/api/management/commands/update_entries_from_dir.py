@@ -15,8 +15,13 @@ class Command(BaseCommand):
         parser.add_argument(
             'path_name', nargs=1, type=str,
             help='<Required> path to DataFiles')
+        parser.add_argument('start_from', nargs='*', type=str, default='0',
+            help='<optional> order num to begin with')
 
     def handle(self, *args, **options):
         path = options['path_name'][0]
+        start = int(options['start_from'][0])
         print("Reading data from", path)
-        get_structures_from_path(path)
+        if start:
+            print("\tstarting from ", start)
+        get_structures_from_path(path, start)
