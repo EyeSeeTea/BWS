@@ -3,6 +3,10 @@ services:
   elasticsearch:
     image: elasticsearch:8.13.4
     container_name: elasticsearch
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
     ports:
       - "9200:9200"
       - "9300:9300"
@@ -15,6 +19,19 @@ services:
       - xpack.security.enabled=false
       - cluster.name=elasticsearch
       - bootstrap.memory_lock=true
-    mem_limit: 1073741824
+      - ES_JAVA_OPTS=${ES_JAVA_OPTS}
+    mem_limit: ${ES_MEM_LIMIT}
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl --silent --fail localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 volumes:
   test_data:
+
+networks:
+  app-network:
+    driver: bridge
+    name: ${NETWORK_NAME}
