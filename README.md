@@ -13,7 +13,7 @@ newgrp docker
 
 START DEV INSTANCE:
 
-1. Create .env file from .sample.env
+1. Create .env-dev file from sample.env-dev
 
 2. Add the `db.sqlite3` file in `/app/bws/` directory
 
@@ -22,31 +22,33 @@ START DEV INSTANCE:
 Start application and elasticsearch containers in deteched mode:
 
 ```
-docker-compose -f docker-compose.yml -f docker-compose.develop.yml -f docker-compose.elastic.yml up -d
+bash run-dev.sh
+or
+docker compose --env-file .env-dev -f docker-compose.develop.yml up -d
 ```
 
 Re-build application or elasticsearch containers:
 
 ```
-docker-compose -f docker-compose.yml -f docker-compose.develop.yml -f docker-compose.elastic.yml up -d --build
+docker compose --env-file .env-dev -f docker-compose.develop.yml up -d --build
 ```
 
 Stop all docker containers:
 
 ```
-docker-compose -f docker-compose.yml -f docker-compose.develop.yml -f docker-compose.elastic.yml down
+docker compose --env-file .env-dev -f docker-compose.develop.yml down
 ```
 
-Connect to the running app container "bws-web-1":
+Connect to the running app container "web":
 
 ```
-docker exec -it bws-web-1 /bin/bash
+docker exec -it web bash
 ```
 
-Connect to the elasticsearch container "bws-es"
+Connect to the elasticsearch container "elasticsearch"
 
 ```
-docker exec -it bws-es /bin/bash
+docker exec -it elasticsearch bash
 ```
 
 START PROD INSTANCE:

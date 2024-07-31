@@ -8,6 +8,7 @@ services:
   # App container
   web:
     image: ${IMAGE_NAME}
+    container_name: web
     depends_on:
       elasticsearch:
         condition: service_healthy
@@ -44,7 +45,41 @@ services:
     networks:
       - app-network
 
+  # Elasticsearch container
+  elasticsearch:
+    image: elasticsearch:${ES_IMAGE_VERSION}
+    container_name: elasticsearch
+    env_file:
+      - .env-dev
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - es_data:/usr/share/elasticsearch/data/
+    environment:
+      - discovery.type=single-node
+      - http.host=0.0.0.0
+      - transport.host=0.0.0.0
+      - xpack.security.enabled=false
+      - cluster.name=elasticsearch
+      - bootstrap.memory_lock=true
+      - ES_JAVA_OPTS=${ES_JAVA_OPTS}
+    mem_limit: ${ES_MEM_LIMIT}
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl --silent --fail localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
 networks:
   app-network:
     driver: bridge
     name: ${NETWORK_NAME}
+
+volumes:
+  data:
+  tools:
+  es_data:
