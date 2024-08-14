@@ -41,9 +41,9 @@ ENV PYTHONUNBUFFERED 1
 # ---------- ---------- ---------- ---------- ---------- ---------- ----------
 # ENV PATH $PATH:/home/${USER_NAME}/.local/bin
 ENV PATH $PATH:/usr/local/bin
-COPY --chown=${USER_NAME} . /app
+COPY --chown=${USER_NAME} ./app /app
 WORKDIR /app
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Start app server 
-ENTRYPOINT exec python manage.py runserver 0.0.0.0:8000
+#ENTRYPOINT exec python manage.py runserver 0.0.0.0:8000
