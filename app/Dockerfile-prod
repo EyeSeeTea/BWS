@@ -15,7 +15,7 @@ RUN pip install --upgrade pip setuptools && \
 FROM python:3.12.3-slim-bookworm
 COPY --from=python-build /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
 RUN apt-get update && \
-    apt-get install -y libmariadb3 && \
+    apt-get install -y libmariadb3 gcc libpcre3 libpcre3-dev && \
     apt-get -y upgrade 2>&1 && \
     apt-get autoremove -y && \
     apt-get clean -y && \
@@ -23,27 +23,22 @@ RUN apt-get update && \
 
 # Setup App basic directories
 # ---------- ---------- ---------- ---------- ---------- ---------- ----------
-ARG USER_NAME
-ARG USER_UID
-# RUN useradd --user-group --uid ${USER_UID} --shell /bin/bash ${USER_NAME}
-RUN useradd --create-home --user-group --uid ${USER_UID} --shell /bin/bash ${USER_NAME}
-RUN mkdir /app && chown ${USER_NAME} -R /app && \
-    mkdir /data && chown ${USER_NAME} -R /data && \
-    mkdir /tools && chown ${USER_NAME} -R /tools
 
-# Switch & Setup as non-root user
-# ---------- ---------- ---------- ---------- ---------- ---------- ----------
-USER ${USER_NAME}
+RUN mkdir /app && \
+    mkdir /data && \
+    mkdir /tools
+
 ENV LANG=C.UTF-8 LC_ALL=C.UTF-8
 ENV PYTHONUNBUFFERED 1
 
 # Setup Django App
 # ---------- ---------- ---------- ---------- ---------- ---------- ----------
-# ENV PATH $PATH:/home/${USER_NAME}/.local/bin
+
 ENV PATH $PATH:/usr/local/bin
-COPY --chown=${USER_NAME} ./app /app
+COPY . /app
 WORKDIR /app
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Start app server 
 #ENTRYPOINT exec python manage.py runserver 0.0.0.0:8000
+ENTRYPOINT ["sh", "./entrypoint.sh"]

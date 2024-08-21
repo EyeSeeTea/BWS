@@ -53,13 +53,26 @@ docker exec -it elasticsearch bash
 
 START PROD INSTANCE:
 
-1. Create .env file from .sample.env
-
-2. Start/stop/manage application
+1. Create docker image and push to registry
 
 ```
-docker-compose -f docker-compose.yml -f docker-compose.production.yml -f docker-compose.elastic.yml up -d
-docker-compose -f docker-compose.yml -f docker-compose.production.yml -f docker-compose.elastic.yml down
+docker build -t bws_container_image_name -f app/Dockerfile-prod ./app
+docker push bws_container_image_name
+```
+If registry.gitlab.com will be used, example of bws_container_image_name should be something like registry.gitlab.com/jrmacias/bws/web:production
+
+2. Copy docker-compose.production.yml to the targeting production server
+
+3. Copy ./nginx and ./tools directories to the same location as docker-compose.production.yml on targeting production server
+
+4. Create .env-prod file from sample.env-prod on same location as docker-compose.production.yml on targeting production server
+
+5. Start application
+
+```
+bash run-prod.sh
+or
+docker compose --env-file .env-prod -f docker-compose.production.yml up -d
 ```
 
 Connect to DB running in "bws-db-1" container in PROD:
