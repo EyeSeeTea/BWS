@@ -435,11 +435,14 @@ def getGitHubFileList(url, ext=''):
     Get the list of files from a GitHub repository
     """
     logger.debug("- get GitHub file list: %s %s", ext, url)
-    print("- get GitHub file list:",  ext, url)
+    print("- get GitHub file list:", ext, url)
     page = requests.get(url, timeout=HTTP_TIMEOUT).text
     soup = BeautifulSoup(page, 'html.parser')
-    files = [node.get('href').split('/')[-1]
-             for node in soup.find_all('a') if node.get('href').endswith(ext)]
+
+    files = []
+    for node in soup.find_all('a'):
+        if node.get('href') and node.get('href').endswith(ext):
+            files.append(node.get('href').split('/')[-1])
     return files
 
 # ========== ========== ========== ========== ========== ========== ==========
@@ -2443,7 +2446,7 @@ def getOntologyTermDataBydbId(dbId):
         name = getDataFromOLS(url, 'label')
         description = getDataFromOLS(url, 'description')
         externalLink = OLS_WS_URL % (
-            '', OntologyEntry.dbId, OntologyEntry.queryLink, dbId)
+            'api', OntologyEntry.dbId, OntologyEntry.queryLink, dbId)
 
         obj = updateOntologyTerm(
             dbId, name, description, externalLink, OntologyEntry)
