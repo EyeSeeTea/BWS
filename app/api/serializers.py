@@ -363,13 +363,6 @@ class LigandEntitySerializer(serializers.ModelSerializer):
 
         return FeatureTypeIDRSerializer(many=True, context=context).to_representation(featureType_qs)
 
-    # To avoid showing imageData field in final JSON file when there is no info associated to it (avoid "imgaData []")
-    def to_representation(self, value):
-        repr_dict = super(serializers.ModelSerializer,
-                          self).to_representation(value)
-        return OrderedDict((k, v) for k, v in repr_dict.items()
-                           if v not in [None, [], '', {}])
-
 
 class PdbLigandSerializer(serializers.ModelSerializer):
 
