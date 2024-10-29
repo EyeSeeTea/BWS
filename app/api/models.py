@@ -299,7 +299,7 @@ class LigandEntity(models.Model):
         max_length=27, primary_key=True, default='')
     dbId = models.CharField(max_length=20, null=True, blank=True)
     pubChemCompoundId = models.CharField(
-        max_length=250,  null=True, blank=True)
+        max_length=250, null=True, blank=True)
     ligandType = models.CharField(max_length=25, null=True, blank=True)
     name = models.CharField(max_length=255, null=True, blank=True)
     formula = models.CharField(max_length=255, null=True, blank=True)
