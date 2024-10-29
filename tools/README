@@ -3,15 +3,16 @@
 
 ### Update every <NumDays> days
 cd /tools
-python3 getNewPDBEntries_covid.py -i 8
-python3 getPBDFiles.py -i /data/updates/latest/PDB_entries_covid_em.txt -o /data/pdb/covid-new
-python3 getPBDFiles.py -i /data/updates/latest/PDB_entries_covid_noem.txt -o /data/pdb/covid-new
+docker exec -it web python3 getNewPDBEntries_covid.py -i 8
+docker exec -it web python3 getPBDFiles.py -i /data/updates/latest/PDB_entries_covid_em.txt -o /data/covid-new
+docker exec -it web python3 getPBDFiles.py -i /data/updates/latest/PDB_entries_covid_noem.txt -o /data/covid-new
 
 cd /app
-python3 manage.py update_entries_from_dir /data/pdb/covid-new/
-python3 manage.py update_Isolde_Refinements
+docker exec -it web python3 manage.py update_entries_from_dir /data/covid-new/
+docker exec -it web python3 manage.py update_Isolde_Refinements
 
-
+cd /data
+mv /data/covid-new/*.cif /data/covid
 
 - - - - - - - - - - - - - - - - - - - - 
 
