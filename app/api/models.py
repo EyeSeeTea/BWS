@@ -157,8 +157,11 @@ class UniProtEntry(models.Model):
 
 
 class PdbEntry(models.Model):
-    dbId = models.CharField(max_length=4, blank=False,
-                            default='', primary_key=True, validators=[
+    dbId = models.CharField(max_length=4,
+                            blank=False,
+                            default='',
+                            primary_key=True,
+                            validators=[
                                 RegexValidator(
                                     regex='^[0-9][a-zA-Z_0-9]{3}$',
                                     message='dbID doesnt comply',
@@ -173,7 +176,7 @@ class PdbEntry(models.Model):
     modified = models.DateField(auto_now=True)
     entities = models.ManyToManyField('ModelEntity', through='PdbToEntity')
     ligands = models.ManyToManyField('LigandEntity', through='PdbToLigand')
-    dbauthors = models.ManyToManyField('Author')
+    dbauthors = models.ManyToManyField('Author', through='PdbEntryAuthor')
     emdbs = models.ManyToManyField('EmdbEntry', through='HybridModel')
 
     def imageLink(self):
@@ -181,10 +184,11 @@ class PdbEntry(models.Model):
             self.dbId.lower(), )
 
     def externalLink(self):
-        return 'https://www.ebi.ac.uk/pdbe/entry/pdb/%s' % (self.dbId.lower(),)
+        return 'https://www.ebi.ac.uk/pdbe/entry/pdb/%s' % (
+            self.dbId.lower(), )
 
     def __str__(self):
-        return '%s' % (self.dbId,)
+        return '%s' % (self.dbId, )
 
 
 class PdbToEntity(models.Model):
@@ -295,7 +299,7 @@ class LigandEntity(models.Model):
         max_length=27, primary_key=True, default='')
     dbId = models.CharField(max_length=20, null=True, blank=True)
     pubChemCompoundId = models.CharField(
-        max_length=250,  null=True, blank=True)
+        max_length=250, null=True, blank=True)
     ligandType = models.CharField(max_length=25, null=True, blank=True)
     name = models.CharField(max_length=255, null=True, blank=True)
     formula = models.CharField(max_length=255, null=True, blank=True)
@@ -421,6 +425,7 @@ class Publication(models.Model):
     doi = models.CharField(max_length=255, blank=False, default='')
     pubMedId = models.CharField(max_length=255, blank=False, default='')
     PMCId = models.CharField(max_length=255, blank=False, default='')
+    authors = models.ManyToManyField(Author, through='PublicationAuthor')
 
     def __str__(self):
         return '(%s) %s - %s' % (self.year, self.issn, self.title)

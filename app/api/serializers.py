@@ -10,7 +10,6 @@ class DataFileNestedSerializer(serializers.ModelSerializer):
         fields = ['filename', 'unique_id']
 
 
-
 class DataFileSerializer(serializers.ModelSerializer):
     data = DataFileNestedSerializer(many=True, read_only=True)
 
@@ -27,17 +26,20 @@ class OntologySerializer(serializers.ModelSerializer):
         model = Ontology
         fields = ['dbId', 'name', 'description', 'externalLink']
 
+
 class OntologyTermSerializer(serializers.ModelSerializer):
     source = serializers.PrimaryKeyRelatedField(read_only=True)
+
     class Meta:
         model = OntologyTerm
         fields = ['dbId', 'name', 'description', 'externalLink', 'source']
 
+
 class AnalysesSerializer(serializers.ModelSerializer):
     class Meta:
         model = Analyses
-        fields = ['name', 'relation', 'value', 'description', 'units'
-                  , 'pvalue', 'dataComment']
+        fields = ['name', 'relation', 'value',
+                  'description', 'units', 'pvalue', 'dataComment']
 
 
 class AuthorSerializer(serializers.ModelSerializer):
@@ -52,7 +54,7 @@ class PublicationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Publication
         fields = ['title', 'journal_abbrev', 'issn', 'issue', 'volume', 'page_first',
-                  'page_last', 'year', 'doi', 'pubMedId', 'PMCId', 'abstract', 'authors']
+                  'page_last', 'year', 'doi', 'pubMedId', 'PMCId', 'authors']
 
 
 class OrganismSerializer(serializers.ModelSerializer):
@@ -93,7 +95,8 @@ class PlateEntitySerializer(serializers.ModelSerializer):
                     wellid_list.append(well[4])  # tupl[4] = WellEntity id
 
             # Given the list of Well IDs, get queryset including all WellEntity models and pass it to WellEntitySerializer
-            well_qs = WellEntity.objects.filter(dbId__in=wellid_list).order_by('name')
+            well_qs = WellEntity.objects.filter(
+                dbId__in=wellid_list).order_by('name')
             return WellEntitySerializer(many=True,  context=context).to_representation(well_qs)
 
     def get_controlWells(self, obj):
@@ -281,21 +284,23 @@ class SampleEntitySerializer(serializers.ModelSerializer):
         model = SampleEntity
         fields = '__all__'
 
+
 class SimpleLigandEntitySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = LigandEntity
         fields = [
-                  'IUPACInChIkey',
-                  'dbId', 'ligandType', 'name',
-                  'formula', 'formula_weight',
-                  'details', 'altNames',
-                  'imageLink', 'externalLink',
-                  'pubChemCompoundId', 'systematicNames',
-                  'IUPACInChI',
-                  'isomericSMILES', 'canonicalSMILES',
-                  'well'
-                  ]
+            'IUPACInChIkey',
+            'dbId', 'ligandType', 'name',
+            'formula', 'formula_weight',
+            'details', 'altNames',
+            'imageLink', 'externalLink',
+            'pubChemCompoundId', 'systematicNames',
+            'IUPACInChI',
+            'isomericSMILES', 'canonicalSMILES',
+            'well'
+        ]
+
 
 class LigandEntitySerializer(serializers.ModelSerializer):
     imageData = serializers.SerializerMethodField()
@@ -303,16 +308,16 @@ class LigandEntitySerializer(serializers.ModelSerializer):
     class Meta:
         model = LigandEntity
         fields = [
-                  'IUPACInChIkey',
-                  'dbId', 'ligandType', 'name',
-                  'formula', 'formula_weight',
-                  'details', 'altNames',
-                  'imageLink', 'externalLink',
-                  'pubChemCompoundId', 'systematicNames',
-                  'IUPACInChI',
-                  'isomericSMILES', 'canonicalSMILES',
-                  'imageData',
-                  ]
+            'IUPACInChIkey',
+            'dbId', 'ligandType', 'name',
+            'formula', 'formula_weight',
+            'details', 'altNames',
+            'imageLink', 'externalLink',
+            'pubChemCompoundId', 'systematicNames',
+            'IUPACInChI',
+            'isomericSMILES', 'canonicalSMILES',
+            'imageData',
+        ]
         depth = 2
 
     def get_imageData(self, obj):
@@ -325,7 +330,8 @@ class LigandEntitySerializer(serializers.ModelSerializer):
         featureTypeId_list2, assayEntityId_list2, screenEntityId_list2, plateEntityId_list2, wellEntityId_list2 = [], [], [], [], []
         if hasattr(obj, 'well'):
             for well in obj.well.all():
-                featureTypeId_list2.append(well.plate.screen.assay.featureType_id)
+                featureTypeId_list2.append(
+                    well.plate.screen.assay.featureType_id)
                 assayEntityId_list2.append(well.plate.screen.assay_id)
                 screenEntityId_list2.append(well.plate.screen_id)
                 plateEntityId_list2.append(well.plate_id)
@@ -357,13 +363,6 @@ class LigandEntitySerializer(serializers.ModelSerializer):
 
         return FeatureTypeIDRSerializer(many=True, context=context).to_representation(featureType_qs)
 
-    # To avoid showing imageData field in final JSON file when there is no info associated to it (avoid "imgaData []")
-    def to_representation(self, value):
-        repr_dict = super(serializers.ModelSerializer,
-                          self).to_representation(value)
-        return OrderedDict((k, v) for k, v in repr_dict.items()
-                           if v not in [None, [], '', {}])
-
 
 class PdbLigandSerializer(serializers.ModelSerializer):
 
@@ -373,11 +372,13 @@ class PdbLigandSerializer(serializers.ModelSerializer):
         fields = ['pdbId', 'ligand', 'quantity']
         depth = 1
 
+
 class NMRTargetSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = NMRTargetToPoliprotein
         fields = ['targetName', 'start', 'end']
+
 
 class UniProtEntrySerializer(serializers.ModelSerializer):
     uniprotentities = NMRTargetSerializer(many=True, read_only=True)
@@ -386,12 +387,12 @@ class UniProtEntrySerializer(serializers.ModelSerializer):
         model = UniProtEntry
         fields = ['dbId', 'name', 'externalLink', 'uniprotentities']
 
+
 class ModelEntitySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ModelEntity
         fields = '__all__'
-
 
 
 class EntityExportSerializer(serializers.ModelSerializer):
@@ -400,7 +401,7 @@ class EntityExportSerializer(serializers.ModelSerializer):
     isSybody = serializers.BooleanField
     organism = OrganismSerializer(read_only=True)
     uniprotAcc = UniProtEntrySerializer(read_only=True)
-    
+
     class Meta:
         model = ModelEntity
         fields = ['uniprotAcc',
@@ -433,8 +434,8 @@ class PublicationResumeSerializer(serializers.ModelSerializer):
         if obj.volume:
             journal = '{} {}'.format(journal, obj.volume)
         if obj.page_first and obj.page_last:
-            journal = '{}: {}-{}'.format(journal,
-                                         obj.page_first, obj.page_last)
+            journal = '{}: {}-{}'.format(journal, obj.page_first,
+                                         obj.page_last)
         if obj.year:
             journal = '{} ({})'.format(journal, obj.year)
         if obj.issn:
@@ -447,7 +448,8 @@ class PublicationResumeSerializer(serializers.ModelSerializer):
     def get_pmidLink(self, obj):
         if obj.pubMedId:
             if not 'https://pubmed.ncbi.nlm.nih.gov/' in obj.pubMedId:
-                return 'https://pubmed.ncbi.nlm.nih.gov/{}'.format(obj.pubMedId)
+                return 'https://pubmed.ncbi.nlm.nih.gov/{}'.format(
+                    obj.pubMedId)
             else:
                 return '{}'.format(obj.pubMedId)
         else:
@@ -471,7 +473,6 @@ class PublicationResumeSerializer(serializers.ModelSerializer):
                   'doi',
                   'pmidLink',
                   'pubDate',
-                  'abstract',
                   'authors']
 
 
@@ -523,16 +524,19 @@ class PdbEntryDetailsExportSerializer(serializers.ModelSerializer):
         # fields = '__all__'
         fields = ['sample', 'refdoc']
 
+
 class EmdbEntrySerializer(serializers.ModelSerializer):
     class Meta:
         model = EmdbEntry
-        fields = ['dbId', 'title', 'emMethod', 'resolution', 'status', 'details', 'imageLink', 'externalLink']
+        fields = ['dbId', 'title', 'emMethod', 'resolution',
+                  'status', 'details', 'imageLink', 'externalLink']
+
 
 class PdbEntryExportSerializer(serializers.ModelSerializer):
 
     entities = EntityExportSerializer(many=True)
     ligands = SimpleLigandEntitySerializer(many=True)
-    emdbs =  EmdbEntrySerializer(many=True, read_only=True)
+    emdbs = EmdbEntrySerializer(many=True, read_only=True)
     refModels = RefinedModelSerializer(many=True, read_only=True)
     dbauthors = serializers.StringRelatedField(many=True)
     details = PdbEntryDetailsExportSerializer(many=True)
@@ -552,6 +556,7 @@ class PdbEntryExportSerializer(serializers.ModelSerializer):
                   'imageLink',
                   'externalLink',
                   ]
+
 
 class FeatureTypeNMRSerializer(serializers.ModelSerializer):
 

@@ -1,0 +1,85 @@
+#
+# PRODUCTION ONLY SETTINGS
+#
+name: bws-prod
+
+services:
+  # App container
+  web:
+    image: ${IMAGE_NAME}
+    container_name: web
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    env_file:
+      - .env-prod
+    build:
+      context: ./app
+      dockerfile: Dockerfile-dev
+      args:
+        USER_NAME: ${USER_NAME}
+        USER_UID: ${USER_UID}
+        APP_NAME: ${APP_NAME}
+    environment:
+      - DJANGO_SETTINGS_MODULE=bws.settings.development
+    mem_limit: ${BWS_MEM_LIMIT}
+    labels:
+        - "csic.cnb.bcu.app.environment=${ENVIRONMENT}"
+        - "csic.cnb.bcu.project.name=${PROJECT_NAME}"
+        - "csic.cnb.bcu.app.name=${APP_NAME}"
+        - "csic.cnb.bcu.app.description=3DBionotes-WS API"
+        - "csic.cnb.bcu.app.maintainer=jr.macias@cnb.csic.es"
+    entrypoint: bash -c
+    command: >
+      'python manage.py makemigrations &&
+      python manage.py migrate &&
+      python manage.py rebuild_index --noinput &&
+      python manage.py runserver 0.0.0.0:8000'
+    ports:
+      - "${APP_EXT_PORT}:8000"
+    volumes:
+      - ./app:/app
+      - ${PATH_DATA}:/data
+      - ${PATH_TOOLS}:/tools:ro
+    networks:
+      - app-network
+
+  # Elasticsearch container
+  elasticsearch:
+    image: elasticsearch:${ES_IMAGE_VERSION}
+    # container_name: elasticsearch
+    hostname: elasticsearch
+    env_file:
+      - .env-prod
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - es_data:/usr/share/elasticsearch/data/
+    environment:
+      - discovery.type=single-node
+      - http.host=0.0.0.0
+      - transport.host=0.0.0.0
+      - xpack.security.enabled=false
+      - cluster.name=elasticsearch
+      - bootstrap.memory_lock=true
+      - ES_JAVA_OPTS=${ES_JAVA_OPTS}
+    mem_limit: ${ES_MEM_LIMIT}
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl --silent --fail localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+networks:
+  app-network:
+    driver: bridge
+    name: ${NETWORK_NAME}
+
+volumes:
+  data:
+  tools:
+  es_data:

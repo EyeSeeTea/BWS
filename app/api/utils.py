@@ -435,11 +435,14 @@ def getGitHubFileList(url, ext=''):
     Get the list of files from a GitHub repository
     """
     logger.debug("- get GitHub file list: %s %s", ext, url)
-    print("- get GitHub file list:",  ext, url)
+    print("- get GitHub file list:", ext, url)
     page = requests.get(url, timeout=HTTP_TIMEOUT).text
     soup = BeautifulSoup(page, 'html.parser')
-    files = [node.get('href').split('/')[-1]
-             for node in soup.find_all('a') if node.get('href').endswith(ext)]
+
+    files = []
+    for node in soup.find_all('a'):
+        if node.get('href') and node.get('href').endswith(ext):
+            files.append(node.get('href').split('/')[-1])
     return files
 
 # ========== ========== ========== ========== ========== ========== ==========
@@ -1098,7 +1101,7 @@ def updatePublicationAuthor(name, orcid, ordinal, publication):
     return obj
 
 
-def updatePublication(title, journal, issn, issue, volume, firstPage, lastPage, year, doi, pubMedId, abstract, PMCId=''):
+def updatePublication(title, journal, issn, issue, volume, firstPage, lastPage, year, doi, pubMedId, PMCId=''):
     obj = None
     try:
         obj, created = Publication.objects.update_or_create(
@@ -1113,7 +1116,6 @@ def updatePublication(title, journal, issn, issue, volume, firstPage, lastPage, 
                 'year': year,
                 'doi': doi,
                 'pubMedId': pubMedId,
-                'abstract': abstract,
                 'PMCId': PMCId,
             })
         if created:
@@ -1140,7 +1142,6 @@ def getPublications(mmCifDict):
     yearList = mmCifDict.get('_citation.year', '')
     doiList = mmCifDict.get('_citation.pdbx_database_id_DOI', '')
     pubMedList = mmCifDict.get('_citation.pdbx_database_id_PubMed', '')
-    abstractList = mmCifDict.get('_citation.abstract', '')
     for idx, title in enumerate(titleList):
         journal = journalList[idx].replace('?', '') if journalList else ''
         issn = issnList[idx].replace('?', '') if issnList else ''
@@ -1152,10 +1153,9 @@ def getPublications(mmCifDict):
         year = yearList[idx].replace('?', '') if yearList else ''
         doi = doiList[idx].replace('?', '') if doiList else ''
         pubMedId = pubMedList[idx].replace('?', '') if pubMedList else ''
-        abstract = abstractList[idx].replace('?', '') if abstractList else ''
 
         refObj = updatePublication(
-            title, journal, issn, issue, volume, firstPage, lastPage, year, doi, pubMedId, abstract)
+            title, journal, issn, issue, volume, firstPage, lastPage, year, doi, pubMedId)
         objs.append(refObj)
 
         auths = getCitationAuthors(mmCifDict, refObj)
@@ -2446,7 +2446,7 @@ def getOntologyTermDataBydbId(dbId):
         name = getDataFromOLS(url, 'label')
         description = getDataFromOLS(url, 'description')
         externalLink = OLS_WS_URL % (
-            '', OntologyEntry.dbId, OntologyEntry.queryLink, dbId)
+            'api', OntologyEntry.dbId, OntologyEntry.queryLink, dbId)
 
         obj = updateOntologyTerm(
             dbId, name, description, externalLink, OntologyEntry)
@@ -2589,7 +2589,7 @@ class IDRUtils(object):
                 pubMedId=publication['PubMed ID'],
                 PMCId=publication['PMC ID'],
                 journal='', issn='', issue='', volume='',
-                firstPage='', lastPage='', year='', abstract='')
+                firstPage='', lastPage='', year='')
 
             publication_entry_list.append(PublicationEntry)
             # Add already updated/created Author entries to Publicacion entry

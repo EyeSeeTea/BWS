@@ -1,15 +1,17 @@
 biopython
-Django
+Django==3.2.9
 django-cors-headers
 bs4
 django-filter
-djangorestframework
+djangorestframework==3.12.4
 drf-yasg
 mysqlclient
 python-dotenv
-django-debug-toolbar
+django-debug-toolbar==3.2
 django-debug-toolbar-force
 pandas
 rcsbsearchapi
-django-haystack[elasticsearch]
+django-haystack[elasticsearch]==3.3.0
+elasticsearch>=7.0.0,<8.0.0
 whitenoise
+# uwsgi
