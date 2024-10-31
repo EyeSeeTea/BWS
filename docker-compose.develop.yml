@@ -11,6 +11,7 @@ services:
     depends_on:
       elasticsearch:
         condition: service_healthy
+        restart: true
     env_file:
       - .env-dev
     build:
@@ -43,6 +44,9 @@ services:
       - ${PATH_TOOLS}:/tools:ro
     networks:
       - app-network
+    deploy:
+      restart_policy:
+        condition: always
 
   # Elasticsearch container
   elasticsearch:

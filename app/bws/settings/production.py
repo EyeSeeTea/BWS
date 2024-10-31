@@ -15,26 +15,23 @@ DEBUG = False
 PRODUCTION = True
 SECRET_KEY = os.environ.get("SECRET_KEY")
 
-# Fix probelms with DebugToolbarMiddleware when running in PROD
-# Need to remove from general settings:
-#   debug_toolbar.middleware.DebugToolbarMiddleware
-#   debug_toolbar_force.middleware.ForceDebugToolbarMiddleware
-# if DEBUG is False:
-#     del MIDDLEWARE[11]
-#     del MIDDLEWARE[10]
-
 # Database
-# https://docs.djangoproject.com/en/3.1/ref/settings/#databases
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.mysql",
-        "NAME": os.environ["DB_NAME"],
-        "USER": os.environ["DB_USER_NAME"],
-        "PASSWORD": os.environ["DB_USER_PASSWD"],
-        "HOST": os.environ["DB_HOST"],
-        "PORT": os.environ["DB_PORT"],
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": os.path.join(BASE_DIR, "db.sqlite3"),
     }
 }
+# DATABASES = {
+#     "default": {
+#         "ENGINE": "django.db.backends.mysql",
+#         "NAME": os.environ["DB_NAME"],
+#         "USER": os.environ["DB_USER_NAME"],
+#         "PASSWORD": os.environ["DB_USER_PASSWD"],
+#         "HOST": os.environ["DB_HOST"],
+#         "PORT": os.environ["DB_PORT"],
+#     }
+# }
 
 HAYSTACK_CONNECTIONS = {
     'default': {
@@ -45,7 +42,7 @@ HAYSTACK_CONNECTIONS = {
 }
 
 
-RUNNING_ENVIRONMENT = "DEV" if DEBUG else "PROD"
+RUNNING_ENVIRONMENT = "PROD"
 
 REST_FRAMEWORK = {
     "DEFAULT_VERSION": ""
