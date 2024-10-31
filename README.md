@@ -144,6 +144,11 @@ ELASTICSEARCH
 - default user: elastic
 
 Troubleshooting
- 
-~~**Issue:** New migration are ignored~~
-~~*Resolution*: Remove absolutely all the tables (even default ones) from mysql server in phpadmin UI and restart docker container~~
+
+Fixing message from Elasticsearch:
+ - flood stage disk watermark [95%] exceeded...
+
+ON the container console, run:
+- curl -XPUT -H "Content-Type: application/json" http://localhost:9200/_cluster/settings -d '{ "transient": { "cluster.routing.allocation.disk.threshold_enabled": false } }'
+- curl -XPUT -H "Content-Type: application/json" http://localhost:9200/_all/_settings -d '{"index.blocks.read_only_allow_delete": null}'
+
