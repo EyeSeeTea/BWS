@@ -177,8 +177,8 @@ LOGGING = {
 # update with every release
 API_NAME = os.environ.get("APP_NAME")
 API_VERSION_MAJOR = "0"
-API_VERSION_MINOR = "10"
-API_VERSION_PATCH = "2"
+API_VERSION_MINOR = "11"
+API_VERSION_PATCH = "0"
 
 
 SWAGGER_SETTINGS = {
