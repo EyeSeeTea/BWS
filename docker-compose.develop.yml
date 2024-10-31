@@ -1,18 +1,18 @@
 #
-# PRODUCTION ONLY SETTINGS
+# DEVELOPMENT ONLY SETTINGS
 #
-name: bws-prod
+name: bws-dev
 
 services:
   # App container
   web:
     image: ${IMAGE_NAME}
-    container_name: web
+    hostname: web
     depends_on:
       elasticsearch:
         condition: service_healthy
     env_file:
-      - .env-prod
+      - .env-dev
     build:
       context: ./app
       dockerfile: Dockerfile-dev
@@ -47,10 +47,9 @@ services:
   # Elasticsearch container
   elasticsearch:
     image: elasticsearch:${ES_IMAGE_VERSION}
-    # container_name: elasticsearch
     hostname: elasticsearch
     env_file:
-      - .env-prod
+      - .env-dev
     ulimits:
       memlock:
         soft: -1

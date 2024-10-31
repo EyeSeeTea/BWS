@@ -1080,6 +1080,29 @@ class GetApiVersion(APIView):
 
         return Response(resp)
 
+class NMRViewSetByPDB(viewsets.ModelViewSet):
+    """
+    This viewset automatically provides `list` and `detail` actions.
+    """
+    serializer_class = FeatureRegionEntitySerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    filter_backends = (filters.DjangoFilterBackend, SearchFilter,
+                       OrderingFilter)
+
+    def get_queryset(self, **kwargs):
+
+        # Get URL parameters pdb_id
+        pdb_id = self.kwargs.get('pdb_id', None)
+
+        # Get NMR queryset
+        # queryset = FeatureRegionEntity.objects.all().order_by('start')
+        queryset = FeatureRegionEntity.objects.all().order_by('start')[1:5]
+
+        # queryset = FeatureRegionEntity.objects.filter(
+        #     featureType__dataSource__exact='The COVID19-NMR Consortium').order_by('details__type')
+
+        return queryset
+
 
 class NMRViewSet(viewsets.ModelViewSet):
     """
