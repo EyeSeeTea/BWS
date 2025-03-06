@@ -1,5 +1,5 @@
 asgiref==3.8.1
-beautifulsoup4==4.12.3
+beautifulsoup4==4.13.3
 biopython==1.83
 bs4==0.0.2
 certifi==2024.2.2
