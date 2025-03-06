@@ -8,7 +8,7 @@ Django==5.0.6
 django-cors-headers==4.3.1
 django-debug-toolbar==4.3.0
 django-debug-toolbar-force==0.2
-django-filter==24.2
+django-filter==25.1
 django-nine==0.2.7
 djangorestframework==3.15.1
 drf-yasg==1.21.7
