@@ -1,0 +1,38 @@
+version: 2
+updates:
+  # Pip dependencies (Python)
+  - package-ecosystem: "pip"
+    directory: "/app"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "python"
+    assignees:
+      - "p3rcypj"
+    groups:
+      pip-dependencies:
+        patterns:
+          - "*"
+        update-types:
+          - "patch"
+
+  # Docker dependencies (including Elasticsearch)
+  - package-ecosystem: "docker"
+    directory: "/app"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "docker"
+    assignees:
+      - "p3rcypj"
+    groups:
+      docker-dependencies:
+        patterns:
+          - "*"
+        update-types:
+          - "patch"
+
