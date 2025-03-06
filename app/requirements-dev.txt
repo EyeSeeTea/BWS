@@ -12,6 +12,6 @@ django-debug-toolbar-force
 pandas
 rcsbsearchapi
 django-haystack[elasticsearch]==3.3.0
-elasticsearch>=7.0.0,<8.0.0
+elasticsearch>=7.0.0,<9.0.0
 whitenoise
 # uwsgi
