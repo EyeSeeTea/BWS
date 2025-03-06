@@ -3,11 +3,11 @@ Django==3.2.9
 django-cors-headers
 bs4
 django-filter
-djangorestframework==3.15.2
+djangorestframework==3.14.0
 drf-yasg
 mysqlclient
 python-dotenv
-django-debug-toolbar==5.0.1
+django-debug-toolbar==4.3.0
 django-debug-toolbar-force
 pandas
 rcsbsearchapi

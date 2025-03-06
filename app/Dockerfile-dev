@@ -13,7 +13,7 @@ RUN pip install --upgrade pip setuptools && \
     pip install mysqlclient
 # use slim to reduce size and unused stuff
 FROM python:3.13.2-slim-bookworm
-COPY --from=python-build /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
+COPY --from=python-build /usr/local/lib/python3.13/site-packages /usr/local/lib/python3.13/site-packages
 RUN apt-get update && \
     apt-get install -y libmariadb3 && \
     apt-get -y upgrade 2>&1 && \
