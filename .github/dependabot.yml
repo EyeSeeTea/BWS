@@ -17,6 +17,7 @@ updates:
           - "*"
         update-types:
           - "patch"
+    target-branch: "feature/upgrade-dependencies"
 
   # Docker dependencies (including Elasticsearch)
   - package-ecosystem: "docker"
@@ -35,4 +36,5 @@ updates:
           - "*"
         update-types:
           - "patch"
+    target-branch: "feature/upgrade-dependencies"
 
