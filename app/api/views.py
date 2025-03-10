@@ -93,8 +93,16 @@ class PdbEntryAllAnnFromMapView(APIView, PdbEntryAnnFromMapsUtils):
                 "request": pdb_id,
                 "detail": "entryId _strictly_ must be in the form `####/#`"
             }
-
             return Response(content, status=status.HTTP_400_BAD_REQUEST)
+
+        if not re.match(r'^[a-z0-9]+$', chain_id):
+            logger.debug("Bad Request Chain ID: %s", chain_id)
+            content = {
+                "request": chain_id,
+                "detail": "chainId must be alphanumeric"
+            }
+            return Response(content, status=status.HTTP_400_BAD_REQUEST)
+        
         responseData = []
         if modified_model is not None:
             pdb_id = pdb_id + "." + modified_model
@@ -260,6 +268,15 @@ class FunPDBeEntryByPDBView(APIView):
     """
 
     def get(self, request, pdb_id, format=None):
+        pdb_id = pdb_id.lower()
+        if not re.search(REGEX_PDB_ID, pdb_id):
+            logger.debug("Bad Request PDB Entry ID: %s", pdb_id)
+            content = {
+                "request": pdb_id,
+                "detail": "entryId _strictly_ must be in the form `####`"
+            }
+            return Response(content, status=status.HTTP_400_BAD_REQUEST)
+        
         path = os.path.join(FUNPDBE_DATA_PATH, pdb_id[1:3])
         entries = []
         try:
@@ -281,7 +298,11 @@ class FunPDBeEntryByPDBView(APIView):
                     }
                 })
 
-            with open(os.path.join(path, data_files[0])) as json_file:
+            filepath = os.path.join(path, data_files[0])
+            # Ensure the filepath is within the allowed directory
+            if not os.path.commonprefix([filepath, path]) == path:
+                raise Exception("Path Traversal Attempt")
+            with open(filepath) as json_file:
                 data = json.load(json_file)
 
         except (Exception) as exc:
@@ -297,6 +318,11 @@ def getEmdbMappings(pdb_id):
     Use the 3DBionotes API:
         https://3dbionotes.cnb.csic.es/api/mappings/PDB/EMDB/7a02/
     """
+
+    pdb_id = pdb_id.lower()
+    # Validate pdb_id to prevent SSRF
+    if not re.match(r'^\d\w{3}$', pdb_id):
+        raise ValueError("Invalid pdb_id format")
     url = BIONOTES_URL + "/" + MAPPINGS_WS_PATH + "/PDB/EMDB/" + pdb_id
     logger.debug("Check Bionotes WS for EMDB mappings for %s", pdb_id)
     logger.debug("WS-qry: %s", url)
@@ -344,6 +370,14 @@ class FunPDBeEntryByPDBMethodView(APIView):
     """
 
     def get(self, request, pdb_id, method, format=None):
+        pdb_id = pdb_id.lower()
+        if not re.search(REGEX_PDB_ID, pdb_id):
+            logger.debug("Bad Request PDB Entry ID: %s", pdb_id)
+            content = {
+                "request": pdb_id,
+                "detail": "entryId _strictly_ must be in the form `####`"
+            }
+            return Response(content, status=status.HTTP_400_BAD_REQUEST)
         volmaps = getEmdbMappings(pdb_id)
         if volmaps:
             # there should be only one
@@ -360,6 +394,9 @@ class FunPDBeEntryByPDBMethodView(APIView):
                 if data_files:
                     # there should be only one
                     filepath = os.path.join(path, data_files[0])
+                    # Ensure the filepath is within the allowed directory
+                    if not os.path.commonprefix([filepath, path]) == path:
+                        raise Exception("Path Traversal Attempt")
                     with open(filepath, 'r') as jfile:
                         data = jfile.read()
                     response = HttpResponse(content=data)
@@ -516,13 +553,15 @@ class AutocompleteAPIView(APIView):
     """
     def get(self, request, *args, **kwargs):
         query = request.GET.get('q', '').lower()
+        # Escape special characters in the query to prevent reDOS attacks
+        safe_query = re.escape(query)
         if query:
-            search_results = SearchQuerySet().models(PdbEntry).autocomplete(text_auto=query)
+            search_results = SearchQuerySet().models(PdbEntry).autocomplete(text_auto=safe_query)
             split_results = [list(filter(None, result.text_auto.lower().split(';;'))) for result in search_results]
-            filtered_results = [[word for word in result if query in word] for result in split_results]
+            filtered_results = [[word for word in result if safe_query in word] for result in split_results]
             flattened_results = list(chain(*filtered_results))
-            regex_filtered_results = [re.sub('.*[\w\d-]'+query+'.*|.*('+query+'[\w\d-]*\s?[\w\d-]*)|.*', r'\1', string, flags=re.IGNORECASE) for string in flattened_results]
-            unique_results = list(filter(None,dict.fromkeys(regex_filtered_results)))
+            regex_filtered_results = [re.sub(r'.*[\w\d-]'+safe_query+r'.*|.*('+safe_query+r'[\w\d-]*\s?[\w\d-]*)|.*', r'\1', string, flags=re.IGNORECASE) for string in flattened_results]
+            unique_results = list(filter(None, dict.fromkeys(regex_filtered_results)))
             return Response({
                 'results': unique_results
             })
