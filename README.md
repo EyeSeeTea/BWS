@@ -36,17 +36,17 @@ cd BWS
 2. Add the `db.sqlite3` file in `/app/bws/` directory
 3. Start application (detached mode)
 ```shell
-docker compose --env-file .env.local -f docker-compose.develop.yml up -d
+docker compose --env-file .env.local -f docker-compose.development.yml up -d
 ```
 
 Additional commands:
 - Re-build containers in detached mode
 ```shell
-docker compose --env-file .env.local -f docker-compose.develop.yml up -d --build
+docker compose --env-file .env.local -f docker-compose.development.yml up -d --build
 ```
 - Stop all docker containers
 ```shell
-docker compose --env-file .env.local -f docker-compose.develop.yml down
+docker compose --env-file .env.local -f docker-compose.development.yml down
 ```
 - Access shell (Replace `<container_name>` with the name or ID of your Docker container. You can find the container name by running `docker ps`:
 ```shell
