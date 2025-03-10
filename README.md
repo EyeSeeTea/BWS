@@ -62,7 +62,7 @@ docker compose --env-file .env.prod -f docker-compose.production.yml build
 ```
 3. Start application (detached mode)
 ```shell
-docker compose --env-file .env-prod -f docker-compose.production.yml up -d
+docker compose --env-file .env.prod -f docker-compose.production.yml up -d
 ```
 
 Additional commands:
