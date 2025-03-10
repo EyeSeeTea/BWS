@@ -1,7 +1,6 @@
 # Visual Studio Code
 .vscode/
 .idea
-.env
 certs/
 # Python
 __pycache__/
@@ -74,7 +73,7 @@ node_modules/
 .python-version
 
 # Environments
-.env*
+.env.*
 .venv
 env/
 venv/

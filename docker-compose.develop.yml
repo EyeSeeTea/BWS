@@ -25,7 +25,7 @@ services:
       - DJANGO_SETTINGS_MODULE=bws.settings.development
     mem_limit: ${BWS_MEM_LIMIT}
     labels:
-        - "csic.cnb.bcu.app.environment=${ENVIRONMENT}"
+        - "csic.cnb.bcu.app.environment=DEVELOPMENT"
         - "csic.cnb.bcu.project.name=${PROJECT_NAME}"
         - "csic.cnb.bcu.app.name=${APP_NAME}"
         - "csic.cnb.bcu.app.description=3DBionotes-WS API"
@@ -41,7 +41,7 @@ services:
     volumes:
       - ./app:/app
       - ${PATH_DATA}:/data
-      - ${PATH_TOOLS}:/tools:ro
+      - ./tools:/tools:ro
     networks:
       - app-network
     deploy:
