@@ -81,7 +81,7 @@ SELECT * FROM table_name WHERE column_name LIKE '%word%';
 ```
 - Run custom command (tools). E.g: updateDB_fromIDRAssay for assay idr0094-ellinger-sarscov2:
 ```shell
-docker exec -it <container_name> bashhttps://github.com/EyeSeeTea/BWS/tree/master
+docker exec -it <container_name> bash
 python manage.py updateDB_fromIDRAssay /data/IDR/idr0094-ellinger-sarscov2
 ```
 - Or alternativelly, run commands directly using the docker container command line:
