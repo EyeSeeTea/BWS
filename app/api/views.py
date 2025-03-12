@@ -28,6 +28,8 @@ logger = logging.getLogger(__name__)
 
 HTTP_TIMEOUT = 15
 REGEX_PDB_ID = re.compile(r'^\d\w{3}$')
+REGEX_EMDB_ID = re.compile(r'^emd-\d{5}$')
+REGEX_CHAIN_ID = re.compile(r'^\w{1,2}$')
 DEEP_RES_FNAME_TEMPLATE = "%(pdb_id)s.deepres.aa.pdb"
 MONORES_FNAME_TEMPLATE = "%(pdb_id)s.monores.aa.pdb"
 BLOCRES_FNAME_TEMPLATE = "%(pdb_id)s.blocres.aa.pdb"
@@ -66,15 +68,25 @@ def not_found_resp(query_id):
     content = {"request": query_id, "detail": "Entry Not Found"}
     return Response(content, status=status.HTTP_404_NOT_FOUND)
 
+def validate_param(pattern, value, message):
+    if not re.search(pattern, value):
+        full_message = f"{message}: {value}"
+        logger.debug(full_message)
+        content = {"request": value, "detail": full_message}
+        return Response(content, status=status.HTTP_400_BAD_REQUEST)
 
-def bad_entry_request(query_id):
-    logger.debug("Bad Request Entry ID: %s", query_id)
-    content = {
-        "request": query_id,
-        "detail": "entryId _strictly_ must be in the form `emd-#####`"
-    }
-    return Response(content, status=status.HTTP_400_BAD_REQUEST)
+def validate_pdb_id(pdb_id):
+    return validate_param(REGEX_PDB_ID, pdb_id, "Invalid PDB Entry ID format")
 
+def validate_emdb_id(emdb_id):
+    return validate_param(REGEX_EMDB_ID, emdb_id, "Invalid EMDB Entry ID format")
+
+def validate_chain_id(chain_id):
+    return validate_param(REGEX_CHAIN_ID, chain_id, "Invalid Chain ID format")
+
+def raise_if_path_traversal_attemp(path, filepath):
+    if not os.path.commonprefix([filepath, path]) == path:
+        raise Exception("Path Traversal Attempt")
 
 class PdbEntryAllAnnFromMapView(APIView, PdbEntryAnnFromMapsUtils):
     """
@@ -85,24 +97,9 @@ class PdbEntryAllAnnFromMapView(APIView, PdbEntryAnnFromMapsUtils):
         """
         Get all map derived annotations related to one pdb_id, chain_id
         """
-
         pdb_id = pdb_id.lower()
-        if not re.search(REGEX_PDB_ID, pdb_id):
-            logger.debug("Bad Request Entry ID: %s", pdb_id)
-            content = {
-                "request": pdb_id,
-                "detail": "entryId _strictly_ must be in the form `####/#`"
-            }
-            return Response(content, status=status.HTTP_400_BAD_REQUEST)
-
-        if not re.match(r'^[a-z0-9]+$', chain_id):
-            logger.debug("Bad Request Chain ID: %s", chain_id)
-            content = {
-                "request": chain_id,
-                "detail": "chainId must be alphanumeric"
-            }
-            return Response(content, status=status.HTTP_400_BAD_REQUEST)
-        
+        validate_pdb_id(pdb_id)
+        validate_chain_id(chain_id)
         responseData = []
         if modified_model is not None:
             pdb_id = pdb_id + "." + modified_model
@@ -269,14 +266,7 @@ class FunPDBeEntryByPDBView(APIView):
 
     def get(self, request, pdb_id, format=None):
         pdb_id = pdb_id.lower()
-        if not re.search(REGEX_PDB_ID, pdb_id):
-            logger.debug("Bad Request PDB Entry ID: %s", pdb_id)
-            content = {
-                "request": pdb_id,
-                "detail": "entryId _strictly_ must be in the form `####`"
-            }
-            return Response(content, status=status.HTTP_400_BAD_REQUEST)
-        
+        validate_pdb_id(pdb_id)
         path = os.path.join(FUNPDBE_DATA_PATH, pdb_id[1:3])
         entries = []
         try:
@@ -299,9 +289,7 @@ class FunPDBeEntryByPDBView(APIView):
                 })
 
             filepath = os.path.join(path, data_files[0])
-            # Ensure the filepath is within the allowed directory
-            if not os.path.commonprefix([filepath, path]) == path:
-                raise Exception("Path Traversal Attempt")
+            raise_if_path_traversal_attempt(path, filepath)
             with open(filepath) as json_file:
                 data = json.load(json_file)
 
@@ -321,7 +309,7 @@ def getEmdbMappings(pdb_id):
 
     pdb_id = pdb_id.lower()
     # Validate pdb_id to prevent SSRF
-    if not re.match(r'^\d\w{3}$', pdb_id):
+    if not re.match(REGEX_PDB_ID, pdb_id):
         raise ValueError("Invalid pdb_id format")
     url = BIONOTES_URL + "/" + MAPPINGS_WS_PATH + "/PDB/EMDB/" + pdb_id
     logger.debug("Check Bionotes WS for EMDB mappings for %s", pdb_id)
@@ -371,13 +359,7 @@ class FunPDBeEntryByPDBMethodView(APIView):
 
     def get(self, request, pdb_id, method, format=None):
         pdb_id = pdb_id.lower()
-        if not re.search(REGEX_PDB_ID, pdb_id):
-            logger.debug("Bad Request PDB Entry ID: %s", pdb_id)
-            content = {
-                "request": pdb_id,
-                "detail": "entryId _strictly_ must be in the form `####`"
-            }
-            return Response(content, status=status.HTTP_400_BAD_REQUEST)
+        validate_pdb_id(pdb_id)
         volmaps = getEmdbMappings(pdb_id)
         if volmaps:
             # there should be only one
@@ -394,9 +376,7 @@ class FunPDBeEntryByPDBMethodView(APIView):
                 if data_files:
                     # there should be only one
                     filepath = os.path.join(path, data_files[0])
-                    # Ensure the filepath is within the allowed directory
-                    if not os.path.commonprefix([filepath, path]) == path:
-                        raise Exception("Path Traversal Attempt")
+                    raise_if_path_traversal_attempt(path, filepath)
                     with open(filepath, 'r') as jfile:
                         data = jfile.read()
                     response = HttpResponse(content=data)
@@ -560,6 +540,7 @@ class AutocompleteAPIView(APIView):
             split_results = [list(filter(None, result.text_auto.lower().split(';;'))) for result in search_results]
             filtered_results = [[word for word in result if safe_query in word] for result in split_results]
             flattened_results = list(chain(*filtered_results))
+            # todo: make this regex more human readable giving it names
             regex_filtered_results = [re.sub(r'.*[\w\d-]'+safe_query+r'.*|.*('+safe_query+r'[\w\d-]*\s?[\w\d-]*)|.*', r'\1', string, flags=re.IGNORECASE) for string in flattened_results]
             unique_results = list(filter(None, dict.fromkeys(regex_filtered_results)))
             return Response({
