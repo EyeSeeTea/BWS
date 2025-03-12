@@ -13,6 +13,7 @@ services:
         condition: service_healthy
         restart: true
     env_file:
+      - .env
       - .env.dev
     build:
       context: ./app
@@ -53,6 +54,7 @@ services:
     image: elasticsearch:${ES_IMAGE_VERSION}
     hostname: elasticsearch
     env_file:
+      - .env
       - .env.dev
     ulimits:
       memlock:
