@@ -68,7 +68,7 @@ docker compose -f docker-compose.production.yml up -d
 Additional commands:
 - Connect to DB running in `<container_name>` container in PROD:
 ```shell
-docker exec -it <container_name> mysql -uroot -p
+docker exec -it <container_name> mysql -u root -p
 # Provide DB_ROOT_PASSWD
 ```
 - MySQL Docker Container commands:
