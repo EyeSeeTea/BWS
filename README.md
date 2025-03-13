@@ -66,9 +66,9 @@ docker compose -f docker-compose.production.yml up -d
 ```
 
 Additional commands:
-- Connect to DB running in `<container_name>` container in PROD:
+- Connect to DB running in the web container for PROD:
 ```shell
-docker exec -it <container_name> mysql -u root -p
+docker exec -it bws-prod-web-1 mysql -u root -p
 # Provide DB_ROOT_PASSWD
 ```
 - MySQL Docker Container commands:
@@ -81,36 +81,36 @@ SELECT * FROM table_name WHERE column_name LIKE '%word%';
 ```
 - Run custom command (tools). E.g: updateDB_fromIDRAssay for assay idr0094-ellinger-sarscov2:
 ```shell
-docker exec -it <container_name> bash
+docker exec -it bws-prod-web-1 bash
 python manage.py updateDB_fromIDRAssay /data/IDR/idr0094-ellinger-sarscov2
 ```
 - Or alternativelly, run commands directly using the docker container command line:
 ```shell
-docker exec -it <container_name> <command>
+docker exec -it bws-prod-web-1 <command>
 ```
 - List of useful commands:
 ```shell
-docker exec -it <container_name> python manage.py flush
-docker exec -it <container_name> python manage.py createsuperuser
-docker exec -it <container_name> python manage.py makemigrations
-docker exec -it <container_name> python manage.py migrate
-docker exec -it <container_name> python manage.py initBaseTables
-docker exec -it <container_name> python manage.py updateEntriesFromDir /data/covid/
-docker exec -it <container_name> python manage.py updateDB_fromHCSAssay /data/IDR/idr0094-ellinger-sarscov2
-docker exec -it <container_name> python manage.py update_NMR_binding /data/C19-NMR-C/C19-NMR-C_pre-processed_data.csv
-docker exec -it <container_name> python manage.py update_NMR_docking /data/C19-NMR-C/C19-NMR-C_All_Proteins_pre-processed_data.csv
-docker exec -it <container_name> python manage.py initUniProtEntry /data/SARS-CoV-2/UniProtEntry_covid19-proteome.csv
-docker exec -it <container_name> python manage.py initPTMEntity /data/SARS-CoV-2/PTMEntity_covid19-proteome.csv
-docker exec -it <container_name> python manage.py initDomainEntity /data/SARS-CoV-2/DomainEntity_covid19-proteome.csv
+docker exec -it bws-prod-web-1 python manage.py flush
+docker exec -it bws-prod-web-1 python manage.py createsuperuser
+docker exec -it bws-prod-web-1 python manage.py makemigrations
+docker exec -it bws-prod-web-1 python manage.py migrate
+docker exec -it bws-prod-web-1 python manage.py initBaseTables
+docker exec -it bws-prod-web-1 python manage.py updateEntriesFromDir /data/covid/
+docker exec -it bws-prod-web-1 python manage.py updateDB_fromHCSAssay /data/IDR/idr0094-ellinger-sarscov2
+docker exec -it bws-prod-web-1 python manage.py update_NMR_binding /data/C19-NMR-C/C19-NMR-C_pre-processed_data.csv
+docker exec -it bws-prod-web-1 python manage.py update_NMR_docking /data/C19-NMR-C/C19-NMR-C_All_Proteins_pre-processed_data.csv
+docker exec -it bws-prod-web-1 python manage.py initUniProtEntry /data/SARS-CoV-2/UniProtEntry_covid19-proteome.csv
+docker exec -it bws-prod-web-1 python manage.py initPTMEntity /data/SARS-CoV-2/PTMEntity_covid19-proteome.csv
+docker exec -it bws-prod-web-1 python manage.py initDomainEntity /data/SARS-CoV-2/DomainEntity_covid19-proteome.csv
 ```
 - Pre-Process data from COVID19 NMR Consortium (C19-NMR-C):
 ```shell
-docker exec -it <container_name> python /tools/pre-process_data.py -i /data/C19-NMR-C/C19-NMR-C-Summary/Summary-ordered.csv -o /data/C19-NMR-C/C19-NMR-C_pre-processed_data.csv
-docker exec -it <container_name> python /tools/pre-process_data.py -i /data/C19-NMR-C/All_Proteins_CNB_CSIC.csv -o /data/C19-NMR-C/C19-NMR-C_All_Proteins_pre-processed_data.csv 
+docker exec -it bws-prod-web-1 python /tools/pre-process_data.py -i /data/C19-NMR-C/C19-NMR-C-Summary/Summary-ordered.csv -o /data/C19-NMR-C/C19-NMR-C_pre-processed_data.csv
+docker exec -it bws-prod-web-1 python /tools/pre-process_data.py -i /data/C19-NMR-C/All_Proteins_CNB_CSIC.csv -o /data/C19-NMR-C/C19-NMR-C_All_Proteins_pre-processed_data.csv 
 ```
 - Create superuser:
 ```shell
-docker exec -it <container_name> python manage.py createsuperuser
+docker exec -it bws-prod-web-1 python manage.py createsuperuser
 ```
 
 ### Django-debug-toolbar usage for APIs in DEV
