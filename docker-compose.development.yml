@@ -13,7 +13,6 @@ services:
         condition: service_healthy
         restart: true
     env_file:
-      - .env
       - .env.dev
     build:
       context: ./app
