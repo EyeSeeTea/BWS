@@ -521,7 +521,7 @@ class AutocompleteAPIView(APIView):
             split_results = [list(filter(None, result.text_auto.lower().split(';;'))) for result in search_results]
             filtered_results = [[word for word in result if query in word] for result in split_results]
             flattened_results = list(chain(*filtered_results))
-            regex_filtered_results = [re.sub('.*[\w\d-]'+query+'.*|.*('+query+'[\w\d-]*\s?[\w\d-]*)|.*', r'\1', string, flags=re.IGNORECASE) for string in flattened_results]
+            regex_filtered_results = [re.sub(r'.*[\w\d-]'+query+r'.*|.*('+query+r'[\w\d-]*\s?[\w\d-]*)|.*', r'\1', string, flags=re.IGNORECASE) for string in flattened_results]
             unique_results = list(filter(None,dict.fromkeys(regex_filtered_results)))
             return Response({
                 'results': unique_results
