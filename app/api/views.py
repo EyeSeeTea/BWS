@@ -544,7 +544,7 @@ class AutocompleteAPIView(APIView):
             flattened_results = list(chain(*filtered_results))
             # todo: make this regex more human readable giving it names
             regex_filtered_results = [re.sub(r'.*[\w\d-]'+safe_query+r'.*|.*('+safe_query+r'[\w\d-]*\s?[\w\d-]*)|.*', r'\1', string, flags=re.IGNORECASE) for string in flattened_results]
-            unique_results = list(filter(None, dict.fromkeys(regex_filtered_results)))
+            unique_results = list(filter(None,dict.fromkeys(regex_filtered_results)))
             return Response({
                 'results': unique_results
             })
