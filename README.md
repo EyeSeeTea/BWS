@@ -43,6 +43,11 @@ Additional commands:
 - Re-build containers in detached mode
 ```shell
 docker compose -f docker-compose.development.yml up -d --build
+
+# This command should be executed in the following scenarios:
+# - When you have made changes to the Dockerfile or any files that are copied into the container during the build process.
+# - When you need to update the dependencies or packages installed in the container.
+# - When you want to ensure that the container is using the latest version of the base image or any other dependencies.
 ```
 - Stop all docker containers
 ```shell
@@ -59,6 +64,11 @@ docker exec -it <container_name> bash
 2. Build docker containers
 ```shell
 docker compose -f docker-compose.production.yml build
+
+# This command should be executed in the following scenarios:
+# - When you have made changes to the Dockerfile or any files that are copied into the container during the build process.
+# - When you need to update the dependencies or packages installed in the container.
+# - When you want to ensure that the container is using the latest version of the base image or any other dependencies.
 ```
 3. Start application (detached mode)
 ```shell
