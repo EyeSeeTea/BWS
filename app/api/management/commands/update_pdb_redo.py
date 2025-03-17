@@ -78,7 +78,7 @@ def save_entries(success, not_found):
     }
     timestamp = time.strftime("%Y%m%d-%H%M%S")
     filename = f"pdb_redo_{timestamp}.json"
-    save_json(json, "./", filename)
+    save_json(json, "/data/pdb_redo_entries", filename)
     log_info(f"Saved to {filename}")
 
 
@@ -110,3 +110,11 @@ def update_pdb_redo_entries(success, not_found):
     for pdb_id in not_found:
         if pdb_id in refined_model_pdb_ids:
             RefinedModel.objects.filter(pdbId_id=pdb_id).delete()
+
+    # Log added refined models
+    added_count = len([pdb_id for pdb_id in success if pdb_id not in refined_model_pdb_ids])
+    log_info(f"Added refined models: {added_count}")
+
+    # Log deleted refined models
+    deleted_count = len([pdb_id for pdb_id in not_found if pdb_id in refined_model_pdb_ids])
+    log_info(f"Deleted refined models: {deleted_count}")
