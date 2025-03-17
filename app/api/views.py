@@ -98,8 +98,10 @@ class PdbEntryAllAnnFromMapView(APIView, PdbEntryAnnFromMapsUtils):
         Get all map derived annotations related to one pdb_id, chain_id
         """
         pdb_id = pdb_id.lower()
-        validate_pdb_id(pdb_id)
-        validate_chain_id(chain_id)
+        if response := validate_pdb_id(pdb_id):
+            return response
+        if response := validate_chain_id(chain_id):
+            return response
         responseData = []
         if modified_model is not None:
             pdb_id = pdb_id + "." + modified_model
