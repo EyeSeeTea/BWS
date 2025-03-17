@@ -536,7 +536,7 @@ class AutocompleteAPIView(APIView):
     def get(self, request, *args, **kwargs):
         query = request.GET.get('q', '').lower()
         # Escape special characters in the query to prevent reDOS attacks
-        safe_query = re.sub(r'([^\w\s\d\-,\.])', r'', query)
+        safe_query = re.escape(query)
         if query:
             search_results = SearchQuerySet().models(PdbEntry).autocomplete(text_auto=safe_query)
             split_results = [list(filter(None, result.text_auto.lower().split(';;'))) for result in search_results]
