@@ -28,7 +28,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         log_info("** Updating PDB Redo entries **")
         pdb_entries = PdbEntry.objects.all().values_list('dbId', flat=True)
-        pdb_entries_list = list(pdb_entries)[:30] # remove clamp
+        pdb_entries_list = list(pdb_entries)
         log_info("Fetching PDB Redo entries")
         success, not_found = get_refined_model_pdb_redo(pdb_entries_list)
         log_info("Success: " + str(len(success)))
