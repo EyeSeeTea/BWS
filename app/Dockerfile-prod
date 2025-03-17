@@ -3,7 +3,7 @@
 # ---------- ---------- ---------- ---------- ---------- ---------- ----------
 # Install packages, Configure & Clean up
 # build from default to include MySQL drivers
-FROM python:3.12.3-bookworm AS python-build
+FROM python:3.13.2-bookworm AS python-build
 RUN apt-get update && \
     apt-get -y upgrade 2>&1 && \
     apt-get autoremove -y && \
@@ -12,7 +12,7 @@ RUN apt-get update && \
 RUN pip install --upgrade pip setuptools && \
     pip install mysqlclient
 # use slim to reduce size and unused stuff
-FROM python:3.12.3-slim-bookworm
+FROM python:3.13.2-slim-bookworm
 COPY --from=python-build /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
 RUN apt-get update && \
     apt-get install -y libmariadb3 gcc libpcre3 libpcre3-dev && \
