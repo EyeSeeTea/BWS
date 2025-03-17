@@ -136,6 +136,11 @@ class StudyParser(object):
         self._study_file = study_file
         self._dir = os.path.dirname(self._study_file)
         self.log = logging.getLogger("pyidr.study_parser.StudyParser")
+        # Snyk: Unsanitized input from a command line argument flows into open,
+        # where it is used as a path. This may result in a Path Traversal vulnerability
+        # and allow an attacker to read arbitrary files.
+        # ** But this is a local script and the study file to analyze will be on ./data,
+        # which is on the root /data on the docker
         with open(self._study_file, 'r', encoding='utf-8',
                   errors='ignore') as f:
             self.log.info("Parsing %s" % self._study_file)
