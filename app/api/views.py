@@ -84,10 +84,9 @@ def validate_emdb_id(emdb_id):
 def validate_chain_id(chain_id):
     return validate_param(REGEX_CHAIN_ID, chain_id, "Invalid Chain ID format")
 
-def raise_if_path_traversal_attemp(path, filepath):
+def raise_if_path_traversal_attempt(path, filepath):
     if not os.path.commonprefix([filepath, path]) == path:
         raise Exception("Path Traversal Attempt")
-
 class PdbEntryAllAnnFromMapView(APIView, PdbEntryAnnFromMapsUtils):
     """
     Retrieve an annotation entry `details`.
@@ -268,7 +267,8 @@ class FunPDBeEntryByPDBView(APIView):
 
     def get(self, request, pdb_id, format=None):
         pdb_id = pdb_id.lower()
-        validate_pdb_id(pdb_id)
+        if response := validate_pdb_id(pdb_id):
+            return response
         path = os.path.join(FUNPDBE_DATA_PATH, pdb_id[1:3])
         entries = []
         try:
@@ -352,7 +352,6 @@ def getPdbMappings(emdb_id):
     except Exception as exc:
         logger.exception(exc)
 
-
 class FunPDBeEntryByPDBMethodView(APIView):
     """
     Retrieve a JSON file with EMV validation data for the PDB entry
@@ -361,7 +360,8 @@ class FunPDBeEntryByPDBMethodView(APIView):
 
     def get(self, request, pdb_id, method, format=None):
         pdb_id = pdb_id.lower()
-        validate_pdb_id(pdb_id)
+        if response := validate_pdb_id(pdb_id):
+            return response
         volmaps = getEmdbMappings(pdb_id)
         if volmaps:
             # there should be only one
