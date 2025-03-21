@@ -1,6 +1,7 @@
 import logging
 import os
 import time
+from urllib.parse import urljoin
 import requests
 from django.core.management.base import BaseCommand
 from api.models import PdbEntry, RefinedModel, RefinedModelMethod, RefinedModelSource
@@ -39,35 +40,30 @@ class Command(BaseCommand):
 
 
 def fetch_pdb_redo(pdb_id):
-    url = URL_PDB_REDO + "db/" + pdb_id + "/pdbe.json"
+    url = urljoin(URL_PDB_REDO, f"db/{pdb_id}/pdbe.json")
     try:
         resp = requests.get(url, timeout=HTTP_TIMEOUT)
-        if resp.status_code == 200:
-            return True
-        else:
-            return False
-    except requests.ConnectionError:
-        log_info("Can't find PDB-Redo model: failed to connect", url)
-    except requests.exceptions.ReadTimeout:
-        log_info("Can't find PDB-Redo model: timeout", url)
-    except requests.exceptions.Timeout:
-        log_info("Can't find PDB-Redo model: timeout", url)
+        return resp.status_code == 200
+    except Exception as e:
+        log_info(f"Can't find PDB-Redo model: {repr(e)}", url)
 
 
 def get_refined_model_pdb_redo(list):
     success = []
     not_found = []
     start_time = time.time()
+
     for index, pdb_id in enumerate(list):
-        if (fetch_pdb_redo(pdb_id.lower())):
+        if fetch_pdb_redo(pdb_id.lower()):
             success.append(pdb_id)
         else:
             not_found.append(pdb_id)
         if time.time() - start_time >= 30:
-            progress = (index + 1) / len(list) * 30
+            progress = (index + 1) / len(list) * 100
             log_info(f"Progress: {progress:.2f}% - Success: {len(success)} - Not found: {len(not_found)}")
             start_time = time.time()
         time.sleep(1)
+
     return success, not_found
 
 
@@ -86,6 +82,7 @@ def get_refined_models():
     refModelSource = RefinedModelSource.objects.get(name='PDB-REDO')
     refModelMethod = RefinedModelMethod.objects.get(source=refModelSource, name='PDB-Redo')
     pdb_redo_refined_models = RefinedModel.objects.filter(method=refModelMethod, source=refModelSource)
+
     return pdb_redo_refined_models
 
 
@@ -99,8 +96,8 @@ def update_pdb_redo_entries(success, not_found):
     for pdb_id in success:
         if pdb_id not in refined_model_pdb_ids:
             pdbObj = PdbEntry.objects.get(dbId=pdb_id)
-            external_link = URL_PDB_REDO + "db/" + pdb_id
-            query_link = URL_PDB_REDO + "query/" + pdb_id
+            external_link = urljoin(URL_PDB_REDO, f"db/{pdb_id}")
+            query_link = urljoin(URL_PDB_REDO, f"query/{pdb_id}")
             updateRefinedModel(
                 None, pdbObj, refModelSource, refModelMethod, pdb_id + '_final.pdb', external_link,
                 query_link, ''
