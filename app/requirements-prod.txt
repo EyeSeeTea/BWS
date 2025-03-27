@@ -15,7 +15,7 @@ drf-yasg==1.21.9
 idna==3.7
 inflection==0.5.1
 mysqlclient==2.2.7
-numpy==1.26.4
+numpy==2.0.2
 packaging==24.2
 pandas==2.2.3
 python-dateutil==2.9.0.post0
