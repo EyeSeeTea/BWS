@@ -1,6 +1,6 @@
 asgiref==3.8.1
 beautifulsoup4==4.13.3
-biopython==1.83
+biopython==1.85
 bs4==0.0.2
 certifi==2025.1.31
 charset-normalizer==3.3.2
