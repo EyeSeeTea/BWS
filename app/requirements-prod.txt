@@ -11,7 +11,7 @@ django-debug-toolbar-force==0.2
 django-filter==25.1
 django-nine==0.2.7
 djangorestframework==3.14.0
-drf-yasg==1.21.9
+drf-yasg==1.21.10
 idna==3.7
 inflection==0.5.1
 mysqlclient==2.2.7
