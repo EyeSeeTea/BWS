@@ -197,6 +197,21 @@ class RefinedModelViewSet(viewsets.GenericViewSet,
     ordering_fields = ['method', 'emdbId', 'pdbId']
     ordering = ['method']
 
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        pdbId = self.request.query_params.get('pdbId')
+        method_name = self.request.query_params.get('method')
+        emdbId = self.request.query_params.get('emdbId')
+        if pdbId:
+            queryset = queryset.filter(pdbId__exact=pdbId)
+        if method_name:
+            method = RefinedModelMethod.objects.filter(name__iexact=method_name).first()
+            if method:
+                queryset = queryset.filter(method__exact=method.id)
+        if emdbId:
+            queryset = queryset.filter(emdbId__exact=emdbId)
+        return queryset
+    
 
 class TopicViewSet(viewsets.GenericViewSet,
                    mixins.ListModelMixin, mixins.RetrieveModelMixin
