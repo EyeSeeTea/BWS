@@ -67,7 +67,7 @@ def get_refined_model_pdb_redo(list):
                 f"Progress: {progress:.2f}% - Success: {len(success)} - Not found: {len(not_found)}"
             )
             start_time = time.time()
-        time.sleep(1)
+        time.sleep(1)  # Avoiding DDoS
 
     return success, not_found
 
