@@ -1,6 +1,5 @@
 from datetime import datetime, timedelta
 import logging
-import os
 import time
 from urllib.parse import urljoin
 import requests
@@ -13,29 +12,14 @@ from api.models import (
     RefinedModelMethod,
     RefinedModelSource,
 )
-
-# from api.dataPaths import URL_CERES
 from api.utils import save_json, updateRefinedModel
 from api.dataPaths import URL_PHENIX_STATUS
-
-# PHENIX
-
-HTTP_TIMEOUT = 15
-
-logger = logging.getLogger(__name__)
-logging.basicConfig(
-    level=logging.INFO, format="[%(asctime)s] %(levelname)s: %(message)s"
-)
-
-
-def log_info(message):
-    logger.info(message)
-    print(message)
+from .update_utils import log_info, save_entries, log_progress, HTTP_TIMEOUT
 
 
 class Command(BaseCommand):
     """
-    Update CERES entries (RefinedModels)
+    Update CERES - PHENIX entries (RefinedModels)
     """
 
     requires_migrations_checks = True
@@ -50,7 +34,7 @@ class Command(BaseCommand):
         success, not_found = get_refined_model_ceres(mapping_entries_list)
         log_info("Success: " + str(len(success)))
         log_info("Not found: " + str(len(not_found)))
-        save_entries(success, not_found)
+        save_entries(success, not_found, "ceres", save_json, "/data/ceres_entries")
         update_ceres_entries(success, not_found)
         log_info("** Finished updating CERES entries **")
 
@@ -150,23 +134,10 @@ def get_refined_model_ceres(mapping_entries_list):
                     emdb_id,  # lowercase
                 )
             )
-        if time.time() - start_time >= 30:
-            progress = (index + 1) / len(mapping_entries_list) * 100
-            log_info(
-                f"Progress: {progress:.2f}% - Success: {len(success)} - Not found: {len(not_found)}"
-            )
-            start_time = time.time()
+        log_progress(index, len(mapping_entries_list), success, not_found, start_time)
         time.sleep(1)  # Avoiding DDoS
 
     return success, not_found
-
-
-def save_entries(success, not_found):
-    json = {"success": success, "not_found": not_found}
-    timestamp = time.strftime("%Y%m%d-%H%M%S")
-    filename = f"ceres_{timestamp}.json"
-    save_json(json, "/data/ceres_entries", filename)
-    log_info(f"Saved to {filename}")
 
 
 def get_refined_models():
