@@ -93,6 +93,7 @@ def get_refined_models():
 
 
 def update_pdb_redo_entries(success, not_found):
+    updated = []
     refined_models = get_refined_models()
     refined_model_pdb_ids = refined_models.values_list("pdbId_id", flat=True)
     refModelSource = RefinedModelSource.objects.get(name="PDB-REDO")
@@ -102,16 +103,34 @@ def update_pdb_redo_entries(success, not_found):
 
     # Add new refined models (not present yet)
     for pdb_id in success:
-        if pdb_id not in refined_model_pdb_ids:
+        pdb_id_lower = pdb_id.lower()
+        filename_url = f"https://pdb-redo.eu/db/{pdb_id_lower}/{pdb_id_lower}_final.cif"
+        external_link = urljoin(URL_PDB_REDO, f"db/{pdb_id}")
+        query_link = ""
+        refined_model = refined_models.get(pdbId_id=pdb_id)
+        needs_update = False
+
+        if refined_model is not None:
+            needs_update = (
+                refined_model.filename != filename_url
+                or refined_model.queryLink != query_link
+            )
+        if needs_update:
+            updated.append(
+                {
+                    "pdbId": pdb_id,
+                    "filename_url": filename_url,
+                }
+            )
+
+        if pdb_id not in refined_model_pdb_ids or needs_update:
             pdbObj = PdbEntry.objects.get(dbId=pdb_id)
-            external_link = urljoin(URL_PDB_REDO, f"db/{pdb_id}")
-            query_link = urljoin(URL_PDB_REDO, f"query/{pdb_id}")
             updateRefinedModel(
                 None,
                 pdbObj,
                 refModelSource,
                 refModelMethod,
-                pdb_id + "_final.pdb",
+                filename_url,
                 external_link,
                 query_link,
                 "",
@@ -133,3 +152,7 @@ def update_pdb_redo_entries(success, not_found):
         [pdb_id for pdb_id in not_found if pdb_id in refined_model_pdb_ids]
     )
     log_info(f"Deleted refined models: {deleted_count}")
+
+    # Log updated refined models
+    updated_count = len(updated)
+    log_info(f"Updated refined models: {updated_count}")
