@@ -461,11 +461,12 @@ class PdbEntryFilter(filters.FilterSet):
     is_sybody = filters.BooleanFilter(method='filter_by_is_sybody', label='Is sybody')
     is_idr = filters.BooleanFilter(method='filter_by_is_idr', label='Is IDR')
     is_pdb_redo = filters.BooleanFilter(method='filter_by_is_pdb_redo', label='Is PDB-REDO')
+    is_ceres = filters.BooleanFilter(method='filter_by_is_ceres', label='Is CERES')
     is_nmr = filters.BooleanFilter(method='filter_by_is_nmr', label='Is NMR')
 
     class Meta:
         model = PdbEntry
-        fields = ['is_antibody', 'is_nanobody', 'is_sybody', 'is_idr', 'is_pdb_redo', 'is_nmr']
+        fields = ['is_antibody', 'is_nanobody', 'is_sybody', 'is_idr', 'is_pdb_redo', 'is_ceres', 'is_nmr']
 
     def filter_by_is_antibody(self, queryset, name, value):
         kwords = ['antibody', 'antibodies', 'fab', 'heavy', 'light']
@@ -486,6 +487,11 @@ class PdbEntryFilter(filters.FilterSet):
         pdb_redo_source = RefinedModelSource.objects.get(name='PDB-REDO')
         pdb_redo_models = RefinedModel.objects.filter(pdbId=models.OuterRef('pk'), source=pdb_redo_source)
         return queryset.annotate(has_pdb_redo=models.Exists(pdb_redo_models)).filter(has_pdb_redo=value)
+
+    def filter_by_is_ceres(self, queryset, name, value):
+        ceres_source = RefinedModelSource.objects.get(name='CERES')
+        ceres_models = RefinedModel.objects.filter(pdbId=models.OuterRef('pk'), source=ceres_source)
+        return queryset.annotate(has_ceres=models.Exists(ceres_models)).filter(has_ceres=value)
     
     def filter_by_is_idr(self, queryset, name, value):
         ligand_well_exists = models.Exists(LigandEntity.objects.filter(pdbentry=models.OuterRef('pk'), well__isnull=False))
@@ -526,7 +532,7 @@ class PdbEntryViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = PdbEntryExportSerializer
     filter_backends = (filters.DjangoFilterBackend, OrderingFilter)
     filterset_class = PdbEntryFilter
-    filterset_fields = ['is_antibody', 'is_nanobody', 'is_sybody', 'is_idr', 'is_pdb_redo', 'is_nmr']
+    filterset_fields = ['is_antibody', 'is_nanobody', 'is_sybody', 'is_idr', 'is_pdb_redo', 'is_ceres', 'is_nmr']
     ordering_fields = ['dbId', 'title', 'relDate', 'emdbs__dbId']
     ordering = ['-relDate']
 
