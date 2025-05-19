@@ -182,6 +182,7 @@ def get_refined_models():
 
 
 def update_ceres_entries(success, not_found):
+    updated = []
     refined_models = get_refined_models()
     refined_model_pdb_ids = refined_models.values_list("pdbId_id", flat=True)
     refModelSource = RefinedModelSource.objects.get(name="CERES")
@@ -195,11 +196,27 @@ def update_ceres_entries(success, not_found):
         emdb_id = item["emdbId"]
         url = item["url"]
         filename_url = item["filename_url"]
-        if pdb_id not in refined_model_pdb_ids:
+        refined_model = refined_models.get(pdbId_id=pdb_id, emdbId_id=emdb_id)
+        needs_update = False
+        external_link = url
+        query_link = ""
+        if refined_model is not None:
+            needs_update = (
+                refined_model.filename != filename_url
+                or refined_model.external_link != url
+            )
+        if needs_update:
+            updated.append(
+                {
+                    "pdbId": pdb_id,
+                    "emdbId": emdb_id,
+                    "url": url,
+                    "filename_url": filename_url,
+                }
+            )
+        if pdb_id not in refined_model_pdb_ids or needs_update:
             pdbObj = PdbEntry.objects.get(dbId=pdb_id)
             emdbObj = EmdbEntry.objects.get(dbId=emdb_id)
-            external_link = url
-            query_link = ""
             updateRefinedModel(
                 emdbObj,
                 pdbObj,
@@ -231,3 +248,7 @@ def update_ceres_entries(success, not_found):
         [pdb_id for pdb_id, _ in not_found if pdb_id in refined_model_pdb_ids]
     )
     log_info(f"Deleted refined models: {deleted_count}")
+
+    # Log updated refined models
+    updated_count = len(updated)
+    log_info(f"Updated refined models: {updated_count}")
