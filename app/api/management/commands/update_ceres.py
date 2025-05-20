@@ -174,7 +174,7 @@ def update_ceres_entries(success, not_found):
         if refined_model is not None:
             needs_update = (
                 refined_model.filename != filename_url
-                or refined_model.external_link != url
+                or refined_model.externalLink != url
             )
         if needs_update:
             updated.append(
