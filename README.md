@@ -36,13 +36,13 @@ cd BWS
 2. Add the `db.sqlite3` file in `/app/bws/` directory (this file will be provided to you)
 3. Start application (detached mode)
 ```shell
-docker compose -f docker-compose.development.yml up -d
+docker compose --env-file .env.dev -f docker-compose.development.yml up -d
 ```
 
 Additional commands:
 - Re-build containers in detached mode
 ```shell
-docker compose -f docker-compose.development.yml up -d --build
+docker compose --env-file .env.dev -f docker-compose.development.yml up -d --build
 
 # This command should be executed in the following scenarios:
 # - When you have made changes to the Dockerfile or any files that are copied into the container during the build process.
@@ -51,7 +51,7 @@ docker compose -f docker-compose.development.yml up -d --build
 ```
 - Stop all docker containers
 ```shell
-docker compose -f docker-compose.development.yml down
+docker compose --env-file .env.dev -f docker-compose.development.yml down
 ```
 - Access shell (Replace `<container_name>` with the name or ID of your Docker container. You can find the container name by running `docker ps`:
 ```shell
@@ -63,7 +63,7 @@ docker exec -it <container_name> bash
 1. Copy `.env` file to `.env.prod` and change the values as needed (including the database variables)
 2. Build docker containers
 ```shell
-docker compose -f docker-compose.production.yml build
+docker compose --env-file .env.prod -f docker-compose.production.yml build
 
 # This command should be executed in the following scenarios:
 # - When you have made changes to the Dockerfile or any files that are copied into the container during the build process.
@@ -72,7 +72,7 @@ docker compose -f docker-compose.production.yml build
 ```
 3. Start application (detached mode)
 ```shell
-docker compose -f docker-compose.production.yml up -d
+docker compose --env-file .env.prod -f docker-compose.production.yml up -d
 ```
 
 Additional commands:
