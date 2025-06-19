@@ -359,7 +359,7 @@ class RefinedModel(models.Model):
     method = models.ForeignKey(
         RefinedModelMethod, on_delete=models.CASCADE)  # Refinement method
     # filename of the refined model
-    filename = models.CharField(max_length=255)
+    filename = models.CharField(max_length=255, blank=True, null=True)
     # link to the refined model
     externalLink = models.CharField(max_length=255, blank=True, null=True)
     # link to the query used to display the refined model in 3DBionotes
