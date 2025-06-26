@@ -1,5 +1,4 @@
 import logging
-import os
 import time
 from urllib.parse import urljoin
 import requests
@@ -7,19 +6,7 @@ from django.core.management.base import BaseCommand
 from api.models import PdbEntry, RefinedModel, RefinedModelMethod, RefinedModelSource
 from api.dataPaths import URL_PDB_REDO
 from api.utils import save_json, updateRefinedModel
-
-
-HTTP_TIMEOUT = 15
-
-logger = logging.getLogger(__name__)
-logging.basicConfig(
-    level=logging.INFO, format="[%(asctime)s] %(levelname)s: %(message)s"
-)
-
-
-def log_info(message):
-    logger.info(message)
-    print(message)
+from .update_utils import log_info, save_entries, log_progress, HTTP_TIMEOUT
 
 
 class Command(BaseCommand):
@@ -37,7 +24,9 @@ class Command(BaseCommand):
         success, not_found = get_refined_model_pdb_redo(pdb_entries_list)
         log_info("Success: " + str(len(success)))
         log_info("Not found: " + str(len(not_found)))
-        save_entries(success, not_found)
+        save_entries(
+            success, not_found, "pdb_redo", save_json, "/data/pdb_redo_entries"
+        )
         update_pdb_redo_entries(success, not_found)
         log_info("** Finished updating PDB Redo entries **")
 
@@ -61,23 +50,10 @@ def get_refined_model_pdb_redo(list):
             success.append(pdb_id)
         else:
             not_found.append(pdb_id)
-        if time.time() - start_time >= 30:
-            progress = (index + 1) / len(list) * 100
-            log_info(
-                f"Progress: {progress:.2f}% - Success: {len(success)} - Not found: {len(not_found)}"
-            )
-            start_time = time.time()
-        time.sleep(1)
+        log_progress(index, len(list), success, not_found, start_time)
+        time.sleep(1)  # Avoiding DDoS
 
     return success, not_found
-
-
-def save_entries(success, not_found):
-    json = {"success": success, "not_found": not_found}
-    timestamp = time.strftime("%Y%m%d-%H%M%S")
-    filename = f"pdb_redo_{timestamp}.json"
-    save_json(json, "/data/pdb_redo_entries", filename)
-    log_info(f"Saved to {filename}")
 
 
 def get_refined_models():
@@ -93,6 +69,7 @@ def get_refined_models():
 
 
 def update_pdb_redo_entries(success, not_found):
+    updated = []
     refined_models = get_refined_models()
     refined_model_pdb_ids = refined_models.values_list("pdbId_id", flat=True)
     refModelSource = RefinedModelSource.objects.get(name="PDB-REDO")
@@ -102,16 +79,34 @@ def update_pdb_redo_entries(success, not_found):
 
     # Add new refined models (not present yet)
     for pdb_id in success:
-        if pdb_id not in refined_model_pdb_ids:
+        pdb_id_lower = pdb_id.lower()
+        filename_url = f"https://pdb-redo.eu/db/{pdb_id_lower}/{pdb_id_lower}_final.cif"
+        external_link = urljoin(URL_PDB_REDO, f"db/{pdb_id}")
+        query_link = ""
+        refined_model = refined_models.get(pdbId_id=pdb_id)
+        needs_update = False
+
+        if refined_model is not None:
+            needs_update = (
+                refined_model.filename != filename_url
+                or refined_model.queryLink != query_link
+            )
+        if needs_update:
+            updated.append(
+                {
+                    "pdbId": pdb_id,
+                    "filename_url": filename_url,
+                }
+            )
+
+        if pdb_id not in refined_model_pdb_ids or needs_update:
             pdbObj = PdbEntry.objects.get(dbId=pdb_id)
-            external_link = urljoin(URL_PDB_REDO, f"db/{pdb_id}")
-            query_link = urljoin(URL_PDB_REDO, f"query/{pdb_id}")
             updateRefinedModel(
                 None,
                 pdbObj,
                 refModelSource,
                 refModelMethod,
-                pdb_id + "_final.pdb",
+                filename_url,
                 external_link,
                 query_link,
                 "",
@@ -133,3 +128,7 @@ def update_pdb_redo_entries(success, not_found):
         [pdb_id for pdb_id in not_found if pdb_id in refined_model_pdb_ids]
     )
     log_info(f"Deleted refined models: {deleted_count}")
+
+    # Log updated refined models
+    updated_count = len(updated)
+    log_info(f"Updated refined models: {updated_count}")
