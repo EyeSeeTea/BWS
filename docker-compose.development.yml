@@ -23,6 +23,7 @@ services:
                 APP_NAME: ${APP_NAME}
         environment:
             - DJANGO_SETTINGS_MODULE=bws.settings.development
+            - GITHUB_TOKEN=${GITHUB_TOKEN}
         mem_limit: ${BWS_MEM_LIMIT}
         labels:
             - "csic.cnb.bcu.app.environment=DEVELOPMENT"

@@ -39,6 +39,7 @@ class Command(BaseCommand):
         log_info("** Finished updating CERES entries **")
 
 
+# TODO: move to utils along the other common functions
 def fetch_and_execute(url, func):
     try:
         response = requests.get(url, timeout=HTTP_TIMEOUT)
@@ -161,13 +162,21 @@ def update_ceres_entries(success, not_found):
         source=refModelSource, name="PHENIX"
     )
 
-    # Add new refined models (not present yet)
+    # Add new refined models (not present yet and ones that need update)
     for item in success:
         pdb_id = item["pdbId"]
         emdb_id = item["emdbId"]
         url = item["url"]
         filename_url = item["filename_url"]
-        refined_model = refined_models.get(pdbId_id=pdb_id, emdbId_id=emdb_id)
+        try:
+            refined_model = refined_models.get(pdbId_id=pdb_id, emdbId_id=emdb_id)
+        except RefinedModel.DoesNotExist:
+            refined_model = None
+        except Exception as e:
+            log_info(
+                f"Error fetching refined model for pdbId={pdb_id}, emdbId={emdb_id}: {repr(e)}"
+            )
+            refined_model = None
         needs_update = False
         external_link = url
         query_link = ""
@@ -182,7 +191,7 @@ def update_ceres_entries(success, not_found):
                     "pdbId": pdb_id,
                     "emdbId": emdb_id,
                     "url": url,
-                    "filename_url": filename_url,
+                    "filename_url": filename_url if filename_url else None,
                 }
             )
         if pdb_id not in refined_model_pdb_ids or needs_update:
