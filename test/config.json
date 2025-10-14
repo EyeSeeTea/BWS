@@ -1,0 +1,339 @@
+{
+ "bws-server-ip":"localhost",
+ "bws-server-port":"8080",
+
+ "bws-PDB-redo-API-valid":{
+    "endpoint": "/api/annotations/PDB_REDO/{name}",
+    "name":"P01308",
+    "status_code":"200",
+    "result":"{}"
+ },
+ "bws-PDB-redo-API-empty":{
+    "endpoint": "/api/annotations/PDB_REDO/{name}",
+    "name":"",
+    "status_code":"404",
+    "result":"{}"
+ },
+  "bws-PDB-redo-API-invalid":{
+    "endpoint": "/api/annotations/PDB_REDO/{name}",
+    "name":"P01308",
+    "status_code":"200",
+    "result":"{}"
+ },
+ "bws-EBI-valid": {
+    "endpoint":"/api/annotations/EBI/{type}/{name}",
+    "type":"test",
+    "name":"P01308",
+    "status_code":"404",
+    "result":""
+ },
+  "bws-EBI-empty": {
+    "endpoint":"/api/annotations/EBI/{type}/{name}",
+    "type":"test",
+    "name":"P01308",
+    "status_code":"404",
+    "result":""
+ },
+  "bws-EBI-invalid": {
+    "endpoint":"/api/annotations/EBI/{type}/{name}",
+    "type":"test",
+    "name":"P01308",
+    "status_code":"404",
+    "result":""
+ },
+
+ "bws-IEDB-valid": {
+    "endpoint":"/api/annotations/IEDB/Uniprot/{name}",
+    "type":"test",
+    "name":"P01308",
+    "status_code":"200",
+    "result":"[]"
+ },
+  "bws-IEDB-empty": {
+    "endpoint":"/api/annotations/IEDB/Uniprot/{name}",
+    "type":"test",
+    "name":"",
+    "status_code":"404",
+    "result":""
+ },
+  "bws-IEDB-invalid": {
+    "endpoint":"/api/annotations/IEDB/Uniprot/{name}",
+    "type":"test",
+    "name":"P01308",
+    "status_code":"200",
+    "result":"[]"
+ },
+ "bws-phosphosite-valid": {
+    "endpoint":"/api/annotations/Phosphosite/Uniprot/{name}",
+    "type":"test",
+    "name":"P01308",
+    "status_code":"404",
+    "result":"{}"
+ },
+ "bws-phosphosite-invalid": {
+    "endpoint":"/api/annotations/Phosphosite/Uniprot/{name}",
+    "type":"test",
+    "name":"P01308",
+    "status_code":"404",
+    "result":""
+ },
+ "bws-phosphosite-empty": {
+    "endpoint":"/api/annotations/Phosphosite/Uniprot/{name}",
+    "type":"test",
+    "name":"",
+    "status_code":"404",
+    "result":""
+ },
+ "bws-DBPTM-valid": {
+    "endpoint":"/api/annotations/dbptm/Uniprot/{name}",
+    "type":"test",
+    "name":"P01308",
+    "status_code":"200",
+    "result":"{}"
+ },
+ "bws-DBPTM-invalid": {
+    "endpoint":"/api/annotations/dbptm/Uniprot/{name}",
+    "type":"test",
+    "name":"P01308",
+    "status_code":"200",
+    "result":"{}"
+ },
+ "bws-DBPTM-empty": {
+    "endpoint":"/api/annotations/dbptm/Uniprot/{name}",
+    "type":"test",
+    "name":"",
+    "status_code":"404",
+    "result":"{}"
+ },
+ "bws-BIOMUTA-valid": {
+    "endpoint":"/api/annotations/dbptm/biomuta/Uniprot/{name}",
+    "type":"test",
+    "name":"P01308",
+    "status_code":"200",
+    "result":"[]"
+ },
+  "bws-BIOMUTA-invalid": {
+    "endpoint":"/api/annotations/dbptm/biomuta/Uniprot/{name}",
+    "type":"test",
+    "name":"P01308",
+    "status_code":"200",
+    "result":"[]"
+ },
+  "bws-BIOMUTA-empty": {
+    "endpoint":"/api/annotations/dbptm/biomuta/Uniprot/{name}",
+    "type":"test",
+    "name":"",
+    "status_code":"404",
+    "result":"[]"
+ },
+ "bws-DSYSMAP-valid": {
+    "endpoint":"/api/annotations/dsysmap/Uniprot/{name}",
+    "type":"test",
+    "name":"P01308",
+    "status_code":"200",
+    "result":""
+ },
+ "bws-DSYSMAP-invalid": {
+    "endpoint":"/api/annotations/dsysmap/Uniprot/{name}",
+    "type":"test",
+    "name":"SOX6",
+    "status_code":"200",
+    "result":""
+ },
+ "bws-DSYSMAP-empty": {
+    "endpoint":"/api/annotations/dsysmap/Uniprot/{name}",
+    "type":"test",
+    "name":"",
+    "status_code":"404",
+    "result":""
+ },
+ "bws-ELMDB-valid": {
+    "endpoint":"/api/annotations/dsysmap/Uniprot/{name}",
+    "type":"test",
+    "name":"P01308",
+    "status_code":"200",
+    "result":""
+ },
+  "bws-ELMDB-invalid": {
+    "endpoint":"/api/annotations/dsysmap/Uniprot/{name}",
+    "type":"test",
+    "name":"P01308",
+    "status_code":"200",
+    "result":""
+ },
+  "bws-ELMDB-empty": {
+    "endpoint":"/api/annotations/dsysmap/Uniprot/{name}",
+    "type":"test",
+    "name":"",
+    "status_code":"404",
+    "result":""
+ },
+ "bws-PFAM-valid": {
+    "endpoint":"/api/annotations/Pfam/Uniprot/{name}",
+    "type":"test",
+    "name":"P01308",
+    "status_code":"200",
+    "result":""
+ },
+  "bws-PFAM-invalid": {
+    "endpoint":"/api/annotations/Pfam/Uniprot/{name}",
+    "type":"test",
+    "name":"P01308",
+    "status_code":"200",
+    "result":""
+ },
+  "bws-PFAM-empty": {
+    "endpoint":"/api/annotations/Pfam/Uniprot/{name}",
+    "type":"test",
+    "name":"",
+    "status_code":"404",
+    "result":""
+ },
+ "bws-SMART-valid": {
+    "endpoint":"/api/annotations/SMART/Uniprot/{name}",
+    "type":"test",
+    "name":"P01308",
+    "status_code":"200",
+    "result":[{"id": 45, "uniprotid": "P01308", "domain": "signal_peptide", "start": 1, "end": 24, "evalue": "0", "type": "INTRINSIC"}, {"id": 46, "uniprotid": "P01308", "domain": "IlGF", "start": 28, "end": 109, "evalue": "1.56489452458817e-35", "type": "SMART"}]
+ },
+  "bws-SMART-invalid": {
+    "endpoint":"/api/annotations/SMART/Uniprot/{name}",
+    "type":"test",
+    "name":"P01308",
+    "status_code":"200",
+    "result":""
+ },
+  "bws-SMART-empty": {
+    "endpoint":"/api/annotations/SMART/Uniprot/{name}",
+    "type":"test",
+    "name":"",
+    "status_code":"404",
+    "result":""
+ },
+ "bws-MOBI-valid": {
+    "endpoint":"/api/annotations/mobi/Uniprot/{name}",
+    "type":"test",
+    "name":"P01308",
+    "status_code":"200",
+    "result":""
+ },
+  "bws-MOBI-invalid": {
+    "endpoint":"/api/annotations/mobi/Uniprot/{name}",
+    "type":"test",
+    "name":"P01308",
+    "status_code":"200",
+    "result":""
+ },
+  "bws-MOBI-empty": {
+    "endpoint":"/api/annotations/mobi/Uniprot/{name}",
+    "type":"test",
+    "name":"",
+    "status_code":"404",
+    "result":""
+ },
+ "bws-INTERPRO-valid": {
+    "endpoint":"/api/annotations/interpro/Uniprot/{name}",
+    "type":"test",
+    "name":"P01308",
+    "status_code":"200",
+    "result":""
+ },
+"bws-INTERPRO-invalid": {
+    "endpoint":"/api/annotations/interpro/Uniprot/{name}",
+    "type":"test",
+    "name":"P01308",
+    "status_code":"200",
+    "result":""
+ },
+ "bws-INTERPRO-empty": {
+    "endpoint":"/api/annotations/interpro/Uniprot/{name}",
+    "type":"test",
+    "name":"",
+    "status_code":"404",
+    "result":""
+ },
+ "bws-ENSEMBL-VARIATION-valid": {
+    "endpoint":"/api/annotations/ENSEMBL/variation/{name}",
+    "type":"test",
+    "name":"P01308",
+    "status_code":"200",
+    "result":""
+ },
+  "bws-ENSEMBL-VARIATION-invalid": {
+    "endpoint":"/api/annotations/ENSEMBL/variation/{name}",
+    "type":"test",
+    "name":"P01308",
+    "status_code":"200",
+    "result":""
+ },
+ "bws-ENSEMBL-VARIATION-empty": {
+    "endpoint":"/api/annotations/ENSEMBL/variation/{name}",
+    "type":"test",
+    "name":"",
+    "status_code":"404",
+    "result":""
+ },
+ "bws-ENSEMBL-ANNOTATION-invalid": {
+    "endpoint":"/api/annotations/ENSEMBL/annotation/{name}",
+    "type":"test",
+    "name":"ENSG00000254647945jre",
+    "status_code":"200",
+    "result":""
+ },
+  "bws-ENSEMBL-ANNOTATION-valid": {
+    "endpoint":"/api/annotations/ENSEMBL/annotation/{name}",
+    "type":"test",
+    "name":"ENSG00000254647",
+    "status_code":"200",
+    "result":""
+ },
+  "bws-ENSEMBL-ANNOTATION-empty": {
+    "endpoint":"/api/annotations/ENSEMBL/annotation/{name}",
+    "type":"test",
+    "name":"",
+    "status_code":"404",
+    "result":""
+ },
+ "bws-LENGTHS-valid":{
+    "endpoint":"/api/lengths/Uniprot/",
+    "type":"test",
+    "name":"P01308",
+    "status_code":"200",
+    "result":""
+ },
+  "bws-LENGTHS-invalid":{
+    "endpoint":"/api/lengths/Uniprot/",
+    "type":"test",
+    "name":"P01308",
+    "status_code":"200",
+    "result":""
+ },
+  "bws-LENGTHS-empty":{
+    "endpoint":"/api/lengths/Uniprot/",
+    "type":"test",
+    "name":"",
+    "status_code":"404",
+    "result":""
+ },
+ "bws-LENGTHS-MULTI-valid": {
+    "endpoint":"/api/annotations/ENSEMBL/variation/",
+    "type":"test",
+    "name":"P01308",
+    "status_code":"200",
+    "result":""
+ },
+"bws-LENGTHS-MULTI-invalid": {
+    "endpoint":"/api/annotations/lengths/UniprotMulti/",
+    "type":"test",
+    "name":"P01308vdszcxa",
+    "status_code":"200",
+    "result":""
+ },
+ "bws-LENGTHS-MULTI-empty": {
+    "endpoint":"/api/annotations/lengths/UniprotMulti/",
+    "type":"test",
+    "name":"",
+    "status_code":"404",
+    "result":""
+ }
+}

@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     "rest_framework.authtoken",
     "drf_yasg",  # enable Yet another Swagger generator https://github.com/axnsan12/drf-yasg
     "api",
+    "api.annotations"
 ]
 
 CRISPY_TEMPLATE_PACK = "bootstrap4"
