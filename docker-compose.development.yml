@@ -54,7 +54,6 @@ services:
         image: elasticsearch:${ES_IMAGE_VERSION}
         hostname: elasticsearch
         env_file:
-            - .env
             - .env.dev
         ulimits:
             memlock:
