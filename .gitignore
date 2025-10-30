@@ -3,7 +3,6 @@
 .idea
 certs/
 # Python
-__pycache__/
 *.py[cod]
 *$py.class
 # migrations/
